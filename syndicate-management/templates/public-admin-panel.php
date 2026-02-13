@@ -316,9 +316,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <div style="font-size: 0.85em; font-weight: 700; color: var(--sm-dark-color);"><?php echo date_i18n('l j F Y'); ?></div>
             </div>
 
-            <?php if ($is_admin || current_user_can('إدارة_الأعضاء')): ?>
-                <a href="/Lesson" class="sm-btn" style="background: #8A244B; height: 38px; font-size: 12px; color: white !important; text-decoration: none;">تحضير الدروس</a>
-            <?php endif; ?>
 
             <?php if ($is_admin || current_user_can('تسجيل_مخالفة')): ?>
                 <button onclick="smOpenViolationModal()" class="sm-btn" style="background: var(--sm-primary-color); height: 38px; font-size: 12px; color: white !important;">+ تسجيل مخالفة</button>
@@ -412,17 +409,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_officer || $is_syndicate_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'lesson-plans' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'lesson-plans'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-welcome-write-blog"></span> تحضير الدروس</a>
-                    </li>
-                <?php endif; ?>
-
-                <?php if ($is_admin || $is_officer || $is_syndicate_member || $is_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'assignments' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'assignments'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-portfolio"></span> الواجبات النقابية</a>
-                    </li>
-                <?php endif; ?>
 
                 <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'printing' ? 'sm-active' : ''; ?>">
@@ -494,14 +480,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     include SM_PLUGIN_DIR . 'templates/admin-syndicate-member-reports.php';
                     break;
 
-                case 'lesson-plans':
-                    include SM_PLUGIN_DIR . 'templates/admin-lesson-plans.php';
-                    break;
-
-                case 'assignments':
-                    include SM_PLUGIN_DIR . 'templates/admin-assignments.php';
-                    break;
-
                 case 'surveys':
                     if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member) {
                         include SM_PLUGIN_DIR . 'templates/admin-surveys.php';
@@ -547,34 +525,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                         </div>
                                     </div>
 
-                                    <div class="sm-form-group" style="grid-column: span 2;">
-                                        <label class="sm-label">أيام العمل الأسبوعية (الجدول الرسمي):</label>
-                                        <div style="display: flex; gap: 40px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                            <div>
-                                    <div style="font-weight: 800; margin-bottom: 10px; color: var(--sm-primary-color);">الأعضاء:</div>
-                                                <?php
-                                                $days = array('sun' => 'الأحد', 'mon' => 'الاثنين', 'tue' => 'الثلاثاء', 'wed' => 'الأربعاء', 'thu' => 'الخميس', 'fri' => 'الجمعة', 'sat' => 'السبت');
-                                                $work_members = $syndicate['working_schedule']['members'] ?? array();
-                                                foreach ($days as $key => $label): ?>
-                                                    <label style="display: block; font-size: 13px; margin-bottom: 5px;">
-                                                        <input type="checkbox" name="work_members[]" value="<?php echo $key; ?>" <?php checked(in_array($key, $work_members)); ?>> <?php echo $label; ?>
-                                                    </label>
-                                                <?php endforeach; ?>
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 800; margin-bottom: 10px; color: var(--sm-secondary-color);">الكادر الإداري:</div>
-                                                <?php
-                                                $work_staff = $syndicate['working_schedule']['staff'] ?? array();
-                                                foreach ($days as $key => $label): ?>
-                                                    <label style="display: block; font-size: 13px; margin-bottom: 5px;">
-                                                        <input type="checkbox" name="work_staff[]" value="<?php echo $key; ?>" <?php checked(in_array($key, $work_staff)); ?>> <?php echo $label; ?>
-                                                    </label>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
-                                <button type="submit" name="sm_save_settings_unified" class="sm-btn" style="width:auto;">حفظ الإعدادات</button>
+                                <button type="submit" name="sm_save_settings_unified" class="sm-btn" style="width:auto; margin-top:20px;">حفظ الإعدادات</button>
                             </form>
                         </div>
                         <div id="design-settings" class="sm-internal-tab" style="display:none;">

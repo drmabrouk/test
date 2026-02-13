@@ -132,8 +132,6 @@ class SM_Public {
         if ($active_tab === 'staff-reports' && !current_user_can('إدارة_المخالفات')) $active_tab = 'summary';
         if ($active_tab === 'printing' && !current_user_can('طباعة_التقارير')) $active_tab = 'summary';
         if ($active_tab === 'global-settings' && !current_user_can('إدارة_النظام')) $active_tab = 'summary';
-        if ($active_tab === 'lesson-plans' && !($is_officer || $is_syndicate_member)) $active_tab = 'summary';
-        if ($active_tab === 'assignments' && !($is_officer || $is_syndicate_member || $is_member)) $active_tab = 'summary';
 
         // Fetch data based on tab
         switch ($active_tab) {
@@ -142,7 +140,6 @@ class SM_Public {
                     $member = SM_DB::get_member_by_parent($user->ID);
                     $member_id = $member ? $member->id : 0;
                     $stats = SM_DB::get_member_stats($member_id);
-                    $member_assignments = SM_DB::get_assignments($user->ID);
 
                     // Find assigned supervisor
                     $supervisor = null;
@@ -911,40 +908,6 @@ class SM_Public {
         wp_send_json_success('Updated');
     }
 
-    public function ajax_add_assignment() {
-        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_assignment_action')) wp_send_json_error('Security check');
-
-        $data = array(
-            'sender_id' => get_current_user_id(),
-            'receiver_id' => intval($_POST['receiver_id']),
-            'title' => sanitize_text_field($_POST['title']),
-            'description' => sanitize_textarea_field($_POST['description']),
-            'file_url' => esc_url_raw($_POST['file_url']),
-            'type' => sanitize_text_field($_POST['type'] ?? 'assignment')
-        );
-
-        if (SM_DB::add_assignment($data)) {
-            wp_send_json_success();
-        } else {
-            wp_send_json_error('Failed');
-        }
-    }
-
-    public function ajax_approve_plan() {
-        if (!current_user_can('مراجعة_التحضير')) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['nonce'], 'sm_assignment_action')) wp_send_json_error('Security check');
-
-        global $wpdb;
-        $plan_id = intval($_POST['plan_id']);
-        $result = $wpdb->update("{$wpdb->prefix}sm_assignments",
-            array('receiver_id' => get_current_user_id()),
-            array('id' => $plan_id, 'type' => 'lesson_plan')
-        );
-
-        if ($result) wp_send_json_success();
-        else wp_send_json_error();
-    }
 
     public function ajax_bulk_delete_users() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
@@ -1307,11 +1270,7 @@ class SM_Public {
                     'syndicate_logo' => esc_url_raw($_POST['syndicate_logo']),
                     'address' => sanitize_text_field($_POST['syndicate_address']),
                     'email' => sanitize_email($_POST['syndicate_email']),
-                    'phone' => sanitize_text_field($_POST['syndicate_phone']),
-                    'working_schedule' => array(
-                        'staff' => isset($_POST['work_staff']) ? array_map('sanitize_text_field', $_POST['work_staff']) : array(),
-                        'members' => isset($_POST['work_members']) ? array_map('sanitize_text_field', $_POST['work_members']) : array()
-                    )
+                    'phone' => sanitize_text_field($_POST['syndicate_phone'])
                 ));
                 SM_Logger::log('تحديث بيانات السلطة', "تم تحديث بيانات النقابة والمدير: {$_POST['syndicate_name']}");
                 SM_Settings::save_retention_settings(array(

@@ -519,45 +519,6 @@ class SM_DB {
         return $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records WHERE status = 'pending'");
     }
 
-    public static function add_assignment($data) {
-        global $wpdb;
-        return $wpdb->insert("{$wpdb->prefix}sm_assignments", array(
-            'sender_id' => $data['sender_id'],
-            'receiver_id' => $data['receiver_id'],
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'file_url' => $data['file_url'],
-            'type' => $data['type'],
-            'created_at' => current_time('mysql')
-        ));
-    }
-
-    public static function get_assignments($user_id) {
-        global $wpdb;
-        $query = "SELECT a.*, u.display_name as sender_name
-                  FROM {$wpdb->prefix}sm_assignments a
-                  JOIN {$wpdb->prefix}users u ON a.sender_id = u.ID
-                  WHERE a.receiver_id = %d AND a.type = 'assignment'
-                  ORDER BY a.created_at DESC";
-        $res = $wpdb->get_results($wpdb->prepare($query, $user_id));
-        foreach ($res as $r) {
-            $r->specialization = get_user_meta($r->sender_id, 'sm_specialization', true);
-        }
-        return $res;
-    }
-
-    public static function get_staff_by_section($grade_num, $section) {
-        return get_users(array(
-            'role' => 'sm_syndicate_member',
-            'meta_query' => array(
-                array(
-                    'key' => 'sm_assigned_sections',
-                    'value' => 'الصف ' . $grade_num . '|' . $section,
-                    'compare' => 'LIKE'
-                )
-            )
-        ));
-    }
 
     public static function add_survey($title, $questions, $recipients, $user_id) {
         global $wpdb;
