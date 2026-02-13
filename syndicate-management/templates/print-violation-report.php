@@ -83,12 +83,12 @@ $academic = SM_Settings::get_academic_structure();
 
     <div style="margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center;">
         <div>
-            <p style="font-weight: 700; margin-bottom: 50px; color: #111F35; font-size: 16px;">مشرف الانضباط</p>
+            <p style="font-weight: 700; margin-bottom: 50px; color: #111F35; font-size: 16px;">عضو النقابة الانضباط</p>
             <div style="border-bottom: 1px dashed #cbd5e0; width: 220px; margin: 0 auto;"></div>
             <div style="font-size: 11px; color: #718096; margin-top: 8px;">التوقيع والختم الرسمي</div>
         </div>
         <div>
-            <p style="font-weight: 700; margin-bottom: 50px; color: #111F35; font-size: 16px;">مدير النقابة</p>
+            <p style="font-weight: 700; margin-bottom: 50px; color: #111F35; font-size: 16px;">مسؤول النقابة</p>
             <div style="border-bottom: 1px dashed #cbd5e0; width: 220px; margin: 0 auto;"></div>
             <div style="font-size: 11px; color: #718096; margin-top: 8px;">الختم والتوقيع</div>
         </div>

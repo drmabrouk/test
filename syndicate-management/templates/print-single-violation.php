@@ -96,12 +96,12 @@
 
         <div class="signatures">
             <div class="sig-box">
-                <div class="sig-label">مشرف الانضباط</div>
+                <div class="sig-label">عضو النقابة الانضباط</div>
                 <div class="sig-line"></div>
                 <div class="sig-name">التوقيع والختم</div>
             </div>
             <div class="sig-box">
-                <div class="sig-label">مدير النقابة</div>
+                <div class="sig-label">مسؤول النقابة</div>
                 <div class="sig-line"></div>
                 <div class="sig-name">التوقيع والختم</div>
             </div>

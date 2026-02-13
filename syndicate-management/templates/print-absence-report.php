@@ -93,11 +93,11 @@
 
     <div class="footer">
         <div class="signature-box">
-            <p>المشرف الإداري</p>
+            <p>عضو النقابة الإداري</p>
             <p>............................</p>
         </div>
         <div class="signature-box">
-            <p>يعتمد مدير النقابة</p>
+            <p>يعتمد مسؤول النقابة</p>
             <div class="principal-name"><?php echo esc_html($syndicate['syndicate_principal_name'] ?? ''); ?></div>
             <p>التوقيع: ............................</p>
         </div>

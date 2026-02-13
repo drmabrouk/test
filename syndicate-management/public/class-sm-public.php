@@ -105,7 +105,7 @@ class SM_Public {
 
         // Notice
         $output .= '<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #edf2f7; text-align: center;">';
-        $output .= '<p style="font-size: 0.85em; color: #718096; line-height: 1.6;">في حال نسيان بيانات الدخول، يرجى التواصل مع إدارة النقابة أو المشرف التربوي لإعادة تعيين كلمة المرور الخاصة بك.</p>';
+        $output .= '<p style="font-size: 0.85em; color: #718096; line-height: 1.6;">في حال نسيان بيانات الدخول، يرجى التواصل مع إدارة النقابة لإعادة تعيين كلمة المرور الخاصة بك.</p>';
         $output .= '</div>';
 
         $output .= '</div>';
@@ -125,24 +125,23 @@ class SM_Public {
         // Data Preparation based on tab
         $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');
         $is_sys_admin = in_array('sm_system_admin', $roles);
-        $is_principal = in_array('sm_principal', $roles);
-        $is_supervisor = in_array('sm_supervisor', $roles);
-        $is_coordinator = in_array('sm_coordinator', $roles);
-        $is_teacher = in_array('sm_teacher', $roles);
+        $is_officer = in_array('sm_officer', $roles);
+        $is_syndicate_member = in_array('sm_syndicate_member', $roles);
         $is_member = in_array('sm_member', $roles);
+        $is_parent = in_array('sm_parent', $roles);
 
         // Security / Capability check for tabs
         if ($active_tab === 'record' && !current_user_can('تسجيل_مخالفة')) $active_tab = 'summary';
         if ($active_tab === 'members' && !current_user_can('إدارة_الأعضاء')) $active_tab = 'summary';
-        if ($active_tab === 'teachers' && !current_user_can('إدارة_المستخدمين')) $active_tab = 'summary';
-        if ($active_tab === 'teacher-reports' && !current_user_can('إدارة_المخالفات')) $active_tab = 'summary';
+        if (($active_tab === 'staff' || $active_tab === 'staffs') && !current_user_can('إدارة_المستخدمين')) $active_tab = 'summary';
+        if ($active_tab === 'staff-reports' && !current_user_can('إدارة_المخالفات')) $active_tab = 'summary';
         if ($active_tab === 'confiscated' && !current_user_can('إدارة_المخالفات')) $active_tab = 'summary';
         if ($active_tab === 'printing' && !current_user_can('طباعة_التقارير')) $active_tab = 'summary';
         if ($active_tab === 'attendance' && !current_user_can('إدارة_الأعضاء')) $active_tab = 'summary';
         if ($active_tab === 'clinic' && !current_user_can('إدارة_العيادة')) $active_tab = 'summary';
         if ($active_tab === 'global-settings' && !current_user_can('إدارة_النظام')) $active_tab = 'summary';
-        if ($active_tab === 'lesson-plans' && !($is_coordinator || $is_teacher)) $active_tab = 'summary';
-        if ($active_tab === 'assignments' && !($is_teacher || $is_member)) $active_tab = 'summary';
+        if ($active_tab === 'lesson-plans' && !($is_officer || $is_syndicate_member)) $active_tab = 'summary';
+        if ($active_tab === 'assignments' && !($is_officer || $is_syndicate_member || $is_member)) $active_tab = 'summary';
 
         // Fetch data based on tab
         switch ($active_tab) {
@@ -156,7 +155,7 @@ class SM_Public {
                     // Find assigned supervisor
                     $supervisor = null;
                     if ($member) {
-                        $supervisors = get_users(array('role' => 'sm_supervisor'));
+                        $supervisors = get_users(array('role' => 'sm_syndicate_member'));
                         foreach ($supervisors as $s) {
                             $supervised = get_user_meta($s->ID, 'sm_supervised_classes', true);
                             if (is_array($supervised) && in_array($member->class_name . '|' . $member->section, $supervised)) {
@@ -166,7 +165,7 @@ class SM_Public {
                         }
                     }
                 } else {
-                    $stats = SM_DB::get_statistics($is_teacher && !$is_admin ? ['teacher_id' => $user->ID] : []);
+                    $stats = SM_DB::get_statistics(($is_syndicate_member && !$is_admin) ? ['officer_id' => $user->ID] : []);
                 }
                 break;
 
@@ -175,8 +174,8 @@ class SM_Public {
                 if (isset($_GET['member_search'])) $args['search'] = sanitize_text_field($_GET['member_search']);
                 if (isset($_GET['class_filter'])) $args['class_name'] = sanitize_text_field($_GET['class_filter']);
                 if (isset($_GET['section_filter'])) $args['section'] = sanitize_text_field($_GET['section_filter']);
-                if (isset($_GET['teacher_filter']) && !empty($_GET['teacher_filter'])) $args['teacher_id'] = intval($_GET['teacher_filter']);
-                if ($is_teacher && !$is_admin) $args['teacher_id'] = $user->ID;
+                if (isset($_GET['officer_filter']) && !empty($_GET['officer_filter'])) $args['officer_id'] = intval($_GET['officer_filter']);
+                if ($is_syndicate_member && !$is_admin) $args['officer_id'] = $user->ID;
                 $members = SM_DB::get_members($args);
                 break;
 
@@ -187,7 +186,7 @@ class SM_Public {
                     $filters['member_id'] = isset($_GET['member_id']) ? intval($_GET['member_id']) : ($my_stu[0]->id ?? 0);
                 } else {
                     if (isset($_GET['member_filter'])) $filters['member_id'] = intval($_GET['member_filter']);
-                    if ($is_teacher && !$is_admin) $filters['teacher_id'] = $user->ID;
+                    if ($is_syndicate_member && !$is_admin) $filters['officer_id'] = $user->ID;
 
                     if (isset($_GET['class_filter'])) $filters['class_name'] = sanitize_text_field($_GET['class_filter']);
                     if (isset($_GET['section_filter'])) $filters['section'] = sanitize_text_field($_GET['section_filter']);
@@ -211,7 +210,7 @@ class SM_Public {
                 $records = SM_DB::get_records();
                 break;
 
-            case 'teacher-reports':
+            case 'staff-reports':
                 $records = SM_DB::get_records(array('status' => 'pending'));
                 break;
 
@@ -434,7 +433,7 @@ class SM_Public {
         if (strlen($query) < 2) wp_send_json_success(array());
 
         $args = array('search' => $query);
-        // Teachers can search all members as per new requirements
+        // Syndicate Members can search all members as per new requirements
         $members = SM_DB::get_members($args);
         wp_send_json_success($members);
     }
@@ -812,9 +811,9 @@ class SM_Public {
         wp_send_json_success('Updated');
     }
 
-    public function ajax_add_teacher() {
+    public function ajax_add_staff() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_teacher_action')) wp_send_json_error('Security check failed');
+        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) wp_send_json_error('Security check failed');
 
         $pass = $_POST['user_pass'];
         if (empty($pass)) {
@@ -830,13 +829,13 @@ class SM_Public {
             'user_email' => $email,
             'display_name' => sanitize_text_field($_POST['display_name']),
             'user_pass' => $pass,
-            'role' => sanitize_text_field($_POST['role'] ?: 'sm_teacher')
+            'role' => sanitize_text_field($_POST['role'] ?: 'sm_syndicate_member')
         );
         $user_id = wp_insert_user($user_data);
         if (is_wp_error($user_id)) wp_send_json_error($user_id->get_error_message());
 
         update_user_meta($user_id, 'sm_temp_pass', $pass);
-        update_user_meta($user_id, 'sm_teacher_id', sanitize_text_field($_POST['teacher_id']));
+        update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
         update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
 
         if (!empty($_POST['specialization'])) {
@@ -845,9 +844,8 @@ class SM_Public {
 
         if (isset($_POST['assigned'])) {
             $assigned = array_map('sanitize_text_field', $_POST['assigned']);
-            if ($_POST['role'] === 'sm_teacher') {
+            if ($_POST['role'] === 'sm_syndicate_member') {
                 update_user_meta($user_id, 'sm_assigned_sections', $assigned);
-            } elseif ($_POST['role'] === 'sm_supervisor') {
                 update_user_meta($user_id, 'sm_supervised_classes', $assigned);
             }
         }
@@ -900,13 +898,13 @@ class SM_Public {
                 $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_records");
                 SM_Logger::log('مسح كافة الأعضاء والسجلات', 'إجراء جماعي');
                 break;
-            case 'teachers':
-                $teachers = get_users(array('role' => 'sm_teacher'));
-                foreach ($teachers as $t) {
+            case 'staffs':
+                $staffs = get_users(array('role' => 'sm_syndicate_member'));
+                foreach ($staffs as $t) {
                     wp_delete_user($t->ID);
                     $count++;
                 }
-                SM_Logger::log('مسح كافة المعلمين', 'إجراء جماعي');
+                SM_Logger::log('مسح كافة أعضاء النقابة', 'إجراء جماعي');
                 break;
             case 'parents':
                 $parents = get_users(array('role' => 'sm_parent'));
@@ -981,9 +979,9 @@ class SM_Public {
             wp_send_json_error('Unauthorized');
         }
 
-        $teacher_id = get_current_user_id(); // 0 for public
+        $officer_id = get_current_user_id(); // 0 for public
 
-        if (SM_DB::save_attendance($member_id, $status, $date, $teacher_id)) {
+        if (SM_DB::save_attendance($member_id, $status, $date, $officer_id)) {
             wp_send_json_success('Saved');
         } else {
             wp_send_json_error('Failed to save');
@@ -1009,13 +1007,13 @@ class SM_Public {
         }
 
         $date = sanitize_text_field($_POST['date']);
-        $teacher_id = get_current_user_id();
+        $officer_id = get_current_user_id();
 
         if (!is_array($batch)) wp_send_json_error('Invalid batch data');
 
         $success_count = 0;
         foreach ($batch as $item) {
-            if (SM_DB::save_attendance(intval($item['member_id']), sanitize_text_field($item['status']), $date, $teacher_id)) {
+            if (SM_DB::save_attendance(intval($item['member_id']), sanitize_text_field($item['status']), $date, $officer_id)) {
                 $success_count++;
             }
         }
@@ -1131,8 +1129,8 @@ class SM_Public {
         $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_confiscated_items");
         $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_logs");
 
-        $teachers = get_users(array('role' => 'sm_teacher'));
-        foreach ($teachers as $t) wp_delete_user($t->ID);
+        $staffs = get_users(array('role' => 'sm_syndicate_member'));
+        foreach ($staffs as $t) wp_delete_user($t->ID);
 
         $parents = get_users(array('role' => 'sm_parent'));
         foreach ($parents as $p) wp_delete_user($p->ID);
@@ -1141,11 +1139,11 @@ class SM_Public {
         wp_send_json_success('تمت تهيأة النظام بالكامل بنجاح');
     }
 
-    public function ajax_update_teacher() {
+    public function ajax_update_staff() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_teacher_action')) wp_send_json_error('Security check failed');
+        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) wp_send_json_error('Security check failed');
 
-        $user_id = intval($_POST['edit_teacher_id']);
+        $user_id = intval($_POST['edit_officer_id']);
         $user_data = array(
             'ID' => $user_id,
             'display_name' => sanitize_text_field($_POST['display_name'])
@@ -1161,7 +1159,7 @@ class SM_Public {
         $role = sanitize_text_field($_POST['role']);
         $u->set_role($role);
 
-        update_user_meta($user_id, 'sm_teacher_id', sanitize_text_field($_POST['teacher_id']));
+        update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
         update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
         update_user_meta($user_id, 'sm_account_status', sanitize_text_field($_POST['account_status']));
 
@@ -1175,9 +1173,8 @@ class SM_Public {
 
         if (isset($_POST['assigned'])) {
             $assigned = array_map('sanitize_text_field', $_POST['assigned']);
-            if ($role === 'sm_teacher') {
+            if ($role === 'sm_syndicate_member') {
                 update_user_meta($user_id, 'sm_assigned_sections', $assigned);
-            } elseif ($role === 'sm_supervisor') {
                 update_user_meta($user_id, 'sm_supervised_classes', $assigned);
             }
         }
@@ -1212,7 +1209,7 @@ class SM_Public {
         global $wpdb;
         $plan_id = intval($_POST['plan_id']);
         $result = $wpdb->update("{$wpdb->prefix}sm_assignments",
-            array('receiver_id' => get_current_user_id()), // Mark as approved by current coordinator
+            array('receiver_id' => get_current_user_id()), // Mark as approved by current staff
             array('id' => $plan_id, 'type' => 'lesson_plan')
         );
 
@@ -1222,7 +1219,7 @@ class SM_Public {
 
     public function ajax_bulk_delete_users() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['nonce'], 'sm_teacher_action')) wp_send_json_error('Security check');
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicate_member_action')) wp_send_json_error('Security check');
 
         $ids = array_map('intval', explode(',', $_POST['user_ids']));
         require_once(ABSPATH . 'wp-admin/includes/user.php');
@@ -1359,7 +1356,7 @@ class SM_Public {
 
         $subject = sanitize_text_field($_POST['subject']);
         $user = wp_get_current_user();
-        if (in_array('sm_teacher', (array)$user->roles) && !current_user_can('manage_options')) {
+        if (in_array('sm_syndicate_member', (array)$user->roles) && !current_user_can('manage_options')) {
             $spec = get_user_meta($user->ID, 'sm_specialization', true);
             if ($spec && $spec !== $subject) {
                 wp_send_json_error('غير مسموح لك برصد درجات لمادة غير مخصص لك.');
@@ -1446,7 +1443,7 @@ class SM_Public {
 
         $subject = sanitize_text_field($_POST['subject']);
         $user = wp_get_current_user();
-        if (in_array('sm_teacher', (array)$user->roles) && !current_user_can('manage_options')) {
+        if (in_array('sm_syndicate_member', (array)$user->roles) && !current_user_can('manage_options')) {
             $spec = get_user_meta($user->ID, 'sm_specialization', true);
             if ($spec && $spec !== $subject) {
                 wp_send_json_error('غير مسموح لك برصد درجات لمادة غير مخصص لك.');
@@ -1486,7 +1483,7 @@ class SM_Public {
     }
 
     public function ajax_add_survey() {
-        if (!current_user_can('manage_options') && !in_array('sm_principal', (array)wp_get_current_user()->roles) && !in_array('sm_supervisor', (array)wp_get_current_user()->roles)) {
+        if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles) && !in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
             wp_send_json_error('Unauthorized');
         }
         if (!wp_verify_nonce($_POST['nonce'], 'sm_admin_action')) wp_send_json_error('Security');
@@ -1501,7 +1498,7 @@ class SM_Public {
     }
 
     public function ajax_cancel_survey() {
-        if (!current_user_can('manage_options') && !in_array('sm_principal', (array)wp_get_current_user()->roles) && !in_array('sm_supervisor', (array)wp_get_current_user()->roles)) {
+        if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles) && !in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
             wp_send_json_error('Unauthorized');
         }
         if (!wp_verify_nonce($_POST['nonce'], 'sm_admin_action')) wp_send_json_error('Security');
@@ -1528,7 +1525,7 @@ class SM_Public {
     }
 
     public function ajax_get_survey_results() {
-        if (!current_user_can('manage_options') && !in_array('sm_principal', (array)wp_get_current_user()->roles) && !in_array('sm_supervisor', (array)wp_get_current_user()->roles)) {
+        if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles) && !in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
             wp_send_json_error('Unauthorized');
         }
         $survey_id = intval($_GET['id']);
@@ -1537,7 +1534,7 @@ class SM_Public {
     }
 
     public function ajax_export_survey_results() {
-         if (!current_user_can('manage_options') && !in_array('sm_principal', (array)wp_get_current_user()->roles) && !in_array('sm_supervisor', (array)wp_get_current_user()->roles)) {
+         if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles) && !in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
             wp_send_json_error('Unauthorized');
         }
         $survey_id = intval($_GET['id']);
@@ -1571,7 +1568,7 @@ class SM_Public {
     }
 
     public function ajax_update_timetable_entry() {
-        if (!current_user_can('manage_options') && !in_array('sm_principal', (array)wp_get_current_user()->roles) && !in_array('sm_supervisor', (array)wp_get_current_user()->roles)) {
+        if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles) && !in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
             wp_send_json_error('Unauthorized');
         }
         if (!wp_verify_nonce($_POST['nonce'], 'sm_admin_action')) wp_send_json_error('Security');
@@ -1586,11 +1583,11 @@ class SM_Public {
         $day = sanitize_text_field($_POST['day']);
         $period = intval($_POST['period']);
         $subject_id = intval($_POST['subject_id']);
-        $teacher_id = intval($_POST['teacher_id']);
+        $officer_id = intval($_POST['officer_id']);
 
         $success_count = 0;
         foreach ($classes as $c) {
-            if (SM_DB::update_timetable($c['class_name'], $c['section'], $day, $period, $subject_id, $teacher_id)) {
+            if (SM_DB::update_timetable($c['class_name'], $c['section'], $day, $period, $subject_id, $officer_id)) {
                 $success_count++;
             }
         }
@@ -1603,7 +1600,7 @@ class SM_Public {
     }
 
     public function ajax_save_timetable_settings() {
-        if (!current_user_can('manage_options') && !in_array('sm_principal', (array)wp_get_current_user()->roles)) {
+        if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles)) {
             wp_send_json_error('Unauthorized');
         }
         if (!wp_verify_nonce($_POST['nonce'], 'sm_admin_action')) wp_send_json_error('Security');
@@ -1620,7 +1617,7 @@ class SM_Public {
     }
 
     public function ajax_download_plans_zip() {
-        if (!current_user_can('manage_options') && !in_array('sm_principal', (array)wp_get_current_user()->roles) && !in_array('sm_coordinator', (array)wp_get_current_user()->roles)) {
+        if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles) && !in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
             wp_die('Unauthorized');
         }
         if (!wp_verify_nonce($_GET['nonce'], 'sm_admin_action')) wp_die('Security');
@@ -1827,19 +1824,19 @@ class SM_Public {
             }
         }
 
-        // Handle Teacher Addition from Public Admin
-        if (isset($_POST['sm_add_teacher']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_teacher_action')) {
-            if (current_user_can('إدارة_المعلمين')) {
+        // Handle Syndicate Member Addition from Public Admin
+        if (isset($_POST['sm_add_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) {
+            if (current_user_can('إدارة_المستخدمين')) {
                 $user_data = array(
                     'user_login' => sanitize_user($_POST['user_login']),
                     'user_email' => sanitize_email($_POST['user_email']),
                     'display_name' => sanitize_text_field($_POST['display_name']),
                     'user_pass' => $_POST['user_pass'],
-                    'role' => 'sm_teacher'
+                    'role' => 'sm_syndicate_member'
                 );
                 $user_id = wp_insert_user($user_data);
                 if (!is_wp_error($user_id)) {
-                    update_user_meta($user_id, 'sm_teacher_id', sanitize_text_field($_POST['teacher_id']));
+                    update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
                     update_user_meta($user_id, 'sm_job_title', sanitize_text_field($_POST['job_title']));
                     update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
                     wp_redirect(add_query_arg('sm_admin_msg', 'settings_saved', $_SERVER['REQUEST_URI']));
@@ -1848,10 +1845,10 @@ class SM_Public {
             }
         }
 
-        // Handle Teacher Update
-        if (isset($_POST['sm_update_teacher']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_teacher_action')) {
-            if (current_user_can('إدارة_المعلمين')) {
-                $user_id = intval($_POST['edit_teacher_id']);
+        // Handle Syndicate Member Update
+        if (isset($_POST['sm_update_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) {
+            if (current_user_can('إدارة_المستخدمين')) {
+                $user_id = intval($_POST['edit_officer_id']);
                 $user_data = array(
                     'ID' => $user_id,
                     'user_email' => sanitize_email($_POST['user_email']),
@@ -1861,7 +1858,7 @@ class SM_Public {
                     $user_data['user_pass'] = $_POST['user_pass'];
                 }
                 wp_update_user($user_data);
-                update_user_meta($user_id, 'sm_teacher_id', sanitize_text_field($_POST['teacher_id']));
+                update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
                 update_user_meta($user_id, 'sm_job_title', sanitize_text_field($_POST['job_title']));
                 update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
                 wp_redirect(add_query_arg('sm_admin_msg', 'settings_saved', $_SERVER['REQUEST_URI']));
@@ -1869,11 +1866,11 @@ class SM_Public {
             }
         }
 
-        // Handle Teacher Deletion
-        if (isset($_POST['sm_delete_teacher']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_teacher_action')) {
-            if (current_user_can('إدارة_المعلمين')) {
+        // Handle Syndicate Member Deletion
+        if (isset($_POST['sm_delete_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) {
+            if (current_user_can('إدارة_المستخدمين')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
-                wp_delete_user(intval($_POST['delete_teacher_id']));
+                wp_delete_user(intval($_POST['delete_officer_id']));
                 wp_redirect(add_query_arg('sm_admin_msg', 'settings_saved', $_SERVER['REQUEST_URI']));
                 exit;
             }
@@ -1892,8 +1889,8 @@ class SM_Public {
         if (isset($_POST['add_member']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_add_member')) {
             if (current_user_can('إدارة_الأعضاء')) {
                 $parent_user_id = !empty($_POST['parent_user_id']) ? intval($_POST['parent_user_id']) : null;
-                $teacher_id = !empty($_POST['teacher_id']) ? intval($_POST['teacher_id']) : null;
-                SM_DB::add_member($_POST['name'], $_POST['class'], $_POST['email'], $_POST['code'], $parent_user_id, $teacher_id);
+                $officer_id = !empty($_POST['officer_id']) ? intval($_POST['officer_id']) : null;
+                SM_DB::add_member($_POST['name'], $_POST['class'], $_POST['email'], $_POST['code'], $parent_user_id, $officer_id);
                 wp_redirect(add_query_arg('sm_admin_msg', 'member_added', $_SERVER['REQUEST_URI']));
                 exit;
             }
@@ -2249,32 +2246,32 @@ class SM_Public {
             }
         }
 
-        // Handle Teacher CSV Upload
-        if (isset($_POST['sm_import_teachers_csv']) && wp_verify_nonce($_POST['sm_admin_nonce'], 'sm_admin_action')) {
-            if (current_user_can('إدارة_المعلمين') && !empty($_FILES['csv_file']['tmp_name'])) {
+        // Handle Syndicate Member CSV Upload
+        if (isset($_POST['sm_import_staffs_csv']) && wp_verify_nonce($_POST['sm_admin_nonce'], 'sm_admin_action')) {
+            if (current_user_can('إدارة_المستخدمين') && !empty($_FILES['csv_file']['tmp_name'])) {
                 $handle = fopen($_FILES['csv_file']['tmp_name'], "r");
                 $header = fgetcsv($handle); // skip header
                 $count = 0;
                 while (($data = fgetcsv($handle)) !== FALSE) {
                     if (count($data) >= 3) {
-                        // username, email, name, teacher_id, job_title, phone, pass
+                        // username, email, name, officer_id, job_title, phone, pass
                         $user_id = wp_insert_user(array(
                             'user_login' => $data[0],
                             'user_email' => $data[1],
                             'display_name' => $data[2],
                             'user_pass' => isset($data[6]) ? $data[6] : wp_generate_password(),
-                            'role' => 'sm_teacher'
+                            'role' => 'sm_syndicate_member'
                         ));
                         if (!is_wp_error($user_id)) {
                             $count++;
-                            update_user_meta($user_id, 'sm_teacher_id', isset($data[3]) ? $data[3] : '');
+                            update_user_meta($user_id, 'sm_syndicate_member_id', isset($data[3]) ? $data[3] : '');
                             update_user_meta($user_id, 'sm_job_title', isset($data[4]) ? $data[4] : '');
                             update_user_meta($user_id, 'sm_phone', isset($data[5]) ? $data[5] : '');
                         }
                     }
                 }
                 fclose($handle);
-                SM_Logger::log('استيراد معلمين (جماعي)', "تم استيراد ($count) معلم بنجاح.");
+                SM_Logger::log('استيراد أعضاء النقابة (جماعي)', "تم استيراد ($count) عضو نقابة بنجاح.");
                 wp_redirect(add_query_arg('sm_admin_msg', 'csv_imported', $_SERVER['REQUEST_URI']));
                 exit;
             }

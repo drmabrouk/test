@@ -36,7 +36,7 @@ $tt_settings = SM_Settings::get_timetable_settings();
             <?php endif; ?>
         </form>
         </div>
-        <?php if ($is_admin || $is_principal): ?>
+        <?php if ($is_admin || $is_officer): ?>
             <button class="sm-btn sm-btn-secondary" onclick="document.getElementById('timetable-settings-modal').style.display='flex'" style="width: auto;">⚙️ إعدادات الجدول</button>
         <?php endif; ?>
     </div>
@@ -62,7 +62,7 @@ $tt_settings = SM_Settings::get_timetable_settings();
         }
         $periods = $tt_settings['periods'];
         $subjects = SM_DB::get_subjects(); // Get all subjects for dropdown
-        $teachers = get_users(array('role' => 'sm_teacher'));
+        $staffs = get_users(array('role' => 'sm_syndicate_member'));
     ?>
     <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color);">
         <h4 style="margin-top:0; color: var(--sm-primary-color);">الجدول الدراسي لـ: <?php echo $selected_class . ' ' . $selected_section; ?></h4>
@@ -82,10 +82,10 @@ $tt_settings = SM_Settings::get_timetable_settings();
                             $entry = $grid[$day_key][$i] ?? null;
                         ?>
                         <td style="padding: 10px; min-width: 150px;">
-                            <div class="sm-timetable-cell" onclick="smEditTimetable('<?php echo $day_key; ?>', <?php echo $i; ?>, '<?php echo $day_label; ?>', <?php echo $entry ? $entry->subject_id : 0; ?>, <?php echo $entry ? $entry->teacher_id : 0; ?>)" style="cursor: pointer; padding: 10px; border: 1px dashed #cbd5e0; border-radius: 6px; min-height: 60px;">
+                            <div class="sm-timetable-cell" onclick="smEditTimetable('<?php echo $day_key; ?>', <?php echo $i; ?>, '<?php echo $day_label; ?>', <?php echo $entry ? $entry->subject_id : 0; ?>, <?php echo $entry ? $entry->officer_id : 0; ?>)" style="cursor: pointer; padding: 10px; border: 1px dashed #cbd5e0; border-radius: 6px; min-height: 60px;">
                                 <?php if ($entry): ?>
                                     <div style="font-weight: 800; font-size: 13px; color: var(--sm-dark-color);"><?php echo esc_html($entry->subject_name); ?></div>
-                                    <div style="font-size: 11px; color: #718096; margin-top: 5px;"><?php echo esc_html($entry->teacher_name); ?></div>
+                                    <div style="font-size: 11px; color: #718096; margin-top: 5px;"><?php echo esc_html($entry->officer_name); ?></div>
                                 <?php else: ?>
                                     <div style="color: #a0aec0; font-size: 11px; text-align: center;">إضافة</div>
                                 <?php endif; ?>
@@ -121,10 +121,10 @@ $tt_settings = SM_Settings::get_timetable_settings();
                 </select>
             </div>
             <div class="sm-form-group">
-                <label class="sm-label">المعلم:</label>
-                <select id="tt_teacher" class="sm-select">
-                    <option value="">-- اختر المعلم --</option>
-                    <?php foreach ($teachers as $t) echo "<option value='{$t->ID}'>{$t->display_name}</option>"; ?>
+                <label class="sm-label">عضو النقابة:</label>
+                <select id="tt_staff" class="sm-select">
+                    <option value="">-- اختر عضو النقابة --</option>
+                    <?php foreach ($staffs as $t) echo "<option value='{$t->ID}'>{$t->display_name}</option>"; ?>
                 </select>
             </div>
 
@@ -178,12 +178,12 @@ $tt_settings = SM_Settings::get_timetable_settings();
 </div>
 
 <script>
-function smEditTimetable(dayKey, period, dayLabel, subjectId, teacherId) {
+function smEditTimetable(dayKey, period, dayLabel, subjectId, staffId) {
     document.getElementById('tt_day').value = dayKey;
     document.getElementById('tt_period').value = period;
     document.getElementById('timetable-info').innerText = dayLabel + ' - الحصة ' + period;
     document.getElementById('tt_subject').value = subjectId || '';
-    document.getElementById('tt_teacher').value = teacherId || '';
+    document.getElementById('tt_staff').value = staffId || '';
     document.getElementById('edit-timetable-modal').style.display = 'flex';
 }
 
@@ -191,10 +191,10 @@ function smSaveTimetableEntry() {
     const day = document.getElementById('tt_day').value;
     const period = document.getElementById('tt_period').value;
     const subjectId = document.getElementById('tt_subject').value;
-    const teacherId = document.getElementById('tt_teacher').value;
+    const staffId = document.getElementById('tt_staff').value;
 
-    if (!subjectId || !teacherId) {
-        smShowNotification('يرجى اختيار المادة والمعلم', true);
+    if (!subjectId || !staffId) {
+        smShowNotification('يرجى اختيار المادة وعضو النقابة', true);
         return;
     }
 
@@ -212,7 +212,7 @@ function smSaveTimetableEntry() {
     formData.append('day', day);
     formData.append('period', period);
     formData.append('subject_id', subjectId);
-    formData.append('teacher_id', teacherId);
+    formData.append('officer_id', staffId);
     formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })

@@ -5,24 +5,24 @@
         <?php if (current_user_can('إدارة_المستخدمين')): ?>
             <div style="display:flex; gap:10px;">
                 <button onclick="executeBulkDeleteUsers()" class="sm-btn" style="width:auto; background:#e53e3e;">حذف المستخدمين المحددين</button>
-                <button onclick="document.getElementById('teacher-csv-import-form').style.display='block'" class="sm-btn" style="width:auto; background:var(--sm-secondary-color);">استيراد جماعي (CSV)</button>
-                <button onclick="document.getElementById('add-teacher-modal').style.display='flex'" class="sm-btn" style="width:auto;">+ إضافة مستخدم جديد</button>
+                <button onclick="document.getElementById('staff-csv-import-form').style.display='block'" class="sm-btn" style="width:auto; background:var(--sm-secondary-color);">استيراد جماعي (CSV)</button>
+                <button onclick="document.getElementById('add-staff-modal').style.display='flex'" class="sm-btn" style="width:auto;">+ إضافة مستخدم جديد</button>
             </div>
         <?php endif; ?>
     </div>
 
-    <div id="teacher-csv-import-form" style="display:none; background: #f8fafc; padding: 30px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 30px;">
-        <h3 style="margin-top:0; color:var(--sm-secondary-color);">دليل استيراد المعلمين (CSV)</h3>
+    <div id="staff-csv-import-form" style="display:none; background: #f8fafc; padding: 30px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 30px;">
+        <h3 style="margin-top:0; color:var(--sm-secondary-color);">دليل استيراد مستخدمي النظام (CSV)</h3>
         
         <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:20px;">
-            <p style="font-size:13px; font-weight:700; margin-bottom:10px;">هيكل ملف المعلمين الصحيح:</p>
+            <p style="font-size:13px; font-weight:700; margin-bottom:10px;">هيكل ملف المستخدمين الصحيح:</p>
             <table style="width:100%; font-size:11px; border-collapse:collapse; text-align:center;">
                 <thead>
                     <tr style="background:#edf2f7;">
                         <th style="border:1px solid #cbd5e0; padding:5px;">اسم المستخدم</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">البريد</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">الاسم الكامل</th>
-                        <th style="border:1px solid #cbd5e0; padding:5px;">الكود الوظيفي</th>
+                        <th style="border:1px solid #cbd5e0; padding:5px;">كود المستخدم</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">المسمى</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">رقم الجوال</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">كلمة المرور</th>
@@ -30,11 +30,11 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td style="border:1px solid #cbd5e0; padding:5px;">teacher_ali</td>
-                        <td style="border:1px solid #cbd5e0; padding:5px;">ali@syndicate.com</td>
-                        <td style="border:1px solid #cbd5e0; padding:5px;">علي محمود</td>
-                        <td style="border:1px solid #cbd5e0; padding:5px;">T101</td>
-                        <td style="border:1px solid #cbd5e0; padding:5px;">معلم رياضة</td>
+                        <td style="border:1px solid #cbd5e0; padding:5px;">staff_member</td>
+                        <td style="border:1px solid #cbd5e0; padding:5px;">user@syndicate.com</td>
+                        <td style="border:1px solid #cbd5e0; padding:5px;">الاسم الكامل</td>
+                        <td style="border:1px solid #cbd5e0; padding:5px;">S101</td>
+                        <td style="border:1px solid #cbd5e0; padding:5px;">عضو نقابة</td>
                         <td style="border:1px solid #cbd5e0; padding:5px;">050000000</td>
                         <td style="border:1px solid #cbd5e0; padding:5px;">123456</td>
                     </tr>
@@ -45,11 +45,11 @@
         <form method="post" enctype="multipart/form-data">
             <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
             <div class="sm-form-group">
-                <label class="sm-label">اختر ملف CSV للمعلمين:</label>
+                <label class="sm-label">اختر ملف CSV للمستخدمين:</label>
                 <input type="file" name="csv_file" accept=".csv" required>
             </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button type="submit" name="sm_import_teachers_csv" class="sm-btn" style="width:auto; background:#27ae60;">استيراد القائمة الآن</button>
+                <button type="submit" name="sm_import_staffs_csv" class="sm-btn" style="width:auto; background:#27ae60;">استيراد القائمة الآن</button>
                 <button type="button" onclick="this.parentElement.parentElement.parentElement.style.display='none'" class="sm-btn" style="width:auto; background:var(--sm-text-gray);">إلغاء</button>
             </div>
         </form>
@@ -57,21 +57,19 @@
 
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee;">
         <a href="<?php echo remove_query_arg('role_filter'); ?>" class="sm-tab-btn <?php echo empty($_GET['role_filter']) ? 'sm-active' : ''; ?>" style="text-decoration:none;">الكل</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_teacher'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_teacher' ? 'sm-active' : ''; ?>" style="text-decoration:none;">المعلمون</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_coordinator'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_coordinator' ? 'sm-active' : ''; ?>" style="text-decoration:none;">المنسقون</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_supervisor'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_supervisor' ? 'sm-active' : ''; ?>" style="text-decoration:none;">المشرفون</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_principal'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_principal' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مديرو النقابة</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_system_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مديرو النظام التقني</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_member'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_member' ? 'sm-active' : ''; ?>" style="text-decoration:none;">أعضاء النقابة</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_officer'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_officer' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مسؤولو النقابة</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_system_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مديرو النظام</a>
     </div>
 
     <div style="background: white; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 30px; box-shadow: var(--sm-shadow);">
         <form method="get" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: end;">
             <input type="hidden" name="page" value="sm-dashboard">
-            <input type="hidden" name="sm_tab" value="teachers">
+            <input type="hidden" name="sm_tab" value="staff">
 
             <div class="sm-form-group" style="margin-bottom:0;">
                 <label class="sm-label">بحث عن مستخدم (اسم/بريد/كود):</label>
-                <input type="text" name="teacher_search" class="sm-input" value="<?php echo esc_attr(isset($_GET['teacher_search']) ? $_GET['teacher_search'] : ''); ?>" placeholder="أدخل بيانات البحث...">
+                <input type="text" name="staff_search" class="sm-input" value="<?php echo esc_attr(isset($_GET['staff_search']) ? $_GET['staff_search'] : ''); ?>" placeholder="أدخل بيانات البحث...">
             </div>
 
             <div class="sm-form-group" style="margin-bottom:0;">
@@ -79,16 +77,14 @@
                 <select name="role_filter" class="sm-select">
                     <option value="">كل الأدوار</option>
                     <option value="sm_system_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_system_admin'); ?>>مدير النظام</option>
-                    <option value="sm_principal" <?php selected($_GET['role_filter'] ?? '', 'sm_principal'); ?>>مدير النقابة</option>
-                    <option value="sm_supervisor" <?php selected($_GET['role_filter'] ?? '', 'sm_supervisor'); ?>>مشرف</option>
-                    <option value="sm_coordinator" <?php selected($_GET['role_filter'] ?? '', 'sm_coordinator'); ?>>منسق مادة</option>
-                    <option value="sm_teacher" <?php selected($_GET['role_filter'] ?? '', 'sm_teacher'); ?>>معلم</option>
+                    <option value="sm_officer" <?php selected($_GET['role_filter'] ?? '', 'sm_officer'); ?>>مسؤول النقابة</option>
+                    <option value="sm_syndicate_member" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_member'); ?>>عضو نقابة</option>
                 </select>
             </div>
 
             <div style="display: flex; gap: 10px;">
                 <button type="submit" class="sm-btn">تطبيق البحث</button>
-                <a href="<?php echo add_query_arg(array('sm_tab'=>'teachers'), remove_query_arg(array('teacher_search', 'role_filter'))); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none;">إعادة ضبط</a>
+                <a href="<?php echo add_query_arg(array('sm_tab'=>'staff'), remove_query_arg(array('staff_search', 'role_filter'))); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none;">إعادة ضبط</a>
             </div>
         </form>
     </div>
@@ -110,18 +106,16 @@
                 <?php 
                 $role_labels = array(
                     'sm_system_admin' => 'مدير النظام',
-                    'sm_principal' => 'مدير النقابة',
-                    'sm_supervisor' => 'مشرف',
-                    'sm_coordinator' => 'منسق مادة',
-                    'sm_teacher' => 'معلم'
+                    'sm_officer' => 'مسؤول النقابة',
+                    'sm_syndicate_member' => 'عضو النقابة'
                 );
 
                 $args = array('role__in' => array_keys($role_labels));
                 if (!empty($_GET['role_filter'])) {
                     $args['role'] = sanitize_text_field($_GET['role_filter']);
                 }
-                if (!empty($_GET['teacher_search'])) {
-                    $args['search'] = '*' . esc_attr($_GET['teacher_search']) . '*';
+                if (!empty($_GET['staff_search'])) {
+                    $args['search'] = '*' . esc_attr($_GET['staff_search']) . '*';
                     $args['search_columns'] = array('user_login', 'display_name', 'user_email');
                 }
 
@@ -136,7 +130,7 @@
                     ?>
                         <tr class="user-row" data-user-id="<?php echo $u->ID; ?>">
                             <td><input type="checkbox" class="user-cb" value="<?php echo $u->ID; ?>"></td>
-                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html(get_user_meta($u->ID, 'sm_teacher_id', true) ?: $u->user_login); ?></td>
+                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html(get_user_meta($u->ID, 'sm_syndicate_member_id', true) ?: $u->user_login); ?></td>
                             <td style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($u->display_name); ?></td>
                             <td><span class="sm-badge sm-badge-low"><?php echo $role_labels[$role_slug] ?? $role_slug; ?></span></td>
                             <td dir="ltr" style="text-align: right;"><?php echo esc_html(get_user_meta($u->ID, 'sm_phone', true)); ?></td>
@@ -153,14 +147,14 @@
                                         "login" => $u->user_login,
                                         "role" => $role_slug,
                                         "assigned" => $assigned,
-                                        "teacher_id" => get_user_meta($u->ID, "sm_teacher_id", true),
+                                        "officer_id" => get_user_meta($u->ID, "sm_syndicate_member_id", true),
                                         "phone" => get_user_meta($u->ID, "sm_phone", true)
                                     )); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px;">تعديل</button>
                                     
                                     <form method="post" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا الحساب؟')">
-                                        <?php wp_nonce_field('sm_teacher_action', 'sm_nonce'); ?>
-                                        <input type="hidden" name="delete_teacher_id" value="<?php echo $u->ID; ?>">
-                                        <button type="submit" name="sm_delete_teacher" class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; color:#e53e3e;">حذف</button>
+                                        <?php wp_nonce_field('sm_syndicate_member_action', 'sm_nonce'); ?>
+                                        <input type="hidden" name="delete_officer_id" value="<?php echo $u->ID; ?>">
+                                        <button type="submit" name="sm_delete_staff" class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; color:#e53e3e;">حذف</button>
                                     </form>
                                 </div>
                             </td>
@@ -172,15 +166,15 @@
     </div>
 
 
-    <div id="edit-teacher-modal" class="sm-modal-overlay">
+    <div id="edit-staff-modal" class="sm-modal-overlay">
         <div class="sm-modal-content">
             <div class="sm-modal-header">
                 <h3>تعديل بيانات الحساب</h3>
-                <button class="sm-modal-close" onclick="document.getElementById('edit-teacher-modal').style.display='none'">&times;</button>
+                <button class="sm-modal-close" onclick="document.getElementById('edit-staff-modal').style.display='none'">&times;</button>
             </div>
-            <form id="edit-teacher-form">
-                <?php wp_nonce_field('sm_teacher_action', 'sm_nonce'); ?>
-                <input type="hidden" name="edit_teacher_id" id="edit_t_id">
+            <form id="edit-staff-form">
+                <?php wp_nonce_field('sm_syndicate_member_action', 'sm_nonce'); ?>
+                <input type="hidden" name="edit_officer_id" id="edit_t_id">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                     <div class="sm-form-group">
                         <label class="sm-label">الاسم الكامل:</label>
@@ -188,7 +182,7 @@
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">كود المستخدم (ID):</label>
-                        <input type="text" name="teacher_id" id="edit_t_code" class="sm-input" required>
+                        <input type="text" name="officer_id" id="edit_t_code" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">رقم الهاتف:</label>
@@ -202,14 +196,12 @@
                         <label class="sm-label">تغيير الدور:</label>
                         <select name="role" id="edit_t_role" class="sm-select" onchange="toggleAssignFields(this, 'edit')">
                             <option value="sm_system_admin">مدير النظام</option>
-                            <option value="sm_principal">مدير النقابة</option>
-                            <option value="sm_supervisor">مشرف</option>
-                            <option value="sm_coordinator">منسق مادة</option>
-                            <option value="sm_teacher">معلم</option>
+                            <option value="sm_officer">مسؤول النقابة</option>
+                            <option value="sm_syndicate_member">عضو النقابة</option>
                         </select>
                     </div>
                     <div class="sm-form-group" id="edit_assign_fields" style="grid-column: span 2; display: none;">
-                        <label class="sm-label">الصفحات/الشعب المسندة للمستخدم:</label>
+                        <label class="sm-label">الشعب المسندة للمستخدم:</label>
                         <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; max-height: 150px; overflow-y: auto; background:#fff; padding:10px; border:1px solid #ddd; border-radius:8px;">
                             <?php
                             $struct = SM_Settings::get_sections_from_db();
@@ -238,14 +230,14 @@
         </div>
     </div>
 
-    <div id="add-teacher-modal" class="sm-modal-overlay">
+    <div id="add-staff-modal" class="sm-modal-overlay">
         <div class="sm-modal-content">
             <div class="sm-modal-header">
                 <h3>إضافة حساب مستخدم جديد</h3>
-                <button class="sm-modal-close" onclick="document.getElementById('add-teacher-modal').style.display='none'">&times;</button>
+                <button class="sm-modal-close" onclick="document.getElementById('add-staff-modal').style.display='none'">&times;</button>
             </div>
-            <form id="add-teacher-form">
-                <?php wp_nonce_field('sm_teacher_action', 'sm_nonce'); ?>
+            <form id="add-staff-form">
+                <?php wp_nonce_field('sm_syndicate_member_action', 'sm_nonce'); ?>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                     <div class="sm-form-group">
                         <label class="sm-label">الاسم الكامل:</label>
@@ -253,20 +245,18 @@
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">كود المستخدم (ID):</label>
-                        <input type="text" name="teacher_id" class="sm-input" required>
+                        <input type="text" name="officer_id" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">اختيار الدور:</label>
                         <select name="role" class="sm-select" onchange="toggleAssignFields(this, 'add')">
                             <option value="sm_system_admin">مدير النظام</option>
-                            <option value="sm_principal">مدير النقابة</option>
-                            <option value="sm_supervisor">مشرف</option>
-                            <option value="sm_coordinator">منسق مادة</option>
-                            <option value="sm_teacher">معلم</option>
+                            <option value="sm_officer">مسؤول النقابة</option>
+                            <option value="sm_syndicate_member">عضو النقابة</option>
                         </select>
                     </div>
                     <div class="sm-form-group" id="add_assign_fields" style="grid-column: span 2; display: none;">
-                        <label class="sm-label">الصفحات/الشعب المسندة (للمعلمين والمشرفين):</label>
+                        <label class="sm-label">الشعب المسندة:</label>
                         <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; max-height: 150px; overflow-y: auto; background:#fff; padding:10px; border:1px solid #ddd; border-radius:8px;">
                             <?php
                             foreach($struct as $g => $secs) {
@@ -315,7 +305,7 @@
         const formData = new FormData();
         formData.append('action', 'sm_bulk_delete_users_ajax');
         formData.append('user_ids', ids.join(','));
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_teacher_action"); ?>');
+        formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicate_member_action"); ?>');
 
         fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
         .then(r => r.json())
@@ -329,7 +319,7 @@
 
     function toggleAssignFields(select, mode) {
         const fields = document.getElementById(mode + '_assign_fields');
-        if (select.value === 'sm_teacher' || select.value === 'sm_supervisor') {
+        if (select.value === 'sm_syndicate_member') {
             fields.style.display = 'block';
         } else {
             fields.style.display = 'none';
@@ -340,7 +330,7 @@
         window.editSmUser = function(u) {
             document.getElementById('edit_t_id').value = u.id;
             document.getElementById('edit_t_name').value = u.name;
-            document.getElementById('edit_t_code').value = u.teacher_id;
+            document.getElementById('edit_t_code').value = u.officer_id;
             document.getElementById('edit_t_phone').value = u.phone;
             document.getElementById('edit_t_email').value = u.email;
             document.getElementById('edit_t_status').value = u.status || 'active';
@@ -355,20 +345,20 @@
                     if (cb) cb.checked = true;
                 });
             }
-            document.getElementById('edit-teacher-modal').style.display = 'flex';
+            document.getElementById('edit-staff-modal').style.display = 'flex';
         };
 
-        const addForm = document.getElementById('add-teacher-form');
+        const addForm = document.getElementById('add-staff-form');
         if (addForm) {
             addForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                formData.append('action', 'sm_add_teacher_ajax');
+                formData.append('action', 'sm_add_staff_ajax');
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        smShowNotification('تمت إضافة المعلم');
+                        smShowNotification('تمت إضافة المستخدم بنجاح');
                         setTimeout(() => location.reload(), 500);
                     } else {
                         smShowNotification('خطأ: ' + res.data, true);
@@ -377,17 +367,17 @@
             });
         }
 
-        const editForm = document.getElementById('edit-teacher-form');
+        const editForm = document.getElementById('edit-staff-form');
         if (editForm) {
             editForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                formData.append('action', 'sm_update_teacher_ajax');
+                formData.append('action', 'sm_update_staff_ajax');
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        smShowNotification('تم تحديث بيانات المعلم');
+                        smShowNotification('تم تحديث بيانات المستخدم');
                         setTimeout(() => location.reload(), 500);
                     }
                 });

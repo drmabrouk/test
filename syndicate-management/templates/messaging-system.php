@@ -40,17 +40,17 @@
                         $member = SM_DB::get_member_by_parent($curr_user->ID);
                         if ($member) {
                             $staff = SM_DB::get_staff_by_section($member->class_name, $member->section);
-                            echo '<optgroup label="المعلمون والمشرفون الخاصون بك">';
+                            echo '<optgroup label="أعضاء النقابة وأعضاء النقابة الخاصون بك">';
                             foreach($staff as $u) echo '<option value="'.$u->ID.'">'.$u->display_name.'</option>';
                             echo '</optgroup>';
                         }
                     } else {
-                        $admins = get_users(array('role' => 'sm_principal'));
-                        $supervisors = get_users(array('role' => 'sm_supervisor'));
+                        $admins = get_users(array('role' => 'sm_officer'));
+                        $supervisors = get_users(array('role' => 'sm_syndicate_member'));
                         echo '<optgroup label="مديري النقابة">';
                         foreach($admins as $a) echo '<option value="'.$a->ID.'">'.$a->display_name.'</option>';
                         echo '</optgroup>';
-                        echo '<optgroup label="المشرفين التربويين">';
+                        echo '<optgroup label="أعضاء النقابة التربويين">';
                         foreach($supervisors as $o) echo '<option value="'.$o->ID.'">'.$o->display_name.'</option>';
                         echo '</optgroup>';
                     }
@@ -79,8 +79,8 @@
                 <label class="sm-label">الفئة المستهدفة:</label>
                 <select name="target_role" class="sm-select">
                     <option value="sm_member">كافة الأعضاء</option>
-                    <option value="sm_teacher">كافة المعلمين</option>
-                    <option value="sm_supervisor">كافة المشرفين</option>
+                    <option value="sm_syndicate_member">كافة أعضاء النقابة</option>
+                    <option value="sm_syndicate_member">كافة أعضاء النقابة</option>
                 </select>
             </div>
             <div class="sm-form-group">

@@ -3,8 +3,8 @@ if (!defined('ABSPATH')) exit;
 
 $user = wp_get_current_user();
 $roles = (array) $user->roles;
-$is_staff_who_can_send = in_array('administrator', $roles) || current_user_can('manage_options') || in_array('sm_system_admin', $roles) || in_array('sm_principal', $roles) || in_array('sm_supervisor', $roles) || in_array('discipline_officer', $roles);
-$is_clinic_staff = in_array('sm_clinic', $roles) || in_array('administrator', $roles) || in_array('sm_system_admin', $roles) || in_array('sm_principal', $roles) || in_array('sm_supervisor', $roles);
+$is_staff_who_can_send = in_array('administrator', $roles) || current_user_can('manage_options') || in_array('sm_system_admin', $roles) || in_array('sm_officer', $roles) || in_array('sm_syndicate_member', $roles) || in_array('discipline_officer', $roles);
+$is_clinic_staff = in_array('sm_clinic', $roles) || in_array('administrator', $roles) || in_array('sm_system_admin', $roles) || in_array('sm_officer', $roles) || in_array('sm_syndicate_member', $roles);
 
 global $wpdb;
 

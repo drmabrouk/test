@@ -2,7 +2,7 @@
 <div class="sm-assignments-container" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin: 0; font-weight: 800;">الواجبات النقابية والمرفقات</h3>
-        <?php if ($is_teacher || $is_member): ?>
+        <?php if ($is_syndicate_member || $is_member): ?>
             <button onclick="document.getElementById('add-assignment-modal').style.display='flex'" class="sm-btn" style="width: auto;">+ إضافة واجب / تسليم</button>
         <?php endif; ?>
     </div>
@@ -107,7 +107,7 @@
             <div class="sm-form-group">
                 <label class="sm-label">إرسال إلى:</label>
                 <select name="receiver_id" class="sm-select" required>
-                    <?php if ($is_teacher || $is_admin || $is_sys_admin || $is_principal): ?>
+                    <?php if ($is_syndicate_member || $is_admin || $is_sys_admin || $is_officer): ?>
                         <option value="">-- اختر العضو --</option>
                         <?php
                         $my_members = SM_DB::get_members();
@@ -118,13 +118,13 @@
                         }
                         ?>
                     <?php elseif ($is_member): ?>
-                        <option value="">-- اختر المعلم المختص --</option>
+                        <option value="">-- اختر عضو النقابة المختص --</option>
                         <?php
                         $stu = SM_DB::get_member_by_parent($user->ID);
                         if ($stu) {
                             $grade_num = (int)str_replace('الصف ', '', $stu->class_name);
-                            $my_teachers = SM_DB::get_staff_by_section($grade_num, $stu->section);
-                            foreach($my_teachers as $t) {
+                            $my_staffs = SM_DB::get_staff_by_section($grade_num, $stu->section);
+                            foreach($my_staffs as $t) {
                                 echo "<option value='{$t->ID}'>{$t->display_name}</option>";
                             }
                         }

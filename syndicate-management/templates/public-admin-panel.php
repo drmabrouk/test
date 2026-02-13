@@ -84,14 +84,14 @@
         document.getElementById('edit-member-modal').style.display = 'flex';
     };
 
-    window.editSmTeacher = function(t) {
+    window.editSmSyndicate Member = function(t) {
         document.getElementById('edit_t_id').value = t.id;
         document.getElementById('edit_t_name').value = t.name;
-        document.getElementById('edit_t_code').value = t.teacher_id;
+        document.getElementById('edit_t_code').value = t.officer_id;
         document.getElementById('edit_t_job').value = t.job_title;
         document.getElementById('edit_t_phone').value = t.phone;
         document.getElementById('edit_t_email').value = t.email;
-        document.getElementById('edit-teacher-modal').style.display = 'flex';
+        document.getElementById('edit-staff-modal').style.display = 'flex';
     };
 
     window.updateRecordStatus = function(id, status) {
@@ -271,10 +271,10 @@ $user = wp_get_current_user();
 $roles = (array)$user->roles;
 $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');
 $is_sys_admin = in_array('sm_system_admin', $roles);
-$is_principal = in_array('sm_principal', $roles);
-$is_supervisor = in_array('sm_supervisor', $roles);
-$is_coordinator = in_array('sm_coordinator', $roles);
-$is_teacher = in_array('sm_teacher', $roles);
+$is_officer = in_array('sm_officer', $roles);
+$is_syndicate_member = in_array('sm_syndicate_member', $roles);
+$is_syndicate_member = in_array('sm_syndicate_member', $roles);
+$is_syndicate_member = in_array('sm_syndicate_member', $roles);
 $is_member = in_array('sm_member', $roles);
 $is_parent = in_array('sm_parent', $roles);
 $is_clinic = in_array('sm_clinic', $roles);
@@ -321,10 +321,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <?php 
                     if ($is_admin) echo 'مدير النظام';
                     elseif ($is_sys_admin) echo 'مدير النظام التقني';
-                    elseif ($is_principal) echo 'مدير النقابة';
-                    elseif ($is_supervisor) echo 'مشرف تربوي';
-                    elseif ($is_coordinator) echo 'منسق مادة';
-                    elseif ($is_teacher) echo 'معلم';
+                    elseif ($is_officer) echo 'مسؤول النقابة';
+                    elseif ($is_syndicate_member) echo 'عضو النقابة';
                     elseif ($is_member) echo 'عضو';
                     else echo 'مستخدم النظام';
                     ?>
@@ -407,41 +405,41 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <a href="<?php echo add_query_arg('sm_tab', 'summary'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-dashboard"></span> لوحة المعلومات</a>
                 </li>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_teacher || $is_member): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member || $is_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'stats' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'stats'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-list-view"></span> سجل المخالفات</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_teacher): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'members' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-groups"></span> إدارة الأعضاء</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'teachers' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'teachers'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-admin-users"></span> إدارة مستخدمي النظام</a>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'staffs' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'staffs'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-admin-users"></span> إدارة مستخدمي النظام</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_coordinator || $is_teacher): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'grades' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'grades'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-welcome-learn-more"></span> إدارة الدرجات والنتائج</a>
                     </li>
                 <?php endif; ?>
 
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'teacher-reports' ? 'sm-active' : ''; ?>" style="position:relative;">
-                        <a href="<?php echo add_query_arg('sm_tab', 'teacher-reports'); ?>" class="sm-sidebar-link">
-                            <span class="dashicons dashicons-warning"></span> بلاغات المعلمين
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'staff-reports' ? 'sm-active' : ''; ?>" style="position:relative;">
+                        <a href="<?php echo add_query_arg('sm_tab', 'staff-reports'); ?>" class="sm-sidebar-link">
+                            <span class="dashicons dashicons-warning"></span> بلاغات أعضاء النقابة
                             <span id="pending-reports-badge" class="sm-sidebar-badge" style="display:none;">0</span>
                         </a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'confiscated' ? 'sm-active' : ''; ?>" style="position:relative;">
                         <a href="<?php echo add_query_arg('sm_tab', 'confiscated'); ?>" class="sm-sidebar-link">
                             <span class="dashicons dashicons-lock"></span> المواد المصادرة
@@ -450,37 +448,37 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_coordinator || $is_teacher): ?>
+                <?php if ($is_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'lesson-plans' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'lesson-plans'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-welcome-write-blog"></span> تحضير الدروس</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_teacher || $is_member): ?>
+                <?php if ($is_admin || $is_officer || $is_syndicate_member || $is_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'assignments' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'assignments'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-portfolio"></span> الواجبات النقابية</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'printing' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'printing'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-printer"></span> مركز الطباعة</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_clinic): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member || $is_clinic): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'clinic' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'clinic'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-heart"></span> العيادة النقابية</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'surveys' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'surveys'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-clipboard"></span> استطلاعات الرأي</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'timetables' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'timetables'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-calendar-alt"></span> الجداول النقابية</a>
                     </li>
@@ -530,9 +528,10 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     include SM_PLUGIN_DIR . 'templates/messaging-center.php';
                     break;
 
-                case 'teachers':
-                    if ($is_admin || current_user_can('إدارة_المعلمين')) {
-                        include SM_PLUGIN_DIR . 'templates/admin-teachers.php';
+                case 'staff':
+                case 'staffs':
+                    if ($is_admin || current_user_can('إدارة_المستخدمين')) {
+                        include SM_PLUGIN_DIR . 'templates/admin-staff.php';
                     }
                     break;
 
@@ -544,8 +543,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     break;
 
 
-                case 'teacher-reports':
-                    include SM_PLUGIN_DIR . 'templates/admin-teacher-reports.php';
+                case 'staff-reports':
+                    include SM_PLUGIN_DIR . 'templates/admin-syndicate-member-reports.php';
                     break;
 
                 case 'confiscated':
@@ -569,13 +568,13 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     break;
 
                 case 'surveys':
-                    if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor) {
+                    if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member) {
                         include SM_PLUGIN_DIR . 'templates/admin-surveys.php';
                     }
                     break;
 
                 case 'timetables':
-                    if ($is_admin || $is_sys_admin || $is_principal || $is_supervisor) {
+                    if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member) {
                         include SM_PLUGIN_DIR . 'templates/admin-timetables.php';
                     }
                     break;
@@ -603,7 +602,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
                                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                                     <div class="sm-form-group"><label class="sm-label">اسم النقابة:</label><input type="text" name="syndicate_name" value="<?php echo esc_attr($syndicate['syndicate_name']); ?>" class="sm-input"></div>
-                                    <div class="sm-form-group"><label class="sm-label">اسم مدير النقابة:</label><input type="text" name="syndicate_principal_name" value="<?php echo esc_attr($syndicate['syndicate_principal_name'] ?? ''); ?>" class="sm-input"></div>
+                                    <div class="sm-form-group"><label class="sm-label">اسم مسؤول النقابة:</label><input type="text" name="syndicate_principal_name" value="<?php echo esc_attr($syndicate['syndicate_principal_name'] ?? ''); ?>" class="sm-input"></div>
                                     <div class="sm-form-group"><label class="sm-label">رقم الهاتف:</label><input type="text" name="syndicate_phone" value="<?php echo esc_attr($syndicate['phone']); ?>" class="sm-input"></div>
                                     <div class="sm-form-group"><label class="sm-label">البريد الإلكتروني:</label><input type="email" name="syndicate_email" value="<?php echo esc_attr($syndicate['email']); ?>" class="sm-input"></div>
                                     <div class="sm-form-group">
@@ -629,7 +628,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                         <label class="sm-label">أيام العمل الأسبوعية (الجدول الرسمي):</label>
                                         <div style="display: flex; gap: 40px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
                                             <div>
-                                                <div style="font-weight: 800; margin-bottom: 10px; color: var(--sm-primary-color);">المعلمين والأعضاء:</div>
+                                    <div style="font-weight: 800; margin-bottom: 10px; color: var(--sm-primary-color);">الأعضاء:</div>
                                                 <?php
                                                 $days = array('sun' => 'الأحد', 'mon' => 'الاثنين', 'tue' => 'الثلاثاء', 'wed' => 'الأربعاء', 'thu' => 'الخميس', 'fri' => 'الجمعة', 'sat' => 'السبت');
                                                 $work_members = $syndicate['working_schedule']['members'] ?? array();
@@ -921,7 +920,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                         <p style="font-size:12px; color:#666; margin-bottom:15px;">اختر القسم الذي تريد مسح كافة بياناته نهائياً:</p>
                                         <div style="display:flex; flex-wrap:wrap; gap:10px;">
                                             <button onclick="smBulkDelete('members')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح الأعضاء</button>
-                                            <button onclick="smBulkDelete('teachers')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح المعلمين</button>
+                                            <button onclick="smBulkDelete('staffs')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح أعضاء النقابة</button>
                                             <button onclick="smBulkDelete('parents')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح أولياء الأمور</button>
                                             <button onclick="smBulkDelete('records')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح المخالفات</button>
                                         </div>

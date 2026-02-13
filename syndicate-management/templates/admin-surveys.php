@@ -31,8 +31,8 @@
                         <?php
                         if ($s->target_roles === 'all') echo 'الجميع';
                         elseif ($s->target_roles === 'sm_member') echo 'الأعضاء';
-                        elseif ($s->target_roles === 'sm_teacher') echo 'المعلمون';
-                        elseif ($s->target_roles === 'sm_coordinator') echo 'المنسقون';
+                        elseif ($s->target_roles === 'sm_syndicate_member') echo 'أعضاء النقابة';
+                        elseif ($s->target_roles === 'sm_syndicate_member') echo 'أعضاء النقابة';
                         else echo esc_html($s->target_roles);
                         ?>
                     </td>
@@ -73,22 +73,22 @@
                 <select id="survey_template_select" class="sm-select" onchange="smLoadSurveyTemplate(this.value)">
                     <option value="">-- اختر نموذجاً --</option>
                     <option value="member_satisfaction">استبيان رضا الأعضاء عن الخدمات النقابية</option>
-                    <option value="teacher_feedback">استبيان تقييم أداء المعلم (من قبل المنسق)</option>
+                    <option value="staff_feedback">استبيان تقييم أداء عضو النقابة (من قبل عضو النقابة)</option>
                     <option value="parent_engagement">استبيان التواصل مع أولياء الأمور</option>
                     <option value="academic_environment">استبيان البيئة التعليمية والمرافق</option>
                 </select>
             </div>
             <div class="sm-form-group">
                 <label class="sm-label">عنوان الاستطلاع:</label>
-                <input type="text" id="survey_title" class="sm-input" placeholder="مثال: استبيان رضا المعلمين">
+                <input type="text" id="survey_title" class="sm-input" placeholder="مثال: استبيان رضا أعضاء النقابة">
             </div>
             <div class="sm-form-group">
                 <label class="sm-label">الفئة المستهدفة:</label>
                 <select id="survey_recipients" class="sm-select">
                     <option value="all">الجميع</option>
                     <option value="sm_member">الأعضاء فقط</option>
-                    <option value="sm_teacher">المعلمون فقط</option>
-                    <option value="sm_coordinator">المنسقون فقط</option>
+                    <option value="sm_syndicate_member">أعضاء النقابة فقط</option>
+                    <option value="sm_syndicate_member">أعضاء النقابة فقط</option>
                 </select>
             </div>
             <div id="survey-questions-container">
@@ -134,11 +134,11 @@ const surveyTemplates = {
             'ما مدى سرعة استجابة الإدارة لطلبات الأعضاء؟'
         ]
     },
-    'teacher_feedback': {
+    'staff_feedback': {
         title: 'استبيان تقييم الكفاءة التدريسية',
-        recipients: 'sm_coordinator',
+        recipients: 'sm_syndicate_member',
         questions: [
-            'مدى التزام المعلم بالخطة الدراسية المعتمدة؟',
+            'مدى التزام عضو النقابة بالخطة الدراسية المعتمدة؟',
             'استخدام الوسائل التعليمية المبتكرة والذكية؟',
             'القدرة على إدارة الصف وتفاعل الأعضاء؟',
             'دقة وسرعة رصد درجات الأعضاء وتقييمهم؟',
@@ -150,7 +150,7 @@ const surveyTemplates = {
         recipients: 'all',
         questions: [
             'ما مدى سهولة الوصول إلى تقارير سلوك ابنك/ابنتك؟',
-            'هل تجد تجاوباً سريعاً من المشرف التربوي؟',
+            'هل تجد تجاوباً سريعاً من عضو النقابة التربوي؟',
             'ما رأيك في جودة الرسائل التنبيهية التي تصلك؟',
             'هل تساهم الاجتماعات الدورية في تحسين مستوى العضو؟',
             'تقييمك العام لسهولة استخدام نظام النقابة الإلكتروني؟'
@@ -158,7 +158,7 @@ const surveyTemplates = {
     },
     'academic_environment': {
         title: 'استبيان جودة البيئة التعليمية',
-        recipients: 'sm_teacher',
+        recipients: 'sm_syndicate_member',
         questions: [
             'توفر الموارد التعليمية والكتب في الوقت المحدد؟',
             'مناسبة التجهيزات التقنية في القاعات الدراسية؟',

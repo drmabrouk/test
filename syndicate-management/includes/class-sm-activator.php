@@ -6,369 +6,285 @@ class SM_Activator {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 
-        $table_members = $wpdb->prefix . 'sm_members';
-        $table_records = $wpdb->prefix . 'sm_records';
-        $table_logs = $wpdb->prefix . 'sm_logs';
-        $table_messages = $wpdb->prefix . 'sm_messages';
+        // Migration: Rename old tables if they exist
+        self::migrate_tables();
 
-        $sql = "CREATE TABLE $table_members (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            name varchar(255) NOT NULL,
-            class_name varchar(100) NOT NULL,
-            section varchar(50) DEFAULT '',
-            parent_email varchar(100),
-            guardian_phone varchar(50) DEFAULT '',
-            nationality varchar(100) DEFAULT '',
-            registration_date date DEFAULT NULL,
-            member_code varchar(50),
-            parent_user_id bigint(20) DEFAULT NULL,
-            teacher_id bigint(20) DEFAULT NULL,
-            photo_url varchar(255) DEFAULT '',
-            sort_order int(11) DEFAULT 0,
-            behavior_points int(11) DEFAULT 0,
-            case_file_active tinyint(1) DEFAULT 0,
-            PRIMARY KEY  (id),
-            KEY member_code (member_code),
-            KEY teacher_id (teacher_id),
-            KEY sort_order (sort_order)
-        ) $charset_collate;
+        // Members Table (formerly Students)
+        $table_name = $wpdb->prefix . 'sm_members';
+        $sql = "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            name tinytext NOT NULL,
+            email tinytext,
+            member_code tinytext,
+            photo_url text,
+            class_name tinytext,
+            section tinytext,
+            parent_user_id bigint(20),
+            officer_id bigint(20),
+            guardian_phone tinytext,
+            nationality tinytext,
+            registration_date date,
+            sort_order int DEFAULT 0,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
 
-        CREATE TABLE $table_records (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            member_id bigint(20) NOT NULL,
-            teacher_id bigint(20) NOT NULL,
-            type varchar(100) NOT NULL,
-            classification varchar(100) DEFAULT 'general',
-            severity varchar(50) NOT NULL,
-            degree int(11) DEFAULT 1,
-            violation_code varchar(50) DEFAULT '',
-            points int(11) DEFAULT 0,
-            recurrence_count int(11) DEFAULT 1,
-            details text NOT NULL,
+        // Records Table
+        $table_name = $wpdb->prefix . 'sm_records';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            member_id mediumint(9) NOT NULL,
+            officer_id bigint(20),
+            type tinytext NOT NULL,
+            severity tinytext,
+            degree tinytext,
+            points int DEFAULT 0,
+            details text,
             action_taken text,
-            reward_penalty text,
-            status varchar(20) DEFAULT 'accepted' NOT NULL,
+            status tinytext DEFAULT 'pending',
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY member_id (member_id),
-            KEY teacher_id (teacher_id),
-            KEY status (status),
-            KEY degree (degree),
-            KEY violation_code (violation_code)
-        ) $charset_collate;
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
 
-        CREATE TABLE $table_logs (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            user_id bigint(20) NOT NULL,
-            action text NOT NULL,
+        // Messages Table
+        $table_name = $wpdb->prefix . 'sm_messages';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            sender_id bigint(20) NOT NULL,
+            receiver_id bigint(20) NOT NULL,
+            member_id mediumint(9),
+            message text NOT NULL,
+            is_read tinyint(1) DEFAULT 0,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
+
+        // Confiscated Items Table
+        $table_name = $wpdb->prefix . 'sm_confiscated_items';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            member_id mediumint(9) NOT NULL,
+            item_name tinytext NOT NULL,
+            officer_id bigint(20),
+            status tinytext DEFAULT 'confiscated',
+            confiscated_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
+
+        // Logs Table
+        $table_name = $wpdb->prefix . 'sm_logs';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20),
+            action tinytext NOT NULL,
             details text,
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id)
-        ) $charset_collate;
-
-        CREATE TABLE $table_messages (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            sender_id bigint(20) NOT NULL,
-            receiver_id bigint(20) NOT NULL,
-            member_id bigint(20) DEFAULT NULL,
-            message text NOT NULL,
-            is_read tinyint(1) DEFAULT 0 NOT NULL,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY sender_id (sender_id),
-            KEY receiver_id (receiver_id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_confiscated_items (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            member_id bigint(20) NOT NULL,
-            item_name varchar(255) NOT NULL,
-            holding_period int(11) DEFAULT 30,
-            status varchar(50) DEFAULT 'held',
-            is_returnable tinyint(1) DEFAULT 1,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY member_id (member_id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_attendance (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            member_id bigint(20) NOT NULL,
-            status varchar(20) NOT NULL,
-            date date NOT NULL,
-            teacher_id bigint(20) NOT NULL,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY member_id (member_id),
-            KEY date (date)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_assignments (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            sender_id bigint(20) NOT NULL,
-            receiver_id bigint(20) NOT NULL,
-            member_id bigint(20) DEFAULT NULL,
-            title varchar(255) NOT NULL,
-            description text,
-            file_url varchar(255) DEFAULT '',
-            type varchar(50) DEFAULT 'assignment',
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY sender_id (sender_id),
-            KEY receiver_id (receiver_id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_clinic (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            member_id bigint(20) NOT NULL,
-            referrer_id bigint(20) NOT NULL,
-            arrival_confirmed tinyint(1) DEFAULT 0,
-            health_condition text,
-            action_taken text,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            arrival_at datetime DEFAULT NULL,
-            PRIMARY KEY  (id),
-            KEY member_id (member_id),
-            KEY referrer_id (referrer_id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_grades (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            member_id bigint(20) NOT NULL,
-            subject varchar(100) NOT NULL,
-            term varchar(50) NOT NULL,
-            grade_val varchar(20) NOT NULL,
-            notes text,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY member_id (member_id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_subjects (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            name varchar(255) NOT NULL,
-            grade_id int(11) NOT NULL,
-            PRIMARY KEY  (id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_surveys (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            title varchar(255) NOT NULL,
-            description text,
-            target_roles varchar(255) NOT NULL,
-            questions text NOT NULL,
-            status varchar(20) DEFAULT 'active',
-            created_by bigint(20) NOT NULL,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_survey_responses (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            survey_id bigint(20) NOT NULL,
-            user_id bigint(20) NOT NULL,
-            answers text NOT NULL,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY survey_id (survey_id),
-            KEY user_id (user_id)
-        ) $charset_collate;
-
-        CREATE TABLE {$wpdb->prefix}sm_timetables (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            class_name varchar(100) NOT NULL,
-            section varchar(50) NOT NULL,
-            day varchar(20) NOT NULL,
-            period int(11) NOT NULL,
-            subject_id bigint(20) NOT NULL,
-            teacher_id bigint(20) NOT NULL,
-            PRIMARY KEY  (id),
-            KEY class_section (class_name, section)
         ) $charset_collate;";
 
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        // Attendance Table
+        $table_name = $wpdb->prefix . 'sm_attendance';
+        $sql .= "CREATE TABLE $table_name (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            member_id mediumint(9) NOT NULL,
+            date date NOT NULL,
+            status enum('present', 'absent', 'late', 'excused') NOT NULL,
+            officer_id bigint(20),
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY member_date (member_id, date)
+        ) $charset_collate;";
+
+        // Assignments / Lesson Plans Table
+        $table_name = $wpdb->prefix . 'sm_assignments';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            sender_id bigint(20) NOT NULL,
+            receiver_id bigint(20),
+            title tinytext NOT NULL,
+            description text,
+            file_url text,
+            type enum('assignment', 'lesson_plan') DEFAULT 'assignment',
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (id)
+        ) $charset_collate;";
+
+        // Clinic Referrals Table
+        $table_name = $wpdb->prefix . 'sm_clinic';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            member_id mediumint(9) NOT NULL,
+            referrer_id bigint(20) NOT NULL,
+            health_condition text,
+            action_taken text,
+            arrival_confirmed tinyint(1) DEFAULT 0,
+            arrival_at datetime,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (id)
+        ) $charset_collate;";
+
+        // Grades Table
+        $table_name = $wpdb->prefix . 'sm_grades';
+        $sql .= "CREATE TABLE $table_name (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            member_id mediumint(9) NOT NULL,
+            subject tinytext NOT NULL,
+            term tinytext NOT NULL,
+            grade_val tinytext NOT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (id)
+        ) $charset_collate;";
+
+        // Timetable Table
+        $table_name = $wpdb->prefix . 'sm_timetable';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            class_name tinytext NOT NULL,
+            section tinytext NOT NULL,
+            day enum('sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat') NOT NULL,
+            period int NOT NULL,
+            subject_id int,
+            officer_id bigint(20),
+            PRIMARY KEY (id)
+        ) $charset_collate;";
+
+        // Subjects Table
+        $table_name = $wpdb->prefix . 'sm_subjects';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            name tinytext NOT NULL,
+            grade_ids text,
+            PRIMARY KEY (id)
+        ) $charset_collate;";
+
+        // Surveys Table
+        $table_name = $wpdb->prefix . 'sm_surveys';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            title tinytext NOT NULL,
+            questions text NOT NULL,
+            recipients tinytext NOT NULL,
+            status enum('active', 'completed', 'cancelled') DEFAULT 'active',
+            created_by bigint(20),
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (id)
+        ) $charset_collate;";
+
+        // Survey Responses Table
+        $table_name = $wpdb->prefix . 'sm_survey_responses';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            survey_id mediumint(9) NOT NULL,
+            user_id bigint(20) NOT NULL,
+            responses text NOT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (id)
+        ) $charset_collate;";
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
 
-        self::add_custom_roles();
-        self::seed_demo_data();
-        self::create_default_pages();
-        self::cleanup_legacy_pages();
-        self::migrate_old_roles();
+        self::setup_roles();
     }
 
-    private static function cleanup_legacy_pages() {
-        $legacy_page = get_page_by_path('sm-system');
-        if ($legacy_page) {
-            wp_delete_post($legacy_page->ID, true);
-        }
-    }
-
-    private static function create_default_pages() {
-        $pages = array(
-            'sm-login' => array(
-                'title'   => 'تسجيل الدخول',
-                'content' => '[sm_login]',
-            ),
-            'sm-admin' => array(
-                'title'   => 'لوحة التحكم النقابية',
-                'content' => '[sm_admin]',
-            ),
-            'attendance' => array(
-                'title'   => 'تسجيل حضور الفصول',
-                'content' => '[sm_class_attendance]',
-            ),
-        );
-
-        foreach ($pages as $slug => $page_data) {
-            $page_exists = get_page_by_path($slug);
-            if (!$page_exists) {
-                wp_insert_post(array(
-                    'post_title'   => $page_data['title'],
-                    'post_content' => $page_data['content'],
-                    'post_status'  => 'publish',
-                    'post_type'    => 'page',
-                    'post_name'    => $slug,
-                ));
-            }
-        }
-    }
-
-    public static function add_custom_roles() {
-        // Remove old roles
-        $old_roles = array(
-            'school_admin', 'discipline_officer', 'sm_school_admin',
-            'sm_discipline_officer', 'sm_teacher', 'sm_parent'
-        );
-        foreach ($old_roles as $role) {
-            remove_role($role);
-        }
-
-        // Capabilities
-        $caps = array(
-            'manage_system' => 'إدارة_النظام',
-            'manage_clinic' => 'إدارة_العيادة',
-            'manage_users' => 'إدارة_المستخدمين',
-            'manage_members' => 'إدارة_الأعضاء',
-            'manage_teachers' => 'إدارة_المعلمين',
-            'manage_violations' => 'إدارة_المخالفات',
-            'add_violation' => 'تسجيل_مخالفة',
-            'print_reports' => 'طباعة_التقارير',
-            'review_plans' => 'مراجعة_التحضير',
-            'manage_grades' => 'إدارة_الدرجات',
-            'manage_assignments' => 'إدارة_الواجبات',
-            'view_own_data' => 'عرض_بياناتي',
-            'submit_complaint' => 'تقديم_شكوى'
-        );
-
-        // Add Caps to Administrator
-        $admin = get_role('administrator');
-        if ($admin) {
-            foreach ($caps as $cap) {
-                $admin->add_cap($cap);
-            }
-        }
-
-        // 1. مدير النظام (System Administrator) - Access to all, including settings
-        add_role('sm_system_admin', 'مدير النظام', array('read' => true));
-        $sys_admin = get_role('sm_system_admin');
-        if ($sys_admin) {
-            foreach ($caps as $cap) $sys_admin->add_cap($cap);
-        }
-
-        // 2. مدير النقابة (Syndicate Principal) - All except settings
-        add_role('sm_principal', 'مدير النقابة', array('read' => true));
-        $principal = get_role('sm_principal');
-        if ($principal) {
-            foreach ($caps as $key => $cap) {
-                if ($key !== 'manage_system') $principal->add_cap($cap);
-            }
-        }
-
-        // 3. مشرف (Supervisor) - Same as Principal (filtered by classes in logic)
-        add_role('sm_supervisor', 'مشرف', array('read' => true));
-        $supervisor = get_role('sm_supervisor');
-        if ($supervisor) {
-            foreach ($caps as $key => $cap) {
-                if ($key !== 'manage_system') $supervisor->add_cap($cap);
-            }
-        }
-
-        // 4. منسق (Coordinator) - Review lesson plans
-        add_role('sm_coordinator', 'منسق المادة', array('read' => true));
-        $coordinator = get_role('sm_coordinator');
-        if ($coordinator) {
-            $coordinator->add_cap($caps['review_plans']);
-            $coordinator->add_cap($caps['manage_grades']);
-            $coordinator->add_cap('read');
-        }
-
-        // 5. معلم (Teacher) - Complaints, search all members, assignments, assigned sections
-        add_role('sm_teacher', 'معلم', array('read' => true));
-        $teacher = get_role('sm_teacher');
-        if ($teacher) {
-            $teacher->add_cap($caps['add_violation']);
-            $teacher->add_cap($caps['submit_complaint']);
-            $teacher->add_cap($caps['manage_assignments']);
-            $teacher->add_cap($caps['manage_members']);
-            $teacher->add_cap($caps['manage_grades']);
-        }
-
-        // 6. عضو (Member) - View own results/attendance, assignments, personal photo
-        add_role('sm_member', 'عضو', array('read' => true));
-        $member = get_role('sm_member');
-        if ($member) {
-            $member->add_cap($caps['view_own_data']);
-            $member->add_cap($caps['manage_assignments']);
-        }
-
-        // 7. العيادة (Clinic) - Referral list and history
-        add_role('sm_clinic', 'العيادة النقابية', array('read' => true));
-        $clinic = get_role('sm_clinic');
-        if ($clinic) {
-            $clinic->add_cap($caps['manage_clinic']);
-            $clinic->add_cap('read');
-        }
-    }
-
-    public static function migrate_old_roles() {
-        $migration_map = array(
-            'discipline_officer'    => 'sm_supervisor',
-            'school_admin'          => 'sm_principal',
-            'sm_discipline_officer' => 'sm_supervisor',
-            'sm_school_admin'       => 'sm_principal'
-        );
-
-        foreach ($migration_map as $old_slug => $new_slug) {
-            $users = get_users(array('role' => $old_slug));
-            foreach ($users as $user) {
-                $user->remove_role($old_slug);
-                $user->add_role($new_slug);
-            }
-        }
-    }
-
-    private static function seed_demo_data() {
+    private static function migrate_tables() {
         global $wpdb;
-        $table_members = $wpdb->prefix . 'sm_members';
-        
-        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table_members");
-        if ($count > 0) return;
+        $mappings = array(
+            'sm_students' => 'sm_members'
+        );
+        foreach ($mappings as $old => $new) {
+            $old_table = $wpdb->prefix . $old;
+            $new_table = $wpdb->prefix . $new;
+            if ($wpdb->get_var("SHOW TABLES LIKE '$old_table'") && !$wpdb->get_var("SHOW TABLES LIKE '$new_table'")) {
+                $wpdb->query("RENAME TABLE $old_table TO $new_table");
 
-        $demo_members = array(
-            array('name' => 'أحمد محمد', 'class_name' => 'الصف الأول', 'parent_email' => 'parent1@example.com', 'member_code' => 'MEM001'),
-            array('name' => 'سارة علي', 'class_name' => 'الصف الأول', 'parent_email' => 'parent2@example.com', 'member_code' => 'MEM002'),
-            array('name' => 'خالد محمود', 'class_name' => 'الصف الثاني', 'parent_email' => 'parent3@example.com', 'member_code' => 'MEM003'),
-            array('name' => 'ليلى يوسف', 'class_name' => 'الصف الثاني', 'parent_email' => 'parent4@example.com', 'member_code' => 'MEM004'),
-            array('name' => 'عمر حسن', 'class_name' => 'الصف الثالث', 'parent_email' => 'parent5@example.com', 'member_code' => 'MEM005'),
-            array('name' => 'مريم إبراهيم', 'class_name' => 'الصف الثالث', 'parent_email' => 'parent6@example.com', 'member_code' => 'MEM006'),
-            array('name' => 'ياسين كمال', 'class_name' => 'الصف الرابع', 'parent_email' => 'parent7@example.com', 'member_code' => 'MEM007'),
-            array('name' => 'نور الهدى', 'class_name' => 'الصف الرابع', 'parent_email' => 'parent8@example.com', 'member_code' => 'MEM008'),
-            array('name' => 'عبد الله فهد', 'class_name' => 'الصف الخامس', 'parent_email' => 'parent9@example.com', 'member_code' => 'MEM009'),
-            array('name' => 'هند سعادة', 'class_name' => 'الصف الخامس', 'parent_email' => 'parent10@example.com', 'member_code' => 'MEM010'),
+                // If it's the students table, rename column student_code to member_code if it exists
+                if ($new === 'sm_members') {
+                    $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $new_table LIKE 'student_code'");
+                    if (!empty($column_exists)) {
+                        $wpdb->query("ALTER TABLE $new_table CHANGE student_code member_code tinytext");
+                    }
+                }
+            }
+        }
+    }
+
+    private static function setup_roles() {
+        // System Admin
+        add_role('sm_system_admin', 'مدير النظام (النقابة)', array(
+            'read' => true,
+            'إدارة_النظام' => true,
+            'إدارة_المستخدمين' => true,
+            'إدارة_الأعضاء' => true,
+            'إدارة_المخالفات' => true,
+            'طباعة_التقارير' => true,
+            'تسجيل_مخالفة' => true,
+            'إدارة_أولياء_الأمور' => true,
+            'إدارة_العيادة' => true
+        ));
+
+        // Syndicate Officer (Formerly Principal)
+        add_role('sm_officer', 'مسؤول النقابة', array(
+            'read' => true,
+            'إدارة_الأعضاء' => true,
+            'إدارة_المخالفات' => true,
+            'طباعة_التقارير' => true,
+            'تسجيل_مخالفة' => true,
+            'إدارة_أولياء_الأمور' => true,
+            'إدارة_العيادة' => true,
+            'manage_grades' => true,
+            'مراجعة_التحضير' => true
+        ));
+
+        // Syndicate Member (Formerly Supervisor/Teacher/Coordinator)
+        add_role('sm_syndicate_member', 'عضو النقابة', array(
+            'read' => true,
+            'تسجيل_مخالفة' => true,
+            'إدارة_المخالفات' => true, // Limited to their assigned members in code
+            'manage_grades' => true,
+            'إدارة_الأعضاء' => true // Limited view
+        ));
+
+        // Member (Formerly Student)
+        add_role('sm_member', 'عضو', array(
+            'read' => true
+        ));
+
+        // Parent
+        add_role('sm_parent', 'ولي أمر', array(
+            'read' => true
+        ));
+
+        // Clinic
+        add_role('sm_clinic', 'العيادة', array(
+            'read' => true,
+            'إدارة_العيادة' => true
+        ));
+
+        // Migrate users from old roles to new roles
+        self::migrate_user_roles();
+    }
+
+    private static function migrate_user_roles() {
+        $legacy_roles = array(
+            'school_admin', 'discipline_officer', 'sm_school_admin',
+            'sm_principal', 'sm_supervisor', 'sm_teacher', 'sm_coordinator'
+        );
+        $role_migration = array(
+            'school_admin'          => 'sm_officer',
+            'sm_school_admin'       => 'sm_officer',
+            'discipline_officer'    => 'sm_officer',
+            'sm_principal'          => 'sm_officer',
+            'sm_supervisor'         => 'sm_syndicate_member',
+            'sm_teacher'            => 'sm_syndicate_member',
+            'sm_coordinator'        => 'sm_syndicate_member'
         );
 
-        foreach ($demo_members as $member) {
-            $wpdb->insert($table_members, $member);
+        foreach ($role_migration as $old => $new) {
+            $users = get_users(array('role' => $old));
+            foreach ($users as $user) {
+                $user->remove_role($old);
+                $user->add_role($new);
+            }
         }
     }
 }
