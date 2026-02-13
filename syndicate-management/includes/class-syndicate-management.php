@@ -32,7 +32,6 @@ class Syndicate_Management {
 
     private function define_public_hooks() {
         $plugin_public = new SM_Public($this->get_plugin_name(), $this->get_version());
-        $this->loader->add_action('init', 'SM_DB', 'cleanup_old_messages');
         $this->loader->add_filter('show_admin_bar', $plugin_public, 'hide_admin_bar_for_non_admins');
         $this->loader->add_action('admin_init', $plugin_public, 'restrict_admin_access');
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');

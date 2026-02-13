@@ -100,6 +100,10 @@ class SM_DB {
             $temp_pass = '';
             for($i=0; $i<10; $i++) $temp_pass .= rand(0,9);
 
+            if (!function_exists('wp_insert_user')) {
+                require_once(ABSPATH . 'wp-includes/user.php');
+            }
+
             $wp_user_id = wp_insert_user(array(
                 'user_login' => $code,
                 'user_email' => $email ?: $code . '@syndicate.local',
@@ -171,6 +175,9 @@ class SM_DB {
         if ($member) {
             SM_Logger::log('حذف عضو (مع إمكانية الاستعادة)', 'ROLLBACK_DATA:' . json_encode(['table' => 'members', 'data' => (array)$member]));
             if ($member->parent_user_id) {
+                if (!function_exists('wp_delete_user')) {
+                    require_once(ABSPATH . 'wp-admin/includes/user.php');
+                }
                 wp_delete_user($member->parent_user_id);
             }
         }
@@ -196,10 +203,10 @@ class SM_DB {
     public static function get_records($filters = array()) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_records';
-        $stu_table = $wpdb->prefix . 'sm_members';
+        $member_table = $wpdb->prefix . 'sm_members';
         $query = "SELECT r.*, s.name as member_name, s.class_name, s.section, s.member_code
                   FROM $table_name r
-                  JOIN $stu_table s ON r.member_id = s.id
+                  JOIN $member_table s ON r.member_id = s.id
                   WHERE 1=1";
         $params = array();
 
@@ -223,16 +230,18 @@ class SM_DB {
                         $params[] = $user_id;
                     } else {
                         $sec_cond = array();
+                        $sec_params = array();
                         foreach ($all_sections as $sec) {
                             $parts = explode('|', $sec);
                             if (count($parts) == 2) {
                                 $sec_cond[] = "(s.class_name = %s AND s.section = %s)";
-                                $params[] = $parts[0];
-                                $params[] = $parts[1];
+                                $sec_params[] = $parts[0];
+                                $sec_params[] = $parts[1];
                             }
                         }
                         $query .= " AND (r.officer_id = %d OR (" . implode(' OR ', $sec_cond) . "))";
                         $params[] = $user_id;
+                        $params = array_merge($params, $sec_params);
                     }
                 }
             }
@@ -390,48 +399,68 @@ class SM_DB {
                         $where .= " AND (officer_id = %d)";
                         $params[] = $user_id;
                     } else {
-                        $stu_table = $wpdb->prefix . 'sm_members';
+                        $member_table = $wpdb->prefix . 'sm_members';
                         $sec_cond = array();
+                        $sec_params = array();
                         foreach ($all_sections as $sec) {
                             $parts = explode('|', $sec);
                             if (count($parts) == 2) {
-                                $sec_cond[] = "(member_id IN (SELECT id FROM $stu_table WHERE class_name = %s AND section = %s))";
-                                $params[] = $parts[0];
-                                $params[] = $parts[1];
+                                $sec_cond[] = "(member_id IN (SELECT id FROM $member_table WHERE class_name = %s AND section = %s))";
+                                $sec_params[] = $parts[0];
+                                $sec_params[] = $parts[1];
                             }
                         }
                         $where .= " AND (officer_id = %d OR (" . implode(' OR ', $sec_cond) . "))";
                         $params[] = $user_id;
+                        $params = array_merge($params, $sec_params);
                     }
                 }
             }
         }
 
         $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members");
-        $stats['total_officers'] = count(get_users(array('role' => 'sm_syndicate_member'))) + count(get_users(array('role' => 'sm_officer')));
 
-        $stats['violations_today'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records " . $where . " AND DATE(created_at) = CURDATE()", $params));
-        $stats['total_actions'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records " . $where . " AND action_taken != ''", $params));
+        if (function_exists('get_users')) {
+            $stats['total_officers'] = count(get_users(array('role' => 'sm_syndicate_member'))) + count(get_users(array('role' => 'sm_officer')));
+        } else {
+            $stats['total_officers'] = 0;
+        }
 
-        $stats['total_records'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records" . $where, $params));
-        $stats['total_points'] = $wpdb->get_var($wpdb->prepare("SELECT SUM(points) FROM {$wpdb->prefix}sm_records" . $where, $params));
-        $stats['pending_reports'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records" . $where . " AND status = 'pending'", $params));
+        $query_today = "SELECT COUNT(*) FROM {$wpdb->prefix}sm_records " . $where . " AND DATE(created_at) = CURDATE()";
+        $stats['violations_today'] = !empty($params) ? $wpdb->get_var($wpdb->prepare($query_today, $params)) : $wpdb->get_var($query_today);
+
+        $query_actions = "SELECT COUNT(*) FROM {$wpdb->prefix}sm_records " . $where . " AND action_taken != ''";
+        $stats['total_actions'] = !empty($params) ? $wpdb->get_var($wpdb->prepare($query_actions, $params)) : $wpdb->get_var($query_actions);
+
+        $query_total = "SELECT COUNT(*) FROM {$wpdb->prefix}sm_records" . $where;
+        $stats['total_records'] = !empty($params) ? $wpdb->get_var($wpdb->prepare($query_total, $params)) : $wpdb->get_var($query_total);
+
+        $query_points = "SELECT SUM(points) FROM {$wpdb->prefix}sm_records" . $where;
+        $stats['total_points'] = !empty($params) ? $wpdb->get_var($wpdb->prepare($query_points, $params)) : $wpdb->get_var($query_points);
+
+        $query_pending = "SELECT COUNT(*) FROM {$wpdb->prefix}sm_records" . $where . " AND status = 'pending'";
+        $stats['pending_reports'] = !empty($params) ? $wpdb->get_var($wpdb->prepare($query_pending, $params)) : $wpdb->get_var($query_pending);
 
         // Trends (last 30 days)
-        $stats['trends'] = $wpdb->get_results($wpdb->prepare("SELECT DATE(created_at) as date, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(created_at) ORDER BY date ASC", $params));
+        $query_trends = "SELECT DATE(created_at) as date, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(created_at) ORDER BY date ASC";
+        $stats['trends'] = !empty($params) ? $wpdb->get_results($wpdb->prepare($query_trends, $params)) : $wpdb->get_results($query_trends);
 
         // By Type
-        $stats['by_type'] = $wpdb->get_results($wpdb->prepare("SELECT type, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY type", $params));
+        $query_type = "SELECT type, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY type";
+        $stats['by_type'] = !empty($params) ? $wpdb->get_results($wpdb->prepare($query_type, $params)) : $wpdb->get_results($query_type);
 
         // By Severity
-        $stats['by_severity'] = $wpdb->get_results($wpdb->prepare("SELECT severity, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY severity", $params));
+        $query_sev = "SELECT severity, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY severity";
+        $stats['by_severity'] = !empty($params) ? $wpdb->get_results($wpdb->prepare($query_sev, $params)) : $wpdb->get_results($query_sev);
 
         // Top Members
-        $stu_table = $wpdb->prefix . 'sm_members';
-        $stats['top_members'] = $wpdb->get_results($wpdb->prepare("SELECT s.name, COUNT(r.id) as count FROM {$wpdb->prefix}sm_records r JOIN $stu_table s ON r.member_id = s.id " . str_replace('officer_id', 'r.officer_id', $where) . " GROUP BY r.member_id ORDER BY count DESC LIMIT 5", $params));
+        $member_table = $wpdb->prefix . 'sm_members';
+        $query_top = "SELECT s.name, COUNT(r.id) as count FROM {$wpdb->prefix}sm_records r JOIN $member_table s ON r.member_id = s.id " . str_replace('officer_id', 'r.officer_id', $where) . " GROUP BY r.member_id ORDER BY count DESC LIMIT 5";
+        $stats['top_members'] = !empty($params) ? $wpdb->get_results($wpdb->prepare($query_top, $params)) : $wpdb->get_results($query_top);
 
         // By Degree
-        $stats['by_degree'] = $wpdb->get_results($wpdb->prepare("SELECT degree, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY degree", $params));
+        $query_deg = "SELECT degree, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY degree";
+        $stats['by_degree'] = !empty($params) ? $wpdb->get_results($wpdb->prepare($query_deg, $params)) : $wpdb->get_results($query_deg);
 
         return $stats;
     }

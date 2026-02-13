@@ -9,9 +9,11 @@ class SM_Activator {
         // Migration: Rename old tables if they exist
         self::migrate_tables();
 
+        $sql = "";
+
         // Members Table (formerly Students)
         $table_name = $wpdb->prefix . 'sm_members';
-        $sql = "CREATE TABLE $table_name (
+        $sql .= "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name tinytext NOT NULL,
             email tinytext,
@@ -28,7 +30,7 @@ class SM_Activator {
             PRIMARY KEY  (id),
             KEY parent_user_id (parent_user_id),
             KEY officer_id (officer_id)
-        ) $charset_collate;";
+        ) $charset_collate;\n";
 
         // Records Table
         $table_name = $wpdb->prefix . 'sm_records';
@@ -50,7 +52,7 @@ class SM_Activator {
             PRIMARY KEY  (id),
             KEY member_id (member_id),
             KEY officer_id (officer_id)
-        ) $charset_collate;";
+        ) $charset_collate;\n";
 
         // Messages Table
         $table_name = $wpdb->prefix . 'sm_messages';
@@ -66,7 +68,7 @@ class SM_Activator {
             KEY sender_id (sender_id),
             KEY receiver_id (receiver_id),
             KEY member_id (member_id)
-        ) $charset_collate;";
+        ) $charset_collate;\n";
 
         // Logs Table
         $table_name = $wpdb->prefix . 'sm_logs';
@@ -78,7 +80,7 @@ class SM_Activator {
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id),
             KEY user_id (user_id)
-        ) $charset_collate;";
+        ) $charset_collate;\n";
 
         // Assignments / Lesson Plans Table
         $table_name = $wpdb->prefix . 'sm_assignments';
@@ -94,7 +96,7 @@ class SM_Activator {
             PRIMARY KEY  (id),
             KEY sender_id (sender_id),
             KEY receiver_id (receiver_id)
-        ) $charset_collate;";
+        ) $charset_collate;\n";
 
         // Surveys Table
         $table_name = $wpdb->prefix . 'sm_surveys';
@@ -108,7 +110,7 @@ class SM_Activator {
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id),
             KEY created_by (created_by)
-        ) $charset_collate;";
+        ) $charset_collate;\n";
 
         // Survey Responses Table
         $table_name = $wpdb->prefix . 'sm_survey_responses';
@@ -121,7 +123,7 @@ class SM_Activator {
             PRIMARY KEY  (id),
             KEY survey_id (survey_id),
             KEY user_id (user_id)
-        ) $charset_collate;";
+        ) $charset_collate;\n";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
@@ -149,14 +151,26 @@ class SM_Activator {
             }
         }
 
-        // Rename student_id to member_id in other tables for data integrity
-        $tables_to_fix = array('sm_records', 'sm_messages');
+        // Rename student_id to member_id and teacher_id to officer_id in other tables for data integrity
+        $tables_to_fix = array('sm_records', 'sm_messages', 'sm_members');
         foreach ($tables_to_fix as $table) {
             $full_table = $wpdb->prefix . $table;
             if ($wpdb->get_var("SHOW TABLES LIKE '$full_table'")) {
-                $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'student_id'");
-                if (!empty($column_exists)) {
+                // Fix Student ID
+                $col_student = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'student_id'");
+                if (!empty($col_student)) {
                     $wpdb->query("ALTER TABLE $full_table CHANGE student_id member_id mediumint(9)");
+                }
+
+                // Fix Teacher ID / Supervisor ID
+                $col_teacher = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'teacher_id'");
+                if (!empty($col_teacher)) {
+                    $wpdb->query("ALTER TABLE $full_table CHANGE teacher_id officer_id bigint(20)");
+                }
+
+                $col_supervisor = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'supervisor_id'");
+                if (!empty($col_supervisor)) {
+                    $wpdb->query("ALTER TABLE $full_table CHANGE supervisor_id officer_id bigint(20)");
                 }
             }
         }
