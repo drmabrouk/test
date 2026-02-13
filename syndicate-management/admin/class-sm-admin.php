@@ -49,11 +49,11 @@ class SM_Admin {
 
         add_submenu_page(
             'sm-dashboard',
-            'المعلمون',
-            'المعلمون',
-            'إدارة_المعلمين',
-            'sm-teachers',
-            array($this, 'display_teachers_page')
+            'أعضاء النقابة',
+            'أعضاء النقابة',
+            'إدارة_المستخدمين',
+            'sm-staff',
+            array($this, 'display_staff_page')
         );
 
         add_submenu_page(
@@ -155,8 +155,8 @@ class SM_Admin {
         include SM_PLUGIN_DIR . 'templates/public-admin-panel.php';
     }
 
-    public function display_teachers_page() {
-        $_GET['sm_tab'] = 'teachers';
+    public function display_staff_page() {
+        $_GET['sm_tab'] = 'staff';
         $this->display_settings();
     }
 
@@ -175,9 +175,9 @@ class SM_Admin {
         if (isset($_GET['end_date'])) $filters['end_date'] = sanitize_text_field($_GET['end_date']);
         if (isset($_GET['type_filter'])) $filters['type'] = sanitize_text_field($_GET['type_filter']);
 
-        // Teacher filter
+        // Syndicate Member filter
         if (!current_user_can('إدارة_المستخدمين') && current_user_can('تسجيل_مخالفة')) {
-            $filters['teacher_id'] = get_current_user_id();
+            $filters['officer_id'] = get_current_user_id();
         }
 
         $records = SM_DB::get_records($filters);

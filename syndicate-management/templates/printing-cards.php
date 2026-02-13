@@ -243,8 +243,8 @@
                 <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,كلمة السر\nاسم ولي الأمر,parent_user,parent@example.com,pass123"); ?>" download="parents_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
                     <span class="dashicons dashicons-download"></span> نموذج أولياء الأمور
                 </a>
-                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,المعرف الوظيفي,المسمى,الجوال,كلمة السر\nاسم المعلم,teacher_user,teacher@example.com,T100,معلم فصل,0500000000,pass123"); ?>" download="teachers_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <span class="dashicons dashicons-download"></span> نموذج المعلمين
+                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,المعرف الوظيفي,المسمى,الجوال,كلمة السر\nاسم عضو النقابة,staff_user,staff@example.com,T100,عضو النقابة فصل,0500000000,pass123"); ?>" download="staffs_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <span class="dashicons dashicons-download"></span> نموذج أعضاء النقابة
                 </a>
             </div>
         </div>

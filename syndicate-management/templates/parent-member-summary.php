@@ -193,18 +193,18 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
     <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color);">
         <h3 style="margin-top:0; border-bottom: 2px solid var(--sm-accent-color); padding-bottom: 10px;">نظام الاستشارات والاستفسارات</h3>
         <?php if (!$supervisor): ?>
-            <p style="padding: 20px; text-align: center; color: var(--sm-text-gray);">لم يتم تعيين مشرف لهذا الصف بعد.</p>
+            <p style="padding: 20px; text-align: center; color: var(--sm-text-gray);">لم يتم تعيين عضو النقابة لهذا الصف بعد.</p>
         <?php else: ?>
             <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
                 <?php echo get_avatar($supervisor->ID, 40, '', '', array('style' => 'border-radius:50%;')); ?>
                 <div>
-                    <div style="font-weight: 800; font-size: 0.9em;">المشرف: <?php echo esc_html($supervisor->display_name); ?></div>
+                    <div style="font-weight: 800; font-size: 0.9em;">عضو النقابة: <?php echo esc_html($supervisor->display_name); ?></div>
                     <div style="font-size: 11px; color: #38a169;">متاح لاستلام استفساراتك</div>
                 </div>
             </div>
             <div class="sm-form-group">
                 <label class="sm-label">موضوع الاستفسار:</label>
-                <textarea id="member-inquiry-msg" class="sm-textarea" rows="4" placeholder="اكتب استفسارك هنا وسيتم إرساله للمشرف مباشرة..."></textarea>
+                <textarea id="member-inquiry-msg" class="sm-textarea" rows="4" placeholder="اكتب استفسارك هنا وسيتم إرساله للعضو نقابة مباشرة..."></textarea>
             </div>
             <button onclick="sendMemberInquiry(<?php echo $supervisor->ID; ?>)" class="sm-btn" style="background: var(--sm-accent-color);">إرسال الاستفسار الآن</button>
         <?php endif; ?>
@@ -240,7 +240,7 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
                     <td style="padding: 10px; font-size: 11px; text-align: center;">
                         <?php if ($entry): ?>
                             <div style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($entry->subject_name); ?></div>
-                            <div style="color: #718096; margin-top: 3px;"><?php echo esc_html($entry->teacher_name); ?></div>
+                            <div style="color: #718096; margin-top: 3px;"><?php echo esc_html($entry->officer_name); ?></div>
                         <?php else: ?>
                             -
                         <?php endif; ?>
@@ -255,22 +255,22 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
 </div>
 
 <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); margin-bottom: 30px; grid-column: span 2;">
-    <h3 style="margin-top:0; border-bottom: 2px solid var(--sm-secondary-color); padding-bottom: 10px;">المعلمون المكلفون بالصف</h3>
+    <h3 style="margin-top:0; border-bottom: 2px solid var(--sm-secondary-color); padding-bottom: 10px;">أعضاء النقابة المكلفون بالصف</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 15px;">
         <?php
         $grade_num = preg_replace('/[^0-9]/', '', $member->class_name);
-        $assigned_teachers = SM_DB::get_staff_by_section($grade_num, $member->section);
-        if (empty($assigned_teachers)):
-            echo '<p style="grid-column: 1/-1; text-align:center; color:#718096;">لا يوجد معلمون مكلفون حالياً.</p>';
+        $assigned_staffs = SM_DB::get_staff_by_section($grade_num, $member->section);
+        if (empty($assigned_staffs)):
+            echo '<p style="grid-column: 1/-1; text-align:center; color:#718096;">لا يوجد أعضاء النقابة مكلفون حالياً.</p>';
         else:
-            foreach ($assigned_teachers as $t):
+            foreach ($assigned_staffs as $t):
                 $spec = get_user_meta($t->ID, 'sm_specialization', true);
         ?>
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px;">
             <?php echo get_avatar($t->ID, 40, '', '', array('style' => 'border-radius:50%; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);')); ?>
             <div>
                 <div style="font-weight: 800; font-size: 13px; color: var(--sm-dark-color);"><?php echo esc_html($t->display_name); ?></div>
-                <div style="font-size: 11px; color: var(--sm-primary-color); font-weight: 600;"><?php echo esc_html($spec ?: 'معلم'); ?></div>
+                <div style="font-size: 11px; color: var(--sm-primary-color); font-weight: 600;"><?php echo esc_html($spec ?: 'عضو النقابة'); ?></div>
             </div>
         </div>
         <?php endforeach; endif; ?>

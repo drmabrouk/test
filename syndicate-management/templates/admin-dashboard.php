@@ -16,7 +16,7 @@
         <?php if (current_user_can('إدارة_الأعضاء')): ?>
         <div style="flex: 1; min-width: 300px; background: #fff; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); box-shadow: var(--sm-shadow);">
             <h3 style="color: var(--sm-primary-color);">إدارة النظام</h3>
-            <p>يمكنك إضافة أعضاء جدد، إدارة المعلمين، واستعراض كافة السجلات.</p>
+            <p>يمكنك إضافة أعضاء جدد، إدارة أعضاء النقابة، واستعراض كافة السجلات.</p>
             <a href="admin.php?page=sm-members" class="sm-btn">إدارة الأعضاء</a>
         </div>
         <?php endif; ?>

@@ -7,10 +7,8 @@
             <div style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; min-width: 180px; margin-top: 5px;">
                 <a href="<?php echo remove_query_arg('role_filter'); ?>" class="sm-dropdown-item">الكل</a>
                 <a href="<?php echo add_query_arg('role_filter', 'sm_member'); ?>" class="sm-dropdown-item">الأعضاء</a>
-                <a href="<?php echo add_query_arg('role_filter', 'sm_teacher'); ?>" class="sm-dropdown-item">المعلمون</a>
-                <a href="<?php echo add_query_arg('role_filter', 'sm_coordinator'); ?>" class="sm-dropdown-item">منسقو المواد</a>
-                <a href="<?php echo add_query_arg('role_filter', 'sm_supervisor'); ?>" class="sm-dropdown-item">المشرفون</a>
-                <a href="<?php echo add_query_arg('role_filter', 'sm_principal'); ?>" class="sm-dropdown-item">مديرو المدارس</a>
+                <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_member'); ?>" class="sm-dropdown-item">أعضاء النقابة</a>
+                <a href="<?php echo add_query_arg('role_filter', 'sm_officer'); ?>" class="sm-dropdown-item">مسؤولو النقابة</a>
                 <a href="<?php echo add_query_arg('role_filter', 'sm_clinic'); ?>" class="sm-dropdown-item">موظفو العيادة</a>
                 <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-dropdown-item">مديرو النظام</a>
             </div>
@@ -41,12 +39,11 @@
             $hierarchy = array(
                 'administrator' => 5,
                 'sm_system_admin' => 4,
-                'sm_principal' => 3,
-                'sm_supervisor' => 2,
-                'sm_coordinator' => 1,
-                'sm_teacher' => 0,
-                'sm_member' => -1,
-                'sm_parent' => -2
+                'sm_officer' => 3,
+                'sm_syndicate_member' => 2,
+                'sm_clinic' => 1,
+                'sm_member' => 0,
+                'sm_parent' => -1
             );
             $current_user = wp_get_current_user();
             $current_role = $current_user->roles[0];
@@ -62,15 +59,14 @@
                 });
             }
 
-            // Ordering hierarchy: Members, Teachers, Coordinators, Supervisors, Principal, Admin
+            // Ordering hierarchy: Members, Syndicate Members, Clinic, Officers, Admin
             $sort_hierarchy = array(
                 'sm_member' => 0,
-                'sm_teacher' => 1,
-                'sm_coordinator' => 2,
-                'sm_supervisor' => 3,
-                'sm_principal' => 4,
-                'sm_system_admin' => 5,
-                'administrator' => 6
+                'sm_syndicate_member' => 1,
+                'sm_clinic' => 2,
+                'sm_officer' => 3,
+                'sm_system_admin' => 4,
+                'administrator' => 5
             );
 
             usort($all_users, function($a, $b) use ($sort_hierarchy) {
@@ -104,10 +100,8 @@
                             $role_map = array(
                                 'administrator' => 'الإدارة المركزية (المطور)',
                                 'sm_system_admin' => 'مدير النظام التقني',
-                                'sm_principal' => 'مدير النقابة',
-                                'sm_supervisor' => 'مشرف تربوي',
-                                'sm_coordinator' => 'منسق مادة',
-                                'sm_teacher' => 'معلم',
+                                'sm_officer' => 'مسؤول النقابة',
+                                'sm_syndicate_member' => 'عضو النقابة',
                                 'sm_clinic' => 'العيادة النقابية',
                                 'sm_member' => 'عضو',
                                 'sm_parent' => 'ولي أمر'
@@ -116,7 +110,7 @@
                             echo $role_map[$u_role_key] ?? $u_role_key;
                             ?>
                         </div>
-                        <?php if ($u_role_key === 'sm_teacher'): ?>
+                        <?php if ($u_role_key === 'sm_syndicate_member'): ?>
                             <div style="font-size:11px; color:var(--sm-primary-color); font-weight:700;">التخصص: <?php echo esc_html(get_user_meta($u->ID, 'sm_specialization', true) ?: 'غير محدد'); ?></div>
                         <?php endif; ?>
                     </td>
@@ -177,18 +171,14 @@
                     <label class="sm-label">الرتبة:</label>
                     <select name="user_role" class="sm-select" onchange="toggleSpecialization(this)">
                         <?php if ($current_level >= 4): ?><option value="sm_system_admin">مدير النظام التقني</option><?php endif; ?>
-                        <?php if ($current_level >= 3): ?><option value="sm_principal">مدير النقابة</option><?php endif; ?>
-                        <?php if ($current_level >= 2): ?><option value="sm_supervisor">مشرف تربوي</option><?php endif; ?>
-                        <?php if ($current_level >= 1): ?><option value="sm_coordinator">منسق مادة</option><?php endif; ?>
-                        <?php if ($current_level >= 0): ?>
-                            <option value="sm_teacher">معلم</option>
-                            <option value="sm_clinic">موظف عيادة</option>
-                        <?php endif; ?>
+                        <?php if ($current_level >= 3): ?><option value="sm_officer">مسؤول النقابة</option><?php endif; ?>
+                        <?php if ($current_level >= 2): ?><option value="sm_syndicate_member">عضو النقابة</option><?php endif; ?>
+                        <?php if ($current_level >= 1): ?><option value="sm_clinic">موظف العيادة</option><?php endif; ?>
                         <option value="sm_member">عضو</option>
                     </select>
                 </div>
                 <div class="sm-form-group spec-group" style="display:none;">
-                    <label class="sm-label">المادة التخصصية (للمعلمين):</label>
+                    <label class="sm-label">المادة التخصصية:</label>
                     <select name="specialization" class="sm-select">
                         <option value="">-- اختر المادة --</option>
                         <?php
@@ -230,18 +220,14 @@
                     <label class="sm-label">الرتبة:</label>
                     <select name="user_role" id="edit_u_role" class="sm-select" onchange="toggleSpecialization(this, 'edit')">
                         <?php if ($current_level >= 4): ?><option value="sm_system_admin">مدير النظام التقني</option><?php endif; ?>
-                        <?php if ($current_level >= 3): ?><option value="sm_principal">مدير النقابة</option><?php endif; ?>
-                        <?php if ($current_level >= 2): ?><option value="sm_supervisor">مشرف تربوي</option><?php endif; ?>
-                        <?php if ($current_level >= 1): ?><option value="sm_coordinator">منسق مادة</option><?php endif; ?>
-                        <?php if ($current_level >= 0): ?>
-                            <option value="sm_teacher">معلم</option>
-                            <option value="sm_clinic">موظف عيادة</option>
-                        <?php endif; ?>
+                        <?php if ($current_level >= 3): ?><option value="sm_officer">مسؤول النقابة</option><?php endif; ?>
+                        <?php if ($current_level >= 2): ?><option value="sm_syndicate_member">عضو النقابة</option><?php endif; ?>
+                        <?php if ($current_level >= 1): ?><option value="sm_clinic">موظف العيادة</option><?php endif; ?>
                         <option value="sm_member">عضو</option>
                     </select>
                 </div>
                 <div class="sm-form-group spec-group" id="edit_spec_group" style="display:none;">
-                    <label class="sm-label">المادة التخصصية (للمعلمين):</label>
+                    <label class="sm-label">المادة التخصصية:</label>
                     <select name="specialization" id="edit_u_spec" class="sm-select">
                         <option value="">-- اختر المادة --</option>
                         <?php
@@ -263,7 +249,7 @@
 (function() {
     window.toggleSpecialization = function(select, mode = 'add') {
         const group = mode === 'add' ? select.closest('form').querySelector('.spec-group') : document.getElementById('edit_spec_group');
-        if (select.value === 'sm_teacher') {
+        if (select.value === 'sm_syndicate_member') {
             group.style.display = 'block';
         } else {
             group.style.display = 'none';
@@ -329,7 +315,7 @@
         const formData = new FormData();
         formData.append('action', 'sm_bulk_delete_users_ajax');
         formData.append('user_ids', selected.join(','));
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_teacher_action"); ?>');
+        formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicate_member_action"); ?>');
 
         fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
         .then(r => r.json())

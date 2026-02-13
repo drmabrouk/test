@@ -1,13 +1,13 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-content-wrapper" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <h3 style="margin:0; border:none; padding:0;">مراجعة بلاغات المعلمين</h3>
+        <h3 style="margin:0; border:none; padding:0;">مراجعة بلاغات أعضاء النقابة</h3>
         <span class="sm-badge sm-badge-high"><?php echo count($records); ?> بلاغ معلق</span>
     </div>
 
     <div style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 15px; margin-bottom: 25px; color: #c53030; font-size: 0.9em; display: flex; align-items: center; gap: 10px;">
         <span class="dashicons dashicons-warning"></span>
-        <span>هذه البلاغات تم تسجيلها بواسطة المعلمين وهي بانتظار اعتماد الإدارة أو مسؤول الانضباط لاتخاذ القرار النهائي.</span>
+        <span>هذه البلاغات تم تسجيلها بواسطة أعضاء النقابة وهي بانتظار اعتماد الإدارة أو مسؤول الانضباط لاتخاذ القرار النهائي.</span>
     </div>
 
     <div class="sm-table-container">
@@ -36,7 +36,7 @@
                     $type_labels = SM_Settings::get_violation_types();
                     $severity_labels = SM_Settings::get_severities();
                     foreach ($records as $row):
-                        $teacher = get_userdata($row->teacher_id);
+                        $staff = get_userdata($row->officer_id);
                     ?>
                         <tr>
                             <td>
@@ -44,7 +44,7 @@
                                 <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo esc_html($row->class_name); ?></div>
                             </td>
                             <td style="font-weight: 600; color: var(--sm-primary-color);">
-                                <?php echo $teacher ? esc_html($teacher->display_name) : 'غير معروف'; ?>
+                                <?php echo $staff ? esc_html($staff->display_name) : 'غير معروف'; ?>
                             </td>
                             <td><?php echo date('Y-m-d H:i', strtotime($row->created_at)); ?></td>
                             <td><?php echo $type_labels[$row->type] ?? $row->type; ?></td>

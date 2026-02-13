@@ -96,7 +96,7 @@ if ($import_results) {
 
             <div style="display: flex; gap: 10px;">
                 <button type="submit" class="sm-btn">بحث</button>
-                <a href="<?php echo add_query_arg('sm_tab', 'members', remove_query_arg(['member_search', 'class_filter', 'section_filter', 'teacher_filter'])); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none;">إعادة ضبط</a>
+                <a href="<?php echo add_query_arg('sm_tab', 'members', remove_query_arg(['member_search', 'class_filter', 'section_filter', 'officer_filter'])); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none;">إعادة ضبط</a>
             </div>
         </form>
     </div>

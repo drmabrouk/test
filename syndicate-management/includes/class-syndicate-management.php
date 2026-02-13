@@ -62,8 +62,8 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_get_counts_ajax', $plugin_public, 'ajax_get_counts');
         $this->loader->add_action('wp_ajax_sm_add_user_ajax', $plugin_public, 'ajax_add_user');
         $this->loader->add_action('wp_ajax_sm_update_generic_user_ajax', $plugin_public, 'ajax_update_generic_user');
-        $this->loader->add_action('wp_ajax_sm_add_teacher_ajax', $plugin_public, 'ajax_add_teacher');
-        $this->loader->add_action('wp_ajax_sm_update_teacher_ajax', $plugin_public, 'ajax_update_teacher');
+        $this->loader->add_action('wp_ajax_sm_add_staff_ajax', $plugin_public, 'ajax_add_staff');
+        $this->loader->add_action('wp_ajax_sm_update_staff_ajax', $plugin_public, 'ajax_update_staff');
         $this->loader->add_action('wp_ajax_sm_add_parent_ajax', $plugin_public, 'ajax_add_parent');
         $this->loader->add_action('wp_ajax_sm_update_profile_ajax', $plugin_public, 'ajax_update_profile');
         $this->loader->add_action('wp_ajax_sm_bulk_delete_ajax', $plugin_public, 'ajax_bulk_delete');
