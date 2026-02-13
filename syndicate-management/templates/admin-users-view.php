@@ -9,7 +9,6 @@
                 <a href="<?php echo add_query_arg('role_filter', 'sm_member'); ?>" class="sm-dropdown-item">الأعضاء</a>
                 <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_member'); ?>" class="sm-dropdown-item">أعضاء النقابة</a>
                 <a href="<?php echo add_query_arg('role_filter', 'sm_officer'); ?>" class="sm-dropdown-item">مسؤولو النقابة</a>
-                <a href="<?php echo add_query_arg('role_filter', 'sm_clinic'); ?>" class="sm-dropdown-item">موظفو العيادة</a>
                 <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-dropdown-item">مديرو النظام</a>
             </div>
         </div>
@@ -37,11 +36,10 @@
         <tbody>
             <?php
             $hierarchy = array(
-                'administrator' => 5,
-                'sm_system_admin' => 4,
-                'sm_officer' => 3,
-                'sm_syndicate_member' => 2,
-                'sm_clinic' => 1,
+                'administrator' => 4,
+                'sm_system_admin' => 3,
+                'sm_officer' => 2,
+                'sm_syndicate_member' => 1,
                 'sm_member' => 0,
                 'sm_parent' => -1
             );
@@ -51,7 +49,6 @@
 
             $all_users = get_users();
 
-            // Filter by role if requested
             if (!empty($_GET['role_filter'])) {
                 $filter_role = sanitize_text_field($_GET['role_filter']);
                 $all_users = array_filter($all_users, function($u) use ($filter_role) {
@@ -59,14 +56,12 @@
                 });
             }
 
-            // Ordering hierarchy: Members, Syndicate Members, Clinic, Officers, Admin
             $sort_hierarchy = array(
                 'sm_member' => 0,
                 'sm_syndicate_member' => 1,
-                'sm_clinic' => 2,
-                'sm_officer' => 3,
-                'sm_system_admin' => 4,
-                'administrator' => 5
+                'sm_officer' => 2,
+                'sm_system_admin' => 3,
+                'administrator' => 4
             );
 
             usort($all_users, function($a, $b) use ($sort_hierarchy) {
@@ -79,7 +74,6 @@
                 $u_role = $u->roles[0];
                 $u_level = $hierarchy[$u_role] ?? -3;
 
-                // Hierarchical Visibility: Can only see equal or lower
                 if ($u_level > $current_level && !current_user_can('administrator')) continue;
             ?>
                 <tr>
@@ -102,7 +96,6 @@
                                 'sm_system_admin' => 'مدير النظام التقني',
                                 'sm_officer' => 'مسؤول النقابة',
                                 'sm_syndicate_member' => 'عضو النقابة',
-                                'sm_clinic' => 'العيادة النقابية',
                                 'sm_member' => 'عضو',
                                 'sm_parent' => 'ولي أمر'
                             );
@@ -170,23 +163,15 @@
                 <div class="sm-form-group">
                     <label class="sm-label">الرتبة:</label>
                     <select name="user_role" class="sm-select" onchange="toggleSpecialization(this)">
-                        <?php if ($current_level >= 4): ?><option value="sm_system_admin">مدير النظام التقني</option><?php endif; ?>
-                        <?php if ($current_level >= 3): ?><option value="sm_officer">مسؤول النقابة</option><?php endif; ?>
-                        <?php if ($current_level >= 2): ?><option value="sm_syndicate_member">عضو النقابة</option><?php endif; ?>
-                        <?php if ($current_level >= 1): ?><option value="sm_clinic">موظف العيادة</option><?php endif; ?>
+                        <?php if ($current_level >= 3): ?><option value="sm_system_admin">مدير النظام التقني</option><?php endif; ?>
+                        <?php if ($current_level >= 2): ?><option value="sm_officer">مسؤول النقابة</option><?php endif; ?>
+                        <?php if ($current_level >= 1): ?><option value="sm_syndicate_member">عضو النقابة</option><?php endif; ?>
                         <option value="sm_member">عضو</option>
                     </select>
                 </div>
                 <div class="sm-form-group spec-group" style="display:none;">
                     <label class="sm-label">المادة التخصصية:</label>
-                    <select name="specialization" class="sm-select">
-                        <option value="">-- اختر المادة --</option>
-                        <?php
-                        $subjects = SM_DB::get_subjects();
-                        $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $subjects));
-                        foreach($unique_subjects as $sub_name) echo '<option value="'.$sub_name.'">'.$sub_name.'</option>';
-                        ?>
-                    </select>
+                    <input type="text" name="specialization" class="sm-input" placeholder="مثال: رياضيات، لغة عربية...">
                 </div>
                 <div class="sm-form-group" style="grid-column: span 2;">
                     <label class="sm-label">كلمة المرور:</label>
@@ -219,21 +204,15 @@
                 <div class="sm-form-group">
                     <label class="sm-label">الرتبة:</label>
                     <select name="user_role" id="edit_u_role" class="sm-select" onchange="toggleSpecialization(this, 'edit')">
-                        <?php if ($current_level >= 4): ?><option value="sm_system_admin">مدير النظام التقني</option><?php endif; ?>
-                        <?php if ($current_level >= 3): ?><option value="sm_officer">مسؤول النقابة</option><?php endif; ?>
-                        <?php if ($current_level >= 2): ?><option value="sm_syndicate_member">عضو النقابة</option><?php endif; ?>
-                        <?php if ($current_level >= 1): ?><option value="sm_clinic">موظف العيادة</option><?php endif; ?>
+                        <?php if ($current_level >= 3): ?><option value="sm_system_admin">مدير النظام التقني</option><?php endif; ?>
+                        <?php if ($current_level >= 2): ?><option value="sm_officer">مسؤول النقابة</option><?php endif; ?>
+                        <?php if ($current_level >= 1): ?><option value="sm_syndicate_member">عضو النقابة</option><?php endif; ?>
                         <option value="sm_member">عضو</option>
                     </select>
                 </div>
                 <div class="sm-form-group spec-group" id="edit_spec_group" style="display:none;">
                     <label class="sm-label">المادة التخصصية:</label>
-                    <select name="specialization" id="edit_u_spec" class="sm-select">
-                        <option value="">-- اختر المادة --</option>
-                        <?php
-                        foreach($unique_subjects as $sub_name) echo '<option value="'.$sub_name.'">'.$sub_name.'</option>';
-                        ?>
-                    </select>
+                    <input type="text" name="specialization" id="edit_u_spec" class="sm-input">
                 </div>
                 <div class="sm-form-group">
                     <label class="sm-label">كلمة مرور جديدة (اختياري):</label>
@@ -272,7 +251,7 @@
         addForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            formData.append('action', 'sm_add_user_ajax'); // Need to implement this
+            formData.append('action', 'sm_add_user_ajax');
             
             fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
             .then(r => r.json())
@@ -290,7 +269,7 @@
         editForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            formData.append('action', 'sm_update_generic_user_ajax'); // Need to implement this
+            formData.append('action', 'sm_update_generic_user_ajax');
             
             fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
             .then(r => r.json())

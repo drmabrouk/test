@@ -84,7 +84,7 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
     formData.append('action', 'sm_submit_survey_response');
     formData.append('survey_id', surveyId);
     formData.append('responses', JSON.stringify(responses));
-    formData.append('nonce', '<?php echo wp_create_nonce("sm_attendance_action"); ?>');
+    formData.append('nonce', '<?php echo wp_create_nonce("sm_survey_action"); ?>');
 
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
     .then(r => r.json())
@@ -121,7 +121,6 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
 
 
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px;">
-    <!-- Trends and Categories Charts -->
     <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); position: relative; max-height: 350px; overflow: hidden;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
             <h3 style="margin:0; font-size: 1.1em;">اتجاهات المخالفات (آخر 30 يوم)</h3>
@@ -162,9 +161,6 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
     </div>
 </div>
 
-
-
-
 <script>
 function smDownloadChart(chartId, fileName) {
     const canvas = document.getElementById(chartId);
@@ -197,7 +193,6 @@ function smDownloadChart(chartId, fileName) {
             }
         };
 
-        // Trends Chart
         createOrUpdateChart('violationTrendsChart', {
             type: 'line',
             data: {
@@ -219,7 +214,6 @@ function smDownloadChart(chartId, fileName) {
             }
         });
 
-        // Categories Chart
         const typeLabels = <?php echo json_encode(SM_Settings::get_violation_types()); ?>;
         createOrUpdateChart('violationCategoriesChart', {
             type: 'doughnut',
@@ -233,7 +227,6 @@ function smDownloadChart(chartId, fileName) {
             options: chartOptions
         });
 
-        // Severity Chart
         createOrUpdateChart('severityChart', {
             type: 'doughnut',
             data: {
@@ -246,7 +239,6 @@ function smDownloadChart(chartId, fileName) {
             options: chartOptions
         });
 
-        // Top Members Chart
         createOrUpdateChart('topMembersChart', {
             type: 'bar',
             data: {
@@ -260,7 +252,6 @@ function smDownloadChart(chartId, fileName) {
             options: { ...chartOptions, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
 
-        // Degree Chart
         createOrUpdateChart('degreeChart', {
             type: 'bar',
             data: {

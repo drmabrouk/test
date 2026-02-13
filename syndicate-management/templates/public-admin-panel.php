@@ -41,12 +41,6 @@
                     badgeReports.innerText = count;
                     badgeReports.style.display = count > 0 ? 'block' : 'none';
                 }
-                const badgeItems = document.getElementById('expired-items-badge');
-                if (badgeItems) {
-                    const count = parseInt(res.data.expired_items);
-                    badgeItems.innerText = count;
-                    badgeItems.style.display = count > 0 ? 'block' : 'none';
-                }
             }
         });
     }
@@ -82,16 +76,6 @@
 
         if (document.getElementById('edit_stu_parent_user')) document.getElementById('edit_stu_parent_user').value = s.parent_id || '';
         document.getElementById('edit-member-modal').style.display = 'flex';
-    };
-
-    window.editSmSyndicate Member = function(t) {
-        document.getElementById('edit_t_id').value = t.id;
-        document.getElementById('edit_t_name').value = t.name;
-        document.getElementById('edit_t_code').value = t.officer_id;
-        document.getElementById('edit_t_job').value = t.job_title;
-        document.getElementById('edit_t_phone').value = t.phone;
-        document.getElementById('edit_t_email').value = t.email;
-        document.getElementById('edit-staff-modal').style.display = 'flex';
     };
 
     window.updateRecordStatus = function(id, status) {
@@ -273,11 +257,8 @@ $is_admin = in_array('administrator', $roles) || current_user_can('manage_option
 $is_sys_admin = in_array('sm_system_admin', $roles);
 $is_officer = in_array('sm_officer', $roles);
 $is_syndicate_member = in_array('sm_syndicate_member', $roles);
-$is_syndicate_member = in_array('sm_syndicate_member', $roles);
-$is_syndicate_member = in_array('sm_syndicate_member', $roles);
 $is_member = in_array('sm_member', $roles);
 $is_parent = in_array('sm_parent', $roles);
-$is_clinic = in_array('sm_clinic', $roles);
 
 $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
 $syndicate = SM_Settings::get_syndicate_info();
@@ -337,10 +318,9 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
             <?php if ($is_admin || current_user_can('إدارة_الأعضاء')): ?>
                 <a href="/Lesson" class="sm-btn" style="background: #8A244B; height: 38px; font-size: 12px; color: white !important; text-decoration: none;">تحضير الدروس</a>
-                <a href="<?php echo add_query_arg('sm_tab', 'attendance'); ?>" class="sm-btn sm-btn-secondary" style="height: 38px; font-size: 12px; color: white !important; text-decoration: none;">سجل الحضور والغياب</a>
             <?php endif; ?>
 
-            <?php if ($active_tab !== 'attendance' && ($is_admin || current_user_can('تسجيل_مخالفة'))): ?>
+            <?php if ($is_admin || current_user_can('تسجيل_مخالفة')): ?>
                 <button onclick="smOpenViolationModal()" class="sm-btn" style="background: var(--sm-primary-color); height: 38px; font-size: 12px; color: white !important;">+ تسجيل مخالفة</button>
             <?php endif; ?>
 
@@ -424,26 +404,10 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <?php endif; ?>
 
                 <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'grades' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'grades'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-welcome-learn-more"></span> إدارة الدرجات والنتائج</a>
-                    </li>
-                <?php endif; ?>
-
-
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'staff-reports' ? 'sm-active' : ''; ?>" style="position:relative;">
                         <a href="<?php echo add_query_arg('sm_tab', 'staff-reports'); ?>" class="sm-sidebar-link">
                             <span class="dashicons dashicons-warning"></span> بلاغات أعضاء النقابة
                             <span id="pending-reports-badge" class="sm-sidebar-badge" style="display:none;">0</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
-
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'confiscated' ? 'sm-active' : ''; ?>" style="position:relative;">
-                        <a href="<?php echo add_query_arg('sm_tab', 'confiscated'); ?>" class="sm-sidebar-link">
-                            <span class="dashicons dashicons-lock"></span> المواد المصادرة
-                            <span id="expired-items-badge" class="sm-sidebar-badge" style="display:none;">0</span>
                         </a>
                     </li>
                 <?php endif; ?>
@@ -466,21 +430,9 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member || $is_clinic): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'clinic' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'clinic'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-heart"></span> العيادة النقابية</a>
-                    </li>
-                <?php endif; ?>
-
                 <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'surveys' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'surveys'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-clipboard"></span> استطلاعات الرأي</a>
-                    </li>
-                <?php endif; ?>
-
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'timetables' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'timetables'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-calendar-alt"></span> الجداول النقابية</a>
                     </li>
                 <?php endif; ?>
 
@@ -513,11 +465,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     }
                     break;
 
-                case 'record':
-                    // This tab is now handled by a global modal
-                    echo '<script>window.location.href="' . remove_query_arg('sm_tab') . '";</script>';
-                    break;
-
                 case 'stats':
                     if ($is_admin || current_user_can('إدارة_المخالفات') || $is_parent) {
                         include SM_PLUGIN_DIR . 'templates/public-dashboard-stats.php'; 
@@ -547,14 +494,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     include SM_PLUGIN_DIR . 'templates/admin-syndicate-member-reports.php';
                     break;
 
-                case 'confiscated':
-                    include SM_PLUGIN_DIR . 'templates/admin-confiscated.php';
-                    break;
-
-                case 'attendance':
-                    include SM_PLUGIN_DIR . 'templates/admin-attendance.php';
-                    break;
-
                 case 'lesson-plans':
                     include SM_PLUGIN_DIR . 'templates/admin-lesson-plans.php';
                     break;
@@ -563,24 +502,10 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     include SM_PLUGIN_DIR . 'templates/admin-assignments.php';
                     break;
 
-                case 'clinic':
-                    include SM_PLUGIN_DIR . 'templates/admin-clinic.php';
-                    break;
-
                 case 'surveys':
                     if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member) {
                         include SM_PLUGIN_DIR . 'templates/admin-surveys.php';
                     }
-                    break;
-
-                case 'timetables':
-                    if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member) {
-                        include SM_PLUGIN_DIR . 'templates/admin-timetables.php';
-                    }
-                    break;
-
-                case 'grades':
-                    include SM_PLUGIN_DIR . 'templates/admin-grades.php';
                     break;
 
                 case 'global-settings':
@@ -589,9 +514,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
                             <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('syndicate-settings', this)">السلطة</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('design-settings', this)">تصميم النظام</button>
-                            <button class="sm-tab-btn" onclick="smOpenInternalTab('violation-hierarchy', this)">تخصيص اللائحة</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('user-settings', this)">إدارة المستخدمين</button>
-                            <button class="sm-tab-btn" onclick="smOpenInternalTab('syndicate-structure', this)">الهيكل المدرسي</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('backup-settings', this)">مركز النسخ الاحتياطي</button>
                             <?php if ($is_admin): ?>
                                 <button class="sm-tab-btn" onclick="smOpenInternalTab('activity-logs', this)">سجل النشاطات</button>
@@ -687,178 +610,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             </form>
                         </div>
 
-                        <div id="violation-hierarchy" class="sm-internal-tab" style="display:none;">
-                            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:25px; margin-bottom:30px;">
-                                <h4 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:15px; color:var(--sm-primary-color);">إعدادات المخالفات العامة</h4>
-                                <form method="post">
-                                    <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
-                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                                        <div class="sm-form-group">
-                                            <label class="sm-label">أنواع المخالفات العامة (مفتاح|اسم):</label>
-                                            <textarea name="violation_types" class="sm-textarea" rows="5"><?php foreach(SM_Settings::get_violation_types() as $k=>$v) echo "$k|$v\n"; ?></textarea>
-                                        </div>
-                                        <div class="sm-form-group">
-                                            <?php $actions = SM_Settings::get_suggested_actions(); ?>
-                                            <label class="sm-label">اقتراحات الإجراءات (كل سطر خيار):</label>
-                                            <div style="font-size:11px; margin-bottom:5px;">منخفضة:</div>
-                                            <textarea name="suggested_low" class="sm-textarea" rows="2"><?php echo esc_textarea($actions['low']); ?></textarea>
-                                            <div style="font-size:11px; margin-top:5px; margin-bottom:5px;">متوسطة:</div>
-                                            <textarea name="suggested_medium" class="sm-textarea" rows="2"><?php echo esc_textarea($actions['medium']); ?></textarea>
-                                            <div style="font-size:11px; margin-top:5px; margin-bottom:5px;">خطيرة:</div>
-                                            <textarea name="suggested_high" class="sm-textarea" rows="2"><?php echo esc_textarea($actions['high']); ?></textarea>
-                                        </div>
-                                    </div>
-                                    <button type="submit" name="sm_save_violation_settings" class="sm-btn" style="width:auto;">حفظ إعدادات المخالفات</button>
-                                </form>
-                            </div>
-
-                            <form method="post">
-                                <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce');
-                                $h_violations = SM_Settings::get_hierarchical_violations();
-                                ?>
-                                <h4 style="margin-top:0;">إدارة اللائحة التنظيمية والمخالفات الهرمية</h4>
-                                <p style="font-size:12px; color:#666; margin-bottom:20px;">يمكنك هنا تعديل تفاصيل المخالفات، النقاط المستحقة، والإجراءات الافتراضية لكل مستوى.</p>
-
-                                <?php for($i=1; $i<=4; $i++): ?>
-                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:20px; margin-bottom:20px;">
-                                        <div style="font-weight:800; color:var(--sm-primary-color); margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
-                                            <span>المستوى <?php echo $i; ?> (الدرجة <?php echo $i; ?>)</span>
-                                            <span style="font-size:11px; background:#fff; padding:2px 10px; border-radius:4px; color:#666; border:1px solid #ddd;">المخالفات: <?php echo count($h_violations[$i]); ?></span>
-                                        </div>
-                                        <div style="display:grid; grid-template-columns: 80px 1fr 60px 1fr auto; gap:10px; font-weight:700; font-size:11px; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                                            <div>الكود</div>
-                                            <div>الوصف / المسمى</div>
-                                            <div>النقاط</div>
-                                            <div>الإجراء المقترح</div>
-                                            <div>-</div>
-                                        </div>
-                                        <?php foreach($h_violations[$i] as $code => $v): ?>
-                                            <div style="display:grid; grid-template-columns: 80px 1fr 60px 1fr auto; gap:10px; margin-bottom:8px;">
-                                                <input type="text" name="h_viol[<?php echo $i; ?>][<?php echo $code; ?>][code]" value="<?php echo esc_attr($code); ?>" class="sm-input" style="padding:5px; font-size:12px;">
-                                                <input type="text" name="h_viol[<?php echo $i; ?>][<?php echo $code; ?>][name]" value="<?php echo esc_attr($v['name']); ?>" class="sm-input" style="padding:5px; font-size:12px;">
-                                                <input type="number" name="h_viol[<?php echo $i; ?>][<?php echo $code; ?>][points]" value="<?php echo esc_attr($v['points']); ?>" class="sm-input" style="padding:5px; font-size:12px;">
-                                                <input type="text" name="h_viol[<?php echo $i; ?>][<?php echo $code; ?>][action]" value="<?php echo esc_attr($v['action']); ?>" class="sm-input" style="padding:5px; font-size:12px;">
-                                                <button type="button" onclick="this.parentElement.remove()" class="sm-btn sm-btn-outline" style="padding:0; width:28px; height:28px; color:red;">×</button>
-                                            </div>
-                                        <?php endforeach; ?>
-                                        <button type="button" class="sm-btn sm-btn-outline" style="font-size:11px; margin-top:10px;" onclick="addViolationRow(<?php echo $i; ?>, this)">+ إضافة بند جديد للمستوى <?php echo $i; ?></button>
-                                    </div>
-                                <?php endfor; ?>
-
-                                <button type="submit" name="sm_save_hierarchical_violations" class="sm-btn" style="width:auto; margin-top:10px;">حفظ اللائحة بالكامل</button>
-                            </form>
-                            <script>
-                            function addViolationRow(level, btn) {
-                                const container = btn.parentElement;
-                                const div = document.createElement('div');
-                                div.style = "display:grid; grid-template-columns: 80px 1fr 60px 1fr auto; gap:10px; margin-bottom:8px;";
-                                const id = 'new_' + Math.random().toString(36).substr(2, 5);
-                                div.innerHTML = `
-                                    <input type="text" name="h_viol[${level}][${id}][code]" placeholder="كود" class="sm-input" style="padding:5px; font-size:12px;">
-                                    <input type="text" name="h_viol[${level}][${id}][name]" placeholder="الوصف" class="sm-input" style="padding:5px; font-size:12px;">
-                                    <input type="number" name="h_viol[${level}][${id}][points]" value="0" class="sm-input" style="padding:5px; font-size:12px;">
-                                    <input type="text" name="h_viol[${level}][${id}][action]" placeholder="الإجراء" class="sm-input" style="padding:5px; font-size:12px;">
-                                    <button type="button" onclick="this.parentElement.remove()" class="sm-btn sm-btn-outline" style="padding:0; width:28px; height:28px; color:red;">×</button>
-                                `;
-                                btn.before(div);
-                            }
-                            </script>
-                        </div>
                         <div id="user-settings" class="sm-internal-tab" style="display:none;">
                             <?php include SM_PLUGIN_DIR . 'templates/admin-users-view.php'; ?>
-                        </div>
-                        <div id="syndicate-structure" class="sm-internal-tab" style="display:none;">
-                            <?php
-                            $academic = SM_Settings::get_academic_structure();
-                            $db_structure = SM_Settings::get_sections_from_db();
-                            ?>
-                            <form method="post" id="sm-academic-structure-form">
-                                <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
-
-                                <h4 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">التقويم الأكاديمي (UAE Framework)</h4>
-                                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom:30px;">
-                                    <?php for($i=1; $i<=3; $i++): ?>
-                                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                                        <div style="font-weight:700; margin-bottom:10px; color:var(--sm-primary-color);">الفصل الدراسي <?php echo $i; ?></div>
-                                        <div class="sm-form-group">
-                                            <label class="sm-label" style="font-size:11px;">تاريخ البدء:</label>
-                                            <input type="date" name="term_dates[term<?php echo $i; ?>][start]" value="<?php echo esc_attr($academic['term_dates']["term$i"]['start'] ?? ''); ?>" class="sm-input">
-                                        </div>
-                                        <div class="sm-form-group">
-                                            <label class="sm-label" style="font-size:11px;">تاريخ الانتهاء:</label>
-                                            <input type="date" name="term_dates[term<?php echo $i; ?>][end]" value="<?php echo esc_attr($academic['term_dates']["term$i"]['end'] ?? ''); ?>" class="sm-input">
-                                        </div>
-                                    </div>
-                                    <?php endfor; ?>
-                                </div>
-
-                                <h4 style="border-bottom:1px solid #eee; padding-bottom:10px;">المراحل التعليمية</h4>
-                                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom:30px;">
-                                    <?php foreach($academic['academic_stages'] as $index => $stage): ?>
-                                    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                                        <div class="sm-form-group">
-                                            <label class="sm-label">اسم المرحلة:</label>
-                                            <input type="text" name="academic_stages[<?php echo $index; ?>][name]" value="<?php echo esc_attr($stage['name']); ?>" class="sm-input">
-                                        </div>
-                                        <div style="display:flex; gap:10px;">
-                                            <div class="sm-form-group" style="flex:1;">
-                                                <label class="sm-label">من صف:</label>
-                                                <input type="number" name="academic_stages[<?php echo $index; ?>][start]" value="<?php echo esc_attr($stage['start']); ?>" class="sm-input">
-                                            </div>
-                                            <div class="sm-form-group" style="flex:1;">
-                                                <label class="sm-label">إلى صف:</label>
-                                                <input type="number" name="academic_stages[<?php echo $index; ?>][end]" value="<?php echo esc_attr($stage['end']); ?>" class="sm-input">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-
-                                <h4 style="border-bottom:1px solid #eee; padding-bottom:10px;">إدارة الصفوف والشعب (تلقائي)</h4>
-                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px; margin-bottom:30px;">
-                                    <div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
-                                        <div class="sm-form-group">
-                                            <label class="sm-label">إجمالي عدد الصفوف:</label>
-                                            <input type="number" name="grades_count" value="<?php echo esc_attr($academic['grades_count']); ?>" class="sm-input" min="1" max="15">
-                                        </div>
-                                        <div class="sm-form-group">
-                                            <label class="sm-label">الصفوف النشطة:</label>
-                                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; background:#f8fafc; padding:10px; border-radius:8px;">
-                                                <?php for($i=1; $i<=$academic['grades_count']; $i++): ?>
-                                                <label style="font-size:12px; display:flex; align-items:center; gap:5px;">
-                                                    <input type="checkbox" name="active_grades[]" value="<?php echo $i; ?>" <?php checked(in_array($i, $academic['active_grades'] ?? [])); ?>> صف <?php echo $i; ?>
-                                                </label>
-                                                <?php endfor; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; grid-column: span 2;">
-                                        <label class="sm-label">الشعب المسجلة لكل صف (تؤخذ من بيانات الأعضاء):</label>
-                                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; background:#f8fafc; padding:15px; border-radius:8px; max-height: 400px; overflow-y: auto;">
-                                            <?php for($i=1; $i<=$academic['grades_count']; $i++):
-                                                $sections = $db_structure[$i] ?? array();
-                                            ?>
-                                            <div style="border:1px solid #e2e8f0; padding:10px; border-radius:6px; background:white;">
-                                                <div style="font-weight:700; margin-bottom:8px; font-size:12px; border-bottom:1px solid #eee; padding-bottom:5px;">الصف <?php echo $i; ?></div>
-                                                <div style="font-size:11px; color:var(--sm-text-gray);">عدد الشعب: <strong><?php echo count($sections); ?></strong></div>
-                                                <div style="font-size:11px; color:var(--sm-text-gray); margin-top:5px;">الرموز: <span style="color:var(--sm-primary-color); font-weight:700;"><?php echo !empty($sections) ? implode(', ', $sections) : '---'; ?></span></div>
-                                            </div>
-                                            <?php endfor; ?>
-                                        </div>
-                                        <p style="font-size:11px; color:#718096; margin-top:10px;">ملاحظة: لا يمكن تعديل الشعب يدوياً، يتم تحديثها تلقائياً عند إضافة أو استيراد الأعضاء.</p>
-                                    </div>
-                                </div>
-
-                                <div style="background:#f0fff4; border:1px solid #c6f6d5; border-radius:8px; padding:15px; margin-bottom:25px;">
-                                    <p style="margin:0; font-size:13px; color:#2f855a; font-weight:700;">💡 نظام التسمية الموحد:</p>
-                                    <ul style="margin:10px 0 0 0; font-size:12px; color:#276749;">
-                                        <li>التنسيق الكامل: <strong>الصف 12 شعبة أ</strong></li>
-                                        <li>التنسيق المختصر: <strong>12 أ</strong></li>
-                                    </ul>
-                                </div>
-
-                                <button type="submit" name="sm_save_academic_structure" class="sm-btn" style="width:auto; padding:0 40px; height:45px;">حفظ الهيكل المدرسي</button>
-                            </form>
                         </div>
 
                         <div id="backup-settings" class="sm-internal-tab" style="display:none;">
@@ -901,7 +654,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                             <?php $ex_nonce = wp_create_nonce('sm_export_action'); ?>
                                             <input type="hidden" name="nonce" value="<?php echo $ex_nonce; ?>">
                                             <div class="sm-form-group">
-                                                <input type="text" name="member_code" class="sm-input" placeholder="أدخل كود العضو (مثال: ST00001)" required style="font-size:11px;">
+                                                <input type="text" name="member_code" class="sm-input" placeholder="أدخل كود العضو (مثال: MB00001)" required style="font-size:11px;">
                                             </div>
                                             <button type="submit" class="sm-btn" style="background:#3182ce; width:auto; font-size:11px;">تصدير سجلات العضو</button>
                                         </form>

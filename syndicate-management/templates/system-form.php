@@ -16,10 +16,8 @@
     <div id="member-intelligence-panel" style="display:none; background: #fdfdfd; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 30px; border-right: 4px solid var(--sm-primary-color);">
         <h4 style="margin-top:0; color:var(--sm-primary-color);">تحليل سلوك العضو الذكي</h4>
         <div id="intel-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
-            <!-- Content loaded via AJAX -->
         </div>
         <div id="intel-history" style="margin-top: 15px; font-size: 0.85em; color: #666; border-top: 1px dashed #eee; padding-top: 10px;">
-            <!-- Latest violations -->
         </div>
     </div>
 
@@ -34,60 +32,44 @@
                 <input type="text" id="member_unified_search" class="sm-input" placeholder="اكتب اسم العضو أو الكود..." autocomplete="off">
             </div>
             <div id="search_results_dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid var(--sm-border-color); border-radius:0 0 8px 8px; z-index:1000; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); max-height:250px; overflow-y:auto;">
-                <!-- Results via AJAX -->
             </div>
             <div id="selected_members_container" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
-                <!-- Selected members tags -->
             </div>
             <input type="hidden" name="member_ids" id="selected_member_ids" required>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
             <div class="sm-form-group" style="margin-bottom:0;">
-                <label class="sm-label">درجة المخالفة (المستوى):</label>
-                <select name="degree" id="violation_degree" class="sm-select" onchange="updateHierarchicalViolations()" required>
-                    <option value="">-- اختر الدرجة --</option>
-                    <option value="1">المستوى الأول (بسيطة)</option>
-                    <option value="2">المستوى الثاني (متوسطة)</option>
-                    <option value="3">المستوى الثالث (جسيمة)</option>
-                    <option value="4">المستوى الرابع (شديدة الخطورة)</option>
+                <label class="sm-label">نوع المخالفة:</label>
+                <select name="type" class="sm-select" required>
+                    <option value="">-- اختر النوع --</option>
+                    <?php foreach (SM_Settings::get_violation_types() as $k => $v): ?>
+                        <option value="<?php echo esc_attr($k); ?>"><?php echo esc_html($v); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
             <div class="sm-form-group" style="margin-bottom:0;">
-                <label class="sm-label">البند القانوني / نوع المخالفة:</label>
-                <select name="violation_code" id="violation_code_select" class="sm-select" onchange="onViolationSelected()" required disabled>
-                    <option value="">-- اختر البند --</option>
+                <label class="sm-label">الحدة:</label>
+                <select name="severity" id="violation_severity" class="sm-select" onchange="updateSuggestions(this.value)" required>
+                    <?php foreach (SM_Settings::get_severities() as $k => $v): ?>
+                        <option value="<?php echo esc_attr($k); ?>"><?php echo esc_html($v); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
             <div class="sm-form-group">
-                <label class="sm-label">تصنيف الموقف:</label>
-                <select name="classification" class="sm-select">
-                    <option value="general">عام</option>
-                    <option value="inside_class">داخل الفصل</option>
-                    <option value="yard">في الساحة</option>
-                    <option value="labs">في المختبرات</option>
-                    <option value="bus">الحافلة النقابية</option>
-                </select>
-            </div>
-
-            <div class="sm-form-group">
                 <label class="sm-label">النقاط المستحقة:</label>
                 <input type="number" name="points" id="violation_points" class="sm-input" value="0">
             </div>
-
-            <input type="hidden" name="severity" id="violation_severity" value="low">
-            <input type="hidden" name="type" id="hidden_violation_type">
         </div>
 
         <div class="sm-form-group">
-            <label class="sm-label">الإجراء المتخذ (اقتراحات ذكية):</label>
+            <label class="sm-label">الإجراء المتخذ (اقتراحات):</label>
             <input type="text" name="action_taken" id="action_taken" class="sm-input" placeholder="مثال: تنبيه شفوي، استدعاء ولي أمر...">
             <div id="action-suggestions" style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap;">
-                <!-- Suggestions based on severity -->
             </div>
         </div>
 
@@ -101,48 +83,6 @@
 </div>
 
 <script>
-const hViolations = <?php echo json_encode(SM_Settings::get_hierarchical_violations()); ?>;
-
-function updateHierarchicalViolations() {
-    const degree = document.getElementById('violation_degree').value;
-    const select = document.getElementById('violation_code_select');
-
-    select.innerHTML = '<option value="">-- اختر البند --</option>';
-    if (!degree || !hViolations[degree]) {
-        select.disabled = true;
-        return;
-    }
-
-    Object.keys(hViolations[degree]).forEach(code => {
-        const v = hViolations[degree][code];
-        const opt = document.createElement('option');
-        opt.value = code;
-        opt.innerText = code + ' - ' + v.name;
-        select.appendChild(opt);
-    });
-    select.disabled = false;
-}
-
-function onViolationSelected() {
-    const degree = document.getElementById('violation_degree').value;
-    const code = document.getElementById('violation_code_select').value;
-
-    if (!degree || !code || !hViolations[degree][code]) return;
-
-    const v = hViolations[degree][code];
-    document.getElementById('violation_points').value = v.points;
-    document.getElementById('action_taken').value = v.action;
-    document.getElementById('hidden_violation_type').value = v.name;
-
-    // Auto severity
-    const sev = document.getElementById('violation_severity');
-    if (degree == 1) sev.value = 'low';
-    else if (degree == 2) sev.value = 'medium';
-    else sev.value = 'high';
-
-    if (typeof updateSuggestions === 'function') updateSuggestions(sev.value);
-}
-
 (function() {
 <?php $suggested = SM_Settings::get_suggested_actions(); ?>
 const severityActions = {
@@ -205,7 +145,6 @@ document.getElementById('member_unified_search').addEventListener('input', funct
                 } else {
                     results.forEach(s => {
                         const div = document.createElement('div');
-                        div.className = 'sm-search-result-item';
                         div.style = "padding:12px 15px; border-bottom:1px solid #eee; cursor:pointer; display:flex; align-items:center; gap:10px; transition: background 0.2s;";
                         div.onmouseover = () => div.style.background = '#f8fafc';
                         div.onmouseout = () => div.style.background = '#fff';
@@ -230,40 +169,29 @@ let selectedMembers = [];
 
 function selectMember(s) {
     if (selectedMembers.find(x => x.id === s.id)) return;
-    
     selectedMembers.push(s);
     renderSelectedMembers();
     document.getElementById('member_unified_search').value = '';
     document.getElementById('search_results_dropdown').style.display = 'none';
-    
-    if (selectedMembers.length === 1) {
-        fetchIntelligence(s.id);
-    } else {
-        document.getElementById('member-intelligence-panel').style.display = 'none';
-    }
+    if (selectedMembers.length === 1) fetchIntelligence(s.id);
+    else document.getElementById('member-intelligence-panel').style.display = 'none';
 }
 
 function renderSelectedMembers() {
     const container = document.getElementById('selected_members_container');
     container.innerHTML = '';
     const ids = [];
-    
     selectedMembers.forEach(s => {
         ids.push(s.id);
         const tag = document.createElement('div');
         tag.style = "background:#f0f7ff; padding:5px 12px; border-radius:20px; border:1px solid #c3dafe; display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--sm-primary-color);";
-        tag.innerHTML = `
-            <span>${s.name}</span>
-            <span onclick="removeMember(${s.id})" style="cursor:pointer; color:#e53e3e;">✖</span>
-        `;
+        tag.innerHTML = `<span>${s.name}</span><span onclick="removeMember(${s.id})" style="cursor:pointer; color:#e53e3e;">✖</span>`;
         container.appendChild(tag);
     });
-    
     document.getElementById('selected_member_ids').value = ids.join(',');
 }
 
 function removeMember(id) {
-    if (!confirm('هل أنت متأكد من إزالة هذا العضو من القائمة؟')) return;
     selectedMembers = selectedMembers.filter(x => x.id !== id);
     renderSelectedMembers();
     if (selectedMembers.length === 1) fetchIntelligence(selectedMembers[0].id);
@@ -285,19 +213,14 @@ document.getElementById('start-scanner').addEventListener('click', function() {
     function onScanSuccess(decodedText) {
         html5QrCode.stop().then(() => {
             reader.style.display = 'none';
-            
             const formData = new FormData();
             formData.append('action', 'sm_get_member');
             formData.append('code', decodedText);
-
             fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
             .then(r => r.json())
             .then(res => {
-                if (res.success) {
-                    selectMember(res.data);
-                } else {
-                    alert('عذراً، كود غير معروف: ' + decodedText);
-                }
+                if (res.success) selectMember(res.data);
+                else alert('عذراً، كود غير معروف: ' + decodedText);
             });
         });
     }
@@ -308,92 +231,54 @@ function fetchIntelligence(memberId) {
         document.getElementById('member-intelligence-panel').style.display = 'none';
         return;
     }
-
     const formData = new FormData();
     formData.append('action', 'sm_get_member_intelligence');
     formData.append('member_id', memberId);
-
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
             const data = res.data;
             document.getElementById('member-intelligence-panel').style.display = 'block';
-            
             let photoHtml = data.photo_url ? `<img src="${data.photo_url}" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:10px; border:2px solid var(--sm-primary-color);">` : '';
-
             let intelHtml = `
                 <div style="grid-column: 1 / -1; display:flex; align-items:center; gap:15px; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                    ${photoHtml}
-                    <h4 style="margin:0;">تحليل بيانات العضو</h4>
+                    ${photoHtml}<h4 style="margin:0;">تحليل بيانات العضو</h4>
                 </div>
                 <div><strong>إجمالي المخالفات:</strong> <span style="color:red;">${data.stats.total}</span></div>
                 <div><strong>النوع الأكثر تكراراً:</strong> <span>${data.labels[data.stats.frequent_type] || 'لا يوجد'}</span></div>
                 <div><strong>آخر إجراء متخذ:</strong> <span>${data.stats.last_action || 'لا يوجد'}</span></div>
             `;
             document.getElementById('intel-content').innerHTML = intelHtml;
-
             let historyHtml = '<strong>آخر 3 ملاحظات:</strong> ';
             if (data.recent.length === 0) historyHtml += 'لا يوجد سجل سابق.';
             data.recent.forEach(r => {
                 historyHtml += `<span style="margin-left:15px;">• ${r.created_at.split(' ')[0]}: ${data.labels[r.type]} (${r.severity})</span>`;
             });
             document.getElementById('intel-history').innerHTML = historyHtml;
-
-            // Smart Auto-select based on history
-            if (data.stats.high_severity_count > 2) {
-                const sEl = document.getElementById('violation_severity');
-                if (sEl) {
-                    sEl.value = 'high';
-                    updateSuggestions('high');
-                }
-            }
         }
     });
 }
 
-// Handle Form Submission via AJAX
 document.getElementById('violation-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');
-    
     btn.innerText = 'جاري الحفظ...';
     btn.disabled = true;
-
     const formData = new FormData(this);
     formData.append('action', 'sm_save_record_ajax');
-
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            // Large Centered Success Notification
             const overlay = document.createElement('div');
-            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:10002; animation: fadeIn 0.3s;";
-            overlay.innerHTML = `
-                <div style="background:white; padding:50px 80px; border-radius:20px; text-align:center; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
-                    <div style="font-size:60px; color:#38a169; margin-bottom:20px;">✅</div>
-                    <h2 style="margin:0; color:#1a202c; font-weight:900;">تم تسجيل المخالفة بنجاح</h2>
-                    <p style="margin-top:10px; color:#718096; font-weight:700;">يتم إرسال التنبيهات الآن وإغلاق النافذة...</p>
-                </div>
-            `;
+            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:10002;";
+            overlay.innerHTML = `<div style="background:white; padding:50px 80px; border-radius:20px; text-align:center;"><div style="font-size:60px; color:#38a169; margin-bottom:20px;">✅</div><h2 style="margin:0;">تم تسجيل المخالفة بنجاح</h2><p>يتم إرسال التنبيهات الآن وإغلاق النافذة...</p></div>`;
             document.body.appendChild(overlay);
-
-            setTimeout(() => {
-                overlay.remove();
-                if (typeof smCloseViolationModal === 'function') {
-                    smCloseViolationModal();
-                } else if (document.getElementById('sm-global-violation-modal')) {
-                    document.getElementById('sm-global-violation-modal').style.display = 'none';
-                }
-                location.reload(); // To update the dashboard
-            }, 2000);
-
-            this.reset();
-            clearMemberSelection();
+            setTimeout(() => { overlay.remove(); location.reload(); }, 2000);
         } else {
             smShowNotification('خطأ: ' + (res.data || 'فشل في حفظ السجل'), true);
-            btn.innerText = 'حفظ وإرسال تنبيه فوري';
+            btn.innerText = 'حفظ وتسجيل المخالفة الآن';
             btn.disabled = false;
         }
     });
