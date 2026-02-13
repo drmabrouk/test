@@ -39,14 +39,17 @@ class SM_Notifications {
 
         if ($count >= 3) {
             $member = SM_DB::get_member_by_id($member_id);
+            if (!$member) return;
+
             $admins = get_users(array('role' => 'sm_officer'));
+            if (empty($admins)) return;
+
             $emails = array_map(function($u) { return $u->user_email; }, $admins);
             
             $subject = "تنبيه: سلوك متكرر للعضو " . $member->name;
             $message = "تم رصد $count مخالفات للعضو خلال الأسبوع الأخير. يرجى مراجعة ملف العضو واتخاذ الإجراء اللازم.";
             
             wp_mail($emails, $subject, $message);
-            // In a real scenario, integrate WhatsApp API here
         }
     }
 
