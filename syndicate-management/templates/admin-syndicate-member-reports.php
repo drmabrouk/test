@@ -7,7 +7,7 @@
 
     <div style="background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 15px; margin-bottom: 25px; color: #c53030; font-size: 0.9em; display: flex; align-items: center; gap: 10px;">
         <span class="dashicons dashicons-warning"></span>
-        <span>هذه البلاغات تم تسجيلها بواسطة أعضاء النقابة وهي بانتظار اعتماد الإدارة أو مسؤول الانضباط لاتخاذ القرار النهائي.</span>
+        <span>هذه البلاغات تم تسجيلها بواسطة أعضاء النقابة وهي بانتظار اعتماد الإدارة أو مسؤول النقابة لاتخاذ القرار النهائي.</span>
     </div>
 
     <div class="sm-table-container">

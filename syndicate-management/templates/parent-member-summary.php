@@ -43,12 +43,10 @@
 </style>
 
 <?php
-// Check for active surveys for current user role
 $user_role = !empty(wp_get_current_user()->roles) ? wp_get_current_user()->roles[0] : '';
 $active_surveys = SM_DB::get_surveys($user_role);
 
 foreach ($active_surveys as $survey):
-    // Check if already responded
     global $wpdb;
     $responded = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d AND user_id = %d", $survey->id, get_current_user_id()));
     if ($responded) continue;
@@ -61,7 +59,6 @@ foreach ($active_surveys as $survey):
     <button class="sm-btn" style="background: #d97706; width: auto;" onclick="smOpenSurveyModal(<?php echo $survey->id; ?>)">المشاركة الآن</button>
 </div>
 
-<!-- Survey Participation Modal -->
 <div id="survey-participation-modal-<?php echo $survey->id; ?>" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 700px;">
         <div class="sm-modal-header">
@@ -122,7 +119,7 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
     formData.append('action', 'sm_submit_survey_response');
     formData.append('survey_id', surveyId);
     formData.append('responses', JSON.stringify(responses));
-    formData.append('nonce', '<?php echo wp_create_nonce("sm_attendance_action"); ?>');
+    formData.append('nonce', '<?php echo wp_create_nonce("sm_survey_action"); ?>');
 
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
     .then(r => r.json())
@@ -212,49 +209,6 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
 </div>
 
 <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); margin-bottom: 30px; grid-column: span 2;">
-    <h3 style="margin-top:0; border-bottom: 2px solid var(--sm-primary-color); padding-bottom: 10px;">الجدول الدراسي الأسبوعي</h3>
-    <?php
-    $timetable = SM_DB::get_timetable($member->class_name, $member->section);
-    if (empty($timetable)):
-        echo '<p style="text-align:center; padding:20px; color:#718096;">لم يتم إعداد الجدول الدراسي لهذا الصف بعد.</p>';
-    else:
-        $grid = array();
-        foreach ($timetable as $t) $grid[$t->day][$t->period] = $t;
-        $days = array('sun' => 'الأحد', 'mon' => 'الاثنين', 'tue' => 'الثلاثاء', 'wed' => 'الأربعاء', 'thu' => 'الخميس');
-    ?>
-    <div class="sm-table-container" style="overflow-x: auto;">
-        <table class="sm-table" style="min-width: 800px; box-shadow: none;">
-            <thead>
-                <tr>
-                    <th style="width: 100px;">اليوم</th>
-                    <?php for($i=1; $i<=8; $i++) echo "<th>الحصة $i</th>"; ?>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($days as $dk => $dl): ?>
-                <tr>
-                    <td style="font-weight: 800; background: #f8fafc;"><?php echo $dl; ?></td>
-                    <?php for($i=1; $i<=8; $i++):
-                        $entry = $grid[$dk][$i] ?? null;
-                    ?>
-                    <td style="padding: 10px; font-size: 11px; text-align: center;">
-                        <?php if ($entry): ?>
-                            <div style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($entry->subject_name); ?></div>
-                            <div style="color: #718096; margin-top: 3px;"><?php echo esc_html($entry->officer_name); ?></div>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
-                    </td>
-                    <?php endfor; ?>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <?php endif; ?>
-</div>
-
-<div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); margin-bottom: 30px; grid-column: span 2;">
     <h3 style="margin-top:0; border-bottom: 2px solid var(--sm-secondary-color); padding-bottom: 10px;">أعضاء النقابة المكلفون بالصف</h3>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 15px;">
         <?php
@@ -276,13 +230,6 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
         <?php endforeach; endif; ?>
     </div>
 </div>
-
-    <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); grid-column: span 2; margin-bottom: 30px;">
-        <h3 style="margin-top:0; border-bottom: 2px solid #3498db; padding-bottom: 10px;">النتائج الأكاديمية</h3>
-        <div id="member-grades-display">
-            <div style="text-align: center; padding: 20px; color: var(--sm-text-gray);">جاري تحميل النتائج...</div>
-        </div>
-    </div>
 
 <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color);">
     <h3 style="margin-top:0;">توزيع المخالفات حسب النوع</h3>
@@ -339,35 +286,10 @@ function sendMemberInquiry(supervisorId) {
             }
         });
     };
-    const loadGradesForDashboard = function() {
-        const container = document.getElementById('member-grades-display');
-        if (!container) return;
 
-        const formData = new FormData();
-        formData.append('action', 'sm_get_member_grades_ajax');
-        formData.append('member_id', <?php echo $member->id; ?>);
-
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                if (res.data.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; padding:20px; color:#718096;">لا يوجد نتائج معتمدة حالياً.</p>';
-                } else {
-                    let html = '<table class="sm-table" style="box-shadow:none; border:none;"><thead><tr><th>المادة</th><th>الفصل</th><th>الدرجة</th></tr></thead><tbody>';
-                    res.data.forEach(g => {
-                        html += `<tr><td style="font-weight:700;">${g.subject}</td><td>${g.term}</td><td><span class="sm-badge" style="background:var(--sm-bg-light); color:var(--sm-primary-color); font-size:1.1em;">${g.grade_val}</span></td></tr>`;
-                    });
-                    html += '</tbody></table>';
-                    container.innerHTML = html;
-                }
-            }
-        });
-    };
-
-    if (document.readyState === 'complete') { initParentChart(); loadGradesForDashboard(); }
+    if (document.readyState === 'complete') { initParentChart(); }
     else {
-        window.addEventListener('load', () => { initParentChart(); loadGradesForDashboard(); });
+        window.addEventListener('load', () => { initParentChart(); });
     }
 })();
 

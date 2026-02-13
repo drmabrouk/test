@@ -16,14 +16,13 @@ class SM_DB {
                 $is_syndicate_member = in_array('sm_syndicate_member', (array) $user->roles);
 
                 if ($is_officer) {
-                    // Officers see all
                 } elseif ($is_syndicate_member) {
                     $assigned_sections = get_user_meta($user_id, 'sm_assigned_sections', true) ?: array();
                     $supervised_classes = get_user_meta($user_id, 'sm_supervised_classes', true) ?: array();
                     $all_sections = array_unique(array_merge($assigned_sections, $supervised_classes));
 
                     if (empty($all_sections)) {
-                        return array(); // No access
+                        return array();
                     }
 
                     $section_conditions = array();
@@ -96,6 +95,25 @@ class SM_DB {
             $code = 'MB' . str_pad($next_num, 5, '0', STR_PAD_LEFT);
         }
 
+        // Auto-create WordPress User for the Member
+        if (empty($parent_user_id)) {
+            $temp_pass = '';
+            for($i=0; $i<10; $i++) $temp_pass .= rand(0,9);
+
+            $wp_user_id = wp_insert_user(array(
+                'user_login' => $code,
+                'user_email' => $email ?: $code . '@syndicate.local',
+                'display_name' => $name,
+                'user_pass' => $temp_pass,
+                'role' => 'sm_member'
+            ));
+
+            if (!is_wp_error($wp_user_id)) {
+                $parent_user_id = $wp_user_id;
+                update_user_meta($wp_user_id, 'sm_temp_pass', $temp_pass);
+            }
+        }
+
         $data = array(
             'name' => $name,
             'email' => $email,
@@ -149,16 +167,15 @@ class SM_DB {
     public static function delete_member($id) {
         global $wpdb;
 
-        // Log for rollback before deletion
         $member = self::get_member_by_id($id);
         if ($member) {
             SM_Logger::log('حذف عضو (مع إمكانية الاستعادة)', 'ROLLBACK_DATA:' . json_encode(['table' => 'members', 'data' => (array)$member]));
+            if ($member->parent_user_id) {
+                wp_delete_user($member->parent_user_id);
+            }
         }
 
         $wpdb->delete($wpdb->prefix . 'sm_records', array('member_id' => $id));
-        $wpdb->delete($wpdb->prefix . 'sm_attendance', array('member_id' => $id));
-        $wpdb->delete($wpdb->prefix . 'sm_grades', array('member_id' => $id));
-        $wpdb->delete($wpdb->prefix . 'sm_clinic', array('member_id' => $id));
         return $wpdb->delete($wpdb->prefix . 'sm_members', array('id' => $id));
     }
 
@@ -176,7 +193,6 @@ class SM_DB {
         return ($max ? intval($max) : 0) + 1;
     }
 
-    // Records (Violations)
     public static function get_records($filters = array()) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_records';
@@ -197,7 +213,6 @@ class SM_DB {
             $user = get_userdata($user_id);
             if ($user && !in_array('administrator', (array)$user->roles) && !current_user_can('manage_options')) {
                 if (in_array('sm_officer', (array)$user->roles)) {
-                    // Principal sees all
                 } else {
                     $assigned_sections = get_user_meta($user_id, 'sm_assigned_sections', true) ?: array();
                     $supervised_classes = get_user_meta($user_id, 'sm_supervised_classes', true) ?: array();
@@ -330,7 +345,6 @@ class SM_DB {
         return $wpdb->delete($wpdb->prefix . 'sm_records', array('id' => $id));
     }
 
-    // Messages
     public static function send_message($sender_id, $receiver_id, $message, $member_id = null) {
         global $wpdb;
         return $wpdb->insert($wpdb->prefix . 'sm_messages', array(
@@ -355,7 +369,6 @@ class SM_DB {
         ));
     }
 
-    // Statistics
     public static function get_statistics($filters = array()) {
         global $wpdb;
         $stats = array();
@@ -368,7 +381,6 @@ class SM_DB {
             $user = get_userdata($user_id);
             if ($user && !in_array('administrator', (array)$user->roles) && !current_user_can('manage_options')) {
                 if (in_array('sm_officer', (array)$user->roles)) {
-                    // Principal sees all
                 } else {
                     $assigned_sections = get_user_meta($user_id, 'sm_assigned_sections', true) ?: array();
                     $supervised_classes = get_user_meta($user_id, 'sm_supervised_classes', true) ?: array();
@@ -383,7 +395,7 @@ class SM_DB {
                         foreach ($all_sections as $sec) {
                             $parts = explode('|', $sec);
                             if (count($parts) == 2) {
-                                $sec_cond[] = "(id IN (SELECT id FROM $stu_table WHERE class_name = %s AND section = %s))";
+                                $sec_cond[] = "(member_id IN (SELECT id FROM $stu_table WHERE class_name = %s AND section = %s))";
                                 $params[] = $parts[0];
                                 $params[] = $parts[1];
                             }
@@ -395,12 +407,31 @@ class SM_DB {
             }
         }
 
-        $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members" . str_replace('officer_id', 'officer_id', $where)); // members count doesn't have officer_id in table yet, might need join
-        // Actually for simplicity let's re-run counts with proper joins if needed.
+        $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members");
+        $stats['total_officers'] = count(get_users(array('role' => 'sm_syndicate_member'))) + count(get_users(array('role' => 'sm_officer')));
+
+        $stats['violations_today'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records " . $where . " AND DATE(created_at) = CURDATE()", $params));
+        $stats['total_actions'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records " . $where . " AND action_taken != ''", $params));
 
         $stats['total_records'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records" . $where, $params));
         $stats['total_points'] = $wpdb->get_var($wpdb->prepare("SELECT SUM(points) FROM {$wpdb->prefix}sm_records" . $where, $params));
         $stats['pending_reports'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records" . $where . " AND status = 'pending'", $params));
+
+        // Trends (last 30 days)
+        $stats['trends'] = $wpdb->get_results($wpdb->prepare("SELECT DATE(created_at) as date, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(created_at) ORDER BY date ASC", $params));
+
+        // By Type
+        $stats['by_type'] = $wpdb->get_results($wpdb->prepare("SELECT type, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY type", $params));
+
+        // By Severity
+        $stats['by_severity'] = $wpdb->get_results($wpdb->prepare("SELECT severity, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY severity", $params));
+
+        // Top Members
+        $stu_table = $wpdb->prefix . 'sm_members';
+        $stats['top_members'] = $wpdb->get_results($wpdb->prepare("SELECT s.name, COUNT(r.id) as count FROM {$wpdb->prefix}sm_records r JOIN $stu_table s ON r.member_id = s.id " . str_replace('officer_id', 'r.officer_id', $where) . " GROUP BY r.member_id ORDER BY count DESC LIMIT 5", $params));
+
+        // By Degree
+        $stats['by_degree'] = $wpdb->get_results($wpdb->prepare("SELECT degree, COUNT(*) as count FROM {$wpdb->prefix}sm_records " . $where . " GROUP BY degree", $params));
 
         return $stats;
     }
@@ -415,125 +446,24 @@ class SM_DB {
         $stats['last_action'] = $wpdb->get_var($wpdb->prepare("SELECT action_taken FROM {$wpdb->prefix}sm_records WHERE member_id = %d ORDER BY created_at DESC LIMIT 1", $member_id));
         $stats['frequent_type'] = $wpdb->get_var($wpdb->prepare("SELECT type FROM {$wpdb->prefix}sm_records WHERE member_id = %d GROUP BY type ORDER BY COUNT(*) DESC LIMIT 1", $member_id));
 
-        // Critical: Case File Status
         $stats['case_file'] = ($stats['points'] >= 15 || $stats['high_severity_count'] >= 2);
 
         return $stats;
     }
 
-    // Confiscated Items
-    public static function add_confiscated_item($data) {
-        global $wpdb;
-        return $wpdb->insert($wpdb->prefix . 'sm_confiscated_items', array(
-            'member_id' => intval($data['member_id']),
-            'item_name' => sanitize_text_field($data['item_name']),
-            'officer_id' => get_current_user_id(),
-            'status' => 'confiscated',
-            'confiscated_at' => current_time('mysql')
-        ));
-    }
-
-    public static function get_confiscated_items() {
-        global $wpdb;
-        return $wpdb->get_results("SELECT c.*, s.name as member_name FROM {$wpdb->prefix}sm_confiscated_items c JOIN {$wpdb->prefix}sm_members s ON c.member_id = s.id ORDER BY confiscated_at DESC");
-    }
-
-    public static function update_confiscated_item_status($id, $status) {
-        global $wpdb;
-        return $wpdb->update($wpdb->prefix . 'sm_confiscated_items', array('status' => $status), array('id' => $id));
-    }
-
-    public static function delete_confiscated_item($id) {
-        global $wpdb;
-        return $wpdb->delete($wpdb->prefix . 'sm_confiscated_items', array('id' => $id));
-    }
-
-    // Attendance
-    public static function save_attendance($member_id, $status, $date, $officer_id) {
-        global $wpdb;
-        return $wpdb->replace($wpdb->prefix . 'sm_attendance', array(
-            'member_id' => $member_id,
-            'date' => $date,
-            'status' => $status,
-            'officer_id' => $officer_id,
-            'created_at' => current_time('mysql')
-        ));
-    }
-
-    public static function get_members_attendance($class_name, $section, $date) {
-        global $wpdb;
-        $query = "SELECT s.id, s.name, s.member_code, a.status
-                  FROM {$wpdb->prefix}sm_members s
-                  LEFT JOIN {$wpdb->prefix}sm_attendance a ON s.id = a.member_id AND a.date = %s
-                  WHERE s.class_name = %s AND s.section = %s
-                  ORDER BY s.sort_order ASC, s.name ASC";
-        return $wpdb->get_results($wpdb->prepare($query, $date, $class_name, $section));
-    }
-
-    public static function get_attendance_summary($date) {
-        global $wpdb;
-        $user_id = get_current_user_id();
-        $user = get_userdata($user_id);
-        $is_admin = in_array('administrator', (array)$user->roles) || current_user_can('manage_options');
-        $is_officer = in_array('sm_officer', (array)$user->roles);
-        $is_syndicate_member = in_array('sm_syndicate_member', (array)$user->roles);
-
-        $query = "SELECT s.class_name, s.section,
-                  COUNT(s.id) as total,
-                  SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) as present,
-                  SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END) as absent,
-                  SUM(CASE WHEN a.status = 'late' THEN 1 ELSE 0 END) as late,
-                  SUM(CASE WHEN a.status = 'excused' THEN 1 ELSE 0 END) as excused
-                  FROM {$wpdb->prefix}sm_members s
-                  LEFT JOIN {$wpdb->prefix}sm_attendance a ON s.id = a.member_id AND a.date = %s
-                  WHERE 1=1";
-
-        $params = array($date);
-
-        if (!$is_admin && !$is_officer && $is_syndicate_member) {
-            $assigned_sections = get_user_meta($user_id, 'sm_assigned_sections', true) ?: array();
-            $supervised_classes = get_user_meta($user_id, 'sm_supervised_classes', true) ?: array();
-            $all_sections = array_unique(array_merge($assigned_sections, $supervised_classes));
-
-            if (!empty($all_sections)) {
-                $sec_cond = array();
-                foreach ($all_sections as $sec) {
-                    $parts = explode('|', $sec);
-                    if (count($parts) == 2) {
-                        $sec_cond[] = "(s.class_name = %s AND s.section = %s)";
-                        $params[] = $parts[0];
-                        $params[] = $parts[1];
-                    }
-                }
-                $query .= " AND (" . implode(' OR ', $sec_cond) . ")";
-            } else {
-                return array();
-            }
-        }
-
-        $query .= " GROUP BY s.class_name, s.section ORDER BY s.class_name ASC, s.section ASC";
-
-        return $wpdb->get_results($wpdb->prepare($query, $params));
-    }
-
-    // Generic Data Handling
     public static function delete_all_data() {
         global $wpdb;
         $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_members");
         $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_records");
         $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_messages");
-        $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_confiscated_items");
         $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_logs");
-        $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_attendance");
-        $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_clinic");
-        $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_grades");
         SM_Logger::log('مسح شامل للبيانات', 'تم تنفيذ أمر مسح كافة بيانات النظام');
     }
 
     public static function get_backup_data() {
         global $wpdb;
         $data = array();
-        $tables = array('members', 'records', 'messages', 'confiscated_items', 'attendance', 'clinic', 'grades');
+        $tables = array('members', 'records', 'messages');
         foreach ($tables as $t) {
             $data[$t] = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_$t", ARRAY_A);
         }
@@ -560,74 +490,6 @@ class SM_DB {
         return $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records WHERE status = 'pending'");
     }
 
-    public static function get_expired_items_count() {
-        global $wpdb;
-        // Logic for expired confiscated items (e.g., > 30 days)
-        return $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_confiscated_items WHERE status = 'confiscated' AND confiscated_at < %s", date('Y-m-d H:i:s', strtotime('-30 days'))));
-    }
-
-    // Timetable
-    public static function get_timetable($class_name, $section) {
-        global $wpdb;
-        $query = "SELECT t.*, s.name as subject_name, u.display_name as officer_name
-                  FROM {$wpdb->prefix}sm_timetable t
-                  LEFT JOIN {$wpdb->prefix}sm_subjects s ON t.subject_id = s.id
-                  LEFT JOIN {$wpdb->prefix}users u ON t.officer_id = u.ID
-                  WHERE t.class_name = %s AND t.section = %s";
-        return $wpdb->get_results($wpdb->prepare($query, $class_name, $section));
-    }
-
-    public static function update_timetable($class_name, $section, $day, $period, $subject_id, $officer_id) {
-        global $wpdb;
-        $table = "{$wpdb->prefix}sm_timetable";
-        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE class_name = %s AND section = %s AND day = %s AND period = %d", $class_name, $section, $day, $period));
-
-        $data = array(
-            'class_name' => $class_name,
-            'section' => $section,
-            'day' => $day,
-            'period' => $period,
-            'subject_id' => $subject_id,
-            'officer_id' => $officer_id
-        );
-
-        if ($exists) {
-            return $wpdb->update($table, $data, array('id' => $exists));
-        } else {
-            return $wpdb->insert($table, $data);
-        }
-    }
-
-    // Subjects
-    public static function get_subjects($grade_id = null) {
-        global $wpdb;
-        $query = "SELECT * FROM {$wpdb->prefix}sm_subjects";
-        $subjects = $wpdb->get_results($query);
-        if ($grade_id) {
-            $filtered = array();
-            foreach ($subjects as $s) {
-                $ids = explode(',', $s->grade_ids);
-                if (in_array($grade_id, $ids)) $filtered[] = $s;
-            }
-            return $filtered;
-        }
-        return $subjects;
-    }
-
-    public static function add_subject($name, $grade_ids) {
-        global $wpdb;
-        return $wpdb->insert("{$wpdb->prefix}sm_subjects", array(
-            'name' => $name,
-            'grade_ids' => implode(',', $grade_ids)
-        ));
-    }
-
-    public static function delete_subject($id) {
-        global $wpdb;
-        return $wpdb->delete("{$wpdb->prefix}sm_subjects", array('id' => $id));
-    }
-
-    // Assignments
     public static function add_assignment($data) {
         global $wpdb;
         return $wpdb->insert("{$wpdb->prefix}sm_assignments", array(
@@ -668,7 +530,6 @@ class SM_DB {
         ));
     }
 
-    // Surveys
     public static function add_survey($title, $questions, $recipients, $user_id) {
         global $wpdb;
         $wpdb->insert("{$wpdb->prefix}sm_surveys", array(

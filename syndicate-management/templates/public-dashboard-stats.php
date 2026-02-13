@@ -145,43 +145,37 @@
                 <?php wp_nonce_field('sm_record_action', 'sm_nonce'); ?>
                 <input type="hidden" name="record_id" id="edit_record_id">
                 
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
-                    <div class="sm-form-group" style="margin-bottom:0;">
-                        <label class="sm-label">درجة المخالفة (المستوى):</label>
-                        <select name="degree" id="edit_violation_degree" class="sm-select" onchange="updateEditHierarchicalViolations()" required>
-                            <option value="1">المستوى الأول (بسيطة)</option>
-                            <option value="2">المستوى الثاني (متوسطة)</option>
-                            <option value="3">المستوى الثالث (جسيمة)</option>
-                            <option value="4">المستوى الرابع (شديدة الخطورة)</option>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="sm-form-group">
+                        <label class="sm-label">نوع المخالفة:</label>
+                        <select name="type" id="edit_violation_type" class="sm-select">
+                            <?php foreach (SM_Settings::get_violation_types() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
                         </select>
                     </div>
 
-                    <div class="sm-form-group" style="margin-bottom:0;">
-                        <label class="sm-label">البند القانوني / نوع المخالفة:</label>
-                        <select name="violation_code" id="edit_violation_code_select" class="sm-select" onchange="onEditViolationSelected()" required>
-                            <option value="">-- اختر البند --</option>
+                    <div class="sm-form-group">
+                        <label class="sm-label">الحدة:</label>
+                        <select name="severity" id="edit_violation_severity" class="sm-select">
+                            <option value="low">منخفضة</option>
+                            <option value="medium">متوسطة</option>
+                            <option value="high">خطيرة</option>
                         </select>
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                     <div class="sm-form-group">
-                        <label class="sm-label">تصنيف الموقف:</label>
-                        <select name="classification" id="edit_classification" class="sm-select">
-                            <option value="general">عام</option>
-                            <option value="inside_class">داخل الفصل</option>
-                            <option value="yard">في الساحة</option>
-                            <option value="labs">في المختبرات</option>
-                            <option value="bus">الحافلة النقابية</option>
-                        </select>
-                    </div>
-
-                    <div class="sm-form-group">
                         <label class="sm-label">النقاط المستحقة:</label>
                         <input type="number" name="points" id="edit_violation_points" class="sm-input" value="0">
                     </div>
-                    <input type="hidden" name="type" id="edit_hidden_violation_type">
-                    <input type="hidden" name="severity" id="edit_violation_severity">
+                    <div class="sm-form-group">
+                        <label class="sm-label">الحالة:</label>
+                        <select name="status" id="edit_record_status" class="sm-select">
+                            <option value="pending">قيد الانتظار</option>
+                            <option value="accepted">تم الاعتماد</option>
+                            <option value="rejected">مرفوضة</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="sm-form-group">
@@ -203,52 +197,15 @@
     </div>
 
     <script>
-    const hViolations = <?php echo json_encode(SM_Settings::get_hierarchical_violations()); ?>;
-
-    function updateEditHierarchicalViolations(selectedCode = '') {
-        const degree = document.getElementById('edit_violation_degree').value;
-        const select = document.getElementById('edit_violation_code_select');
-
-        select.innerHTML = '<option value="">-- اختر البند --</option>';
-        if (!degree || !hViolations[degree]) return;
-
-        Object.keys(hViolations[degree]).forEach(code => {
-            const v = hViolations[degree][code];
-            const opt = document.createElement('option');
-            opt.value = code;
-            opt.innerText = code + ' - ' + v.name;
-            if (code === selectedCode) opt.selected = true;
-            select.appendChild(opt);
-        });
-    }
-
-    function onEditViolationSelected() {
-        const degree = document.getElementById('edit_violation_degree').value;
-        const code = document.getElementById('edit_violation_code_select').value;
-        if (!degree || !code || !hViolations[degree][code]) return;
-
-        const v = hViolations[degree][code];
-        document.getElementById('edit_violation_points').value = v.points;
-        document.getElementById('edit_action_taken').value = v.action;
-        document.getElementById('edit_hidden_violation_type').value = v.name;
-
-        const sev = document.getElementById('edit_violation_severity');
-        if (degree == 1) sev.value = 'low';
-        else if (degree == 2) sev.value = 'medium';
-        else sev.value = 'high';
-    }
-
     function editSmRecord(record) {
         document.getElementById('edit_record_id').value = record.id;
-        document.getElementById('edit_violation_degree').value = record.degree || 1;
-        document.getElementById('edit_classification').value = record.classification || 'general';
+        document.getElementById('edit_violation_type').value = record.type || 'behavior';
+        document.getElementById('edit_violation_severity').value = record.severity || 'low';
         document.getElementById('edit_violation_points').value = record.points || 0;
         document.getElementById('edit_action_taken').value = record.action_taken || '';
         document.getElementById('edit_details').value = record.details || '';
-        document.getElementById('edit_hidden_violation_type').value = record.type || '';
-        document.getElementById('edit_violation_severity').value = record.severity || 'low';
+        document.getElementById('edit_record_status').value = record.status || 'pending';
 
-        updateEditHierarchicalViolations(record.violation_code);
         document.getElementById('edit-record-modal').style.display = 'flex';
     }
     </script>
@@ -259,18 +216,17 @@
                 <tr>
                     <th>العضو</th>
                     <th>التاريخ</th>
-                    <th>الدرجة</th>
-                    <th>البند</th>
-                    <th>النقاط</th>
-                    <th>تكرار</th>
+                    <th>النوع</th>
                     <th>الحدة</th>
+                    <th>النقاط</th>
+                    <th>الحالة</th>
                     <th>الإجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($records)): ?>
                     <tr>
-                        <td colspan="6" style="padding: 60px; text-align: center; color: var(--sm-text-gray);">
+                        <td colspan="7" style="padding: 60px; text-align: center; color: var(--sm-text-gray);">
                             <span class="dashicons dashicons-clipboard" style="font-size:48px; width:48px; height:48px; margin-bottom:15px;"></span>
                             <p>لا توجد سجلات مطابقة حالياً.</p>
                         </td>
@@ -288,16 +244,18 @@
                                 <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo SM_Settings::format_grade_name($row->class_name, $row->section, 'short'); ?></div>
                             </td>
                             <td><?php echo date('Y-m-d', strtotime($row->created_at)); ?></td>
-                            <td style="text-align:center;"><span style="font-weight:900; color:var(--sm-primary-color);"><?php echo (int)$row->degree; ?></span></td>
                             <td>
-                                <div style="font-weight:600;"><?php echo esc_html($row->violation_code); ?></div>
-                                <div style="font-size:11px; color:#718096;"><?php echo $row->type; ?></div>
+                                <div style="font-weight:600;"><?php echo $type_labels[$row->type] ?? $row->type; ?></div>
                             </td>
-                            <td style="text-align:center; font-weight:800; color:#111F35;"><?php echo (int)$row->points; ?></td>
-                            <td style="text-align:center;"><span class="sm-badge" style="background:#edf2f7; color:#4a5568;"><?php echo (int)$row->recurrence_count; ?></span></td>
                             <td>
                                 <span class="sm-badge sm-badge-<?php echo esc_attr($row->severity); ?>">
                                     <?php echo $severity_labels[$row->severity] ?? $row->severity; ?>
+                                </span>
+                            </td>
+                            <td style="text-align:center; font-weight:800; color:#111F35;"><?php echo (int)$row->points; ?></td>
+                            <td>
+                                <span class="sm-badge" style="background:<?php echo $row->status === 'accepted' ? '#38a169' : ($row->status === 'rejected' ? '#e53e3e' : '#718096'); ?>;">
+                                    <?php echo $row->status === 'accepted' ? 'معتمد' : ($row->status === 'rejected' ? 'مرفوض' : 'قيد الانتظار'); ?>
                                 </span>
                             </td>
                             <td>

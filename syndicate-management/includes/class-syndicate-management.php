@@ -55,9 +55,6 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_add_member_ajax', $plugin_public, 'ajax_add_member');
         $this->loader->add_action('wp_ajax_sm_update_member_ajax', $plugin_public, 'ajax_update_member');
         $this->loader->add_action('wp_ajax_sm_delete_member_ajax', $plugin_public, 'ajax_delete_member');
-        $this->loader->add_action('wp_ajax_sm_add_confiscated_ajax', $plugin_public, 'ajax_add_confiscated');
-        $this->loader->add_action('wp_ajax_sm_update_confiscated_ajax', $plugin_public, 'ajax_update_confiscated');
-        $this->loader->add_action('wp_ajax_sm_delete_confiscated_ajax', $plugin_public, 'ajax_delete_confiscated');
         $this->loader->add_action('wp_ajax_sm_delete_record_ajax', $plugin_public, 'ajax_delete_record');
         $this->loader->add_action('wp_ajax_sm_get_counts_ajax', $plugin_public, 'ajax_get_counts');
         $this->loader->add_action('wp_ajax_sm_add_user_ajax', $plugin_public, 'ajax_add_user');
@@ -71,38 +68,16 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_rollback_log_ajax', $plugin_public, 'ajax_rollback_log');
         $this->loader->add_action('wp_ajax_sm_delete_log_ajax', $plugin_public, 'ajax_delete_log');
         $this->loader->add_action('wp_ajax_sm_delete_all_logs_ajax', $plugin_public, 'ajax_delete_all_logs');
-        $this->loader->add_action('wp_ajax_sm_get_members_attendance_ajax', $plugin_public, 'ajax_get_members_attendance');
-        $this->loader->add_action('wp_ajax_nopriv_sm_get_members_attendance_ajax', $plugin_public, 'ajax_get_members_attendance');
-        $this->loader->add_action('wp_ajax_sm_save_attendance_ajax', $plugin_public, 'ajax_save_attendance');
-        $this->loader->add_action('wp_ajax_nopriv_sm_save_attendance_ajax', $plugin_public, 'ajax_save_attendance');
-        $this->loader->add_action('wp_ajax_sm_save_attendance_batch_ajax', $plugin_public, 'ajax_save_attendance_batch');
-        $this->loader->add_action('wp_ajax_nopriv_sm_save_attendance_batch_ajax', $plugin_public, 'ajax_save_attendance_batch');
-        $this->loader->add_action('wp_ajax_sm_reset_class_code_ajax', $plugin_public, 'ajax_reset_class_code');
-        $this->loader->add_action('wp_ajax_sm_toggle_attendance_status_ajax', $plugin_public, 'ajax_toggle_attendance_status');
         $this->loader->add_action('wp_ajax_sm_add_assignment_ajax', $plugin_public, 'ajax_add_assignment');
         $this->loader->add_action('wp_ajax_sm_approve_plan_ajax', $plugin_public, 'ajax_approve_plan');
         $this->loader->add_action('wp_ajax_sm_bulk_delete_users_ajax', $plugin_public, 'ajax_bulk_delete_users');
-        $this->loader->add_action('wp_ajax_sm_add_clinic_referral', $plugin_public, 'ajax_add_clinic_referral');
-        $this->loader->add_action('wp_ajax_sm_confirm_clinic_arrival', $plugin_public, 'ajax_confirm_clinic_arrival');
-        $this->loader->add_action('wp_ajax_sm_update_clinic_record', $plugin_public, 'ajax_update_clinic_record');
-        $this->loader->add_action('wp_ajax_sm_get_clinic_reports', $plugin_public, 'ajax_get_clinic_reports');
         $this->loader->add_action('wp_ajax_sm_export_violations_csv', $plugin_public, 'ajax_export_violations_csv');
-        $this->loader->add_action('wp_ajax_sm_save_grade_ajax', $plugin_public, 'ajax_save_grade_ajax');
-        $this->loader->add_action('wp_ajax_sm_get_member_grades_ajax', $plugin_public, 'ajax_get_member_grades_ajax');
-        $this->loader->add_action('wp_ajax_sm_delete_grade_ajax', $plugin_public, 'ajax_delete_grade_ajax');
-        $this->loader->add_action('wp_ajax_sm_add_subject', $plugin_public, 'ajax_add_subject');
-        $this->loader->add_action('wp_ajax_sm_delete_subject', $plugin_public, 'ajax_delete_subject');
-        $this->loader->add_action('wp_ajax_sm_get_subjects', $plugin_public, 'ajax_get_subjects');
-        $this->loader->add_action('wp_ajax_sm_save_class_grades', $plugin_public, 'ajax_save_class_grades');
         $this->loader->add_action('wp_ajax_sm_bulk_delete_members_ajax', $plugin_public, 'ajax_bulk_delete_members');
         $this->loader->add_action('wp_ajax_sm_add_survey', $plugin_public, 'ajax_add_survey');
         $this->loader->add_action('wp_ajax_sm_cancel_survey', $plugin_public, 'ajax_cancel_survey');
         $this->loader->add_action('wp_ajax_sm_submit_survey_response', $plugin_public, 'ajax_submit_survey_response');
         $this->loader->add_action('wp_ajax_sm_get_survey_results', $plugin_public, 'ajax_get_survey_results');
         $this->loader->add_action('wp_ajax_sm_export_survey_results', $plugin_public, 'ajax_export_survey_results');
-        $this->loader->add_action('wp_ajax_sm_update_timetable_entry', $plugin_public, 'ajax_update_timetable_entry');
-        $this->loader->add_action('wp_ajax_sm_save_timetable_settings', $plugin_public, 'ajax_save_timetable_settings');
-        $this->loader->add_action('wp_ajax_sm_download_plans_zip', $plugin_public, 'ajax_download_plans_zip');
     }
 
     public function run() {
@@ -114,7 +89,7 @@ class Syndicate_Management {
         $db_version = get_option('sm_plugin_version', '1.0.0');
         if (version_compare($db_version, SM_VERSION, '<')) {
             require_once SM_PLUGIN_DIR . 'includes/class-sm-activator.php';
-            SM_Activator::activate(); // Run full activation logic including dbDelta
+            SM_Activator::activate();
             update_option('sm_plugin_version', SM_VERSION);
         }
     }
