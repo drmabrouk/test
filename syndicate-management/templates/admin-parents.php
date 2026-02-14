@@ -171,7 +171,7 @@
 
                 <div class="sm-form-group" style="text-align: right;">
                     <label class="sm-label">نص الرسالة المقترح:</label>
-                    <textarea id="call_in_msg_text" class="sm-textarea" rows="4">تحية طيبة، نرجو منكم التكرم بزيارة مكتب الإرشاد الأعضاءي بالنقابة في أقرب وقت ممكن لمناقشة أمور هامة تخص ابنكم/ابنتكم. شكراً لتعاونكم.</textarea>
+                    <textarea id="call_in_msg_text" class="sm-textarea" rows="4">تحية طيبة، نرجو منكم التكرم بزيارة مكتب الإرشاد المهني بالنقابة في أقرب وقت ممكن لمناقشة أمور هامة تخص العضو التابع لكم. شكراً لتعاونكم.</textarea>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px;">

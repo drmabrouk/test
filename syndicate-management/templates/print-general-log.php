@@ -64,7 +64,7 @@
     </table>
 
     <div style="margin-top: 50px; text-align: left; font-size: 0.9em;">
-        <p>يعتمد مسؤول النقابة: <?php echo esc_html($syndicate['syndicate_principal_name'] ?? ''); ?></p>
+        <p>يعتمد مسؤول النقابة: <?php echo esc_html($syndicate['syndicate_officer_name'] ?? ''); ?></p>
         <br>
         <p>التوقيع: ................................................</p>
     </div>

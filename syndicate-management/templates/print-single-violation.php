@@ -108,7 +108,7 @@
         </div>
 
         <div style="margin-top: 40px; font-size: 11px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
-            هذه وثيقة رسمية صادرة عن نظام إدارة السلوك المدرسي. أي كشط أو تعديل يلغيها.
+            هذه وثيقة رسمية صادرة عن نظام إدارة السلوك المهني بالنقابة. أي كشط أو تعديل يلغيها.
         </div>
     </div>
 </body>

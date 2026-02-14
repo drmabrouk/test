@@ -346,6 +346,18 @@ class SM_DB {
         ));
     }
 
+    public static function get_sent_messages($user_id) {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT m.*, u.display_name as receiver_name
+             FROM {$wpdb->prefix}sm_messages m
+             JOIN {$wpdb->prefix}users u ON m.receiver_id = u.ID
+             WHERE m.sender_id = %d
+             ORDER BY m.created_at DESC",
+            $user_id
+        ));
+    }
+
     public static function get_statistics($filters = array()) {
         global $wpdb;
         $stats = array();

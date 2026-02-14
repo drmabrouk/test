@@ -294,7 +294,7 @@
         const formData = new FormData();
         formData.append('action', 'sm_bulk_delete_users_ajax');
         formData.append('user_ids', selected.join(','));
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicate_member_action"); ?>');
+        formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicateMemberAction"); ?>');
 
         fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
         .then(r => r.json())

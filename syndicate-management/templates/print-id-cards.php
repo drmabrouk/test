@@ -75,7 +75,7 @@
                 </div>
             </div>
             <div class="footer">
-                مسؤول النقابة: <?php echo esc_html($syndicate['syndicate_principal_name'] ?? ''); ?> | <?php echo esc_html($syndicate['phone']); ?>
+                مسؤول النقابة: <?php echo esc_html($syndicate['syndicate_officer_name'] ?? ''); ?> | <?php echo esc_html($syndicate['phone']); ?>
             </div>
         </div>
         <?php endforeach; ?>

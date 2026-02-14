@@ -141,17 +141,14 @@ class SM_Public {
                     $member_id = $member ? $member->id : 0;
                     $stats = SM_DB::get_member_stats($member_id);
 
-                    // Find assigned supervisor
-                    $supervisor = null;
-                    if ($member) {
-                        $supervisors = get_users(array('role' => 'sm_syndicate_member'));
-                        foreach ($supervisors as $s) {
-                            $supervised = get_user_meta($s->ID, 'sm_supervised_classes', true);
-                            if (is_array($supervised) && in_array($member->class_name . '|' . $member->section, $supervised)) {
-                                $supervisor = $s;
-                                break;
-                            }
-                        }
+                    // Find assigned syndicate_member (Formerly Syndicate Member)
+                    $syndicate_member = null;
+                    if ($member && $member->officer_id) {
+                        $syndicate_member = get_userdata($member->officer_id);
+                    }
+                    if (!$syndicate_member) {
+                        $syndicate_members = get_users(array('role' => 'sm_syndicate_member', 'number' => 1));
+                        $syndicate_member = !empty($syndicate_members) ? $syndicate_members[0] : null;
                     }
                 } else {
                     $stats = SM_DB::get_statistics(($is_syndicate_member && !$is_admin) ? ['officer_id' => $user->ID] : []);
@@ -170,8 +167,8 @@ class SM_Public {
             case 'stats':
                 $filters = array();
                 if ($is_parent || $is_member) {
-                    $my_stu = SM_DB::get_members_by_parent($user->ID);
-                    $filters['member_id'] = isset($_GET['member_id']) ? intval($_GET['member_id']) : ($my_stu[0]->id ?? 0);
+                    $my_members_list = SM_DB::get_members_by_parent($user->ID);
+                    $filters['member_id'] = isset($_GET['member_id']) ? intval($_GET['member_id']) : ($my_members_list[0]->id ?? 0);
                 } else {
                     if (isset($_GET['member_filter'])) $filters['member_id'] = intval($_GET['member_filter']);
                     if ($is_syndicate_member && !$is_admin) $filters['officer_id'] = $user->ID;
@@ -640,7 +637,7 @@ class SM_Public {
 
     public function ajax_add_staff() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) wp_send_json_error('Security check failed');
+        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
 
         $pass = $_POST['user_pass'];
         if (empty($pass)) {
@@ -662,7 +659,7 @@ class SM_Public {
         if (is_wp_error($user_id)) wp_send_json_error($user_id->get_error_message());
 
         update_user_meta($user_id, 'sm_temp_pass', $pass);
-        update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
+        update_user_meta($user_id, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
         update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
 
         if (!empty($_POST['specialization'])) {
@@ -672,8 +669,8 @@ class SM_Public {
         if (isset($_POST['assigned'])) {
             $assigned = array_map('sanitize_text_field', $_POST['assigned']);
             if ($_POST['role'] === 'sm_syndicate_member') {
-                update_user_meta($user_id, 'sm_assigned_sections', $assigned);
-                update_user_meta($user_id, 'sm_supervised_classes', $assigned);
+                update_user_meta($user_id, 'sm_assigned_specializations', $assigned);
+                update_user_meta($user_id, 'sm_supervised_grades', $assigned);
             }
         }
 
@@ -845,7 +842,7 @@ class SM_Public {
 
     public function ajax_update_staff() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) wp_send_json_error('Security check failed');
+        if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
 
         $user_id = intval($_POST['edit_officer_id']);
         $user_data = array(
@@ -863,7 +860,7 @@ class SM_Public {
         $role = sanitize_text_field($_POST['role']);
         $u->set_role($role);
 
-        update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
+        update_user_meta($user_id, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
         update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
         update_user_meta($user_id, 'sm_account_status', sanitize_text_field($_POST['account_status']));
 
@@ -871,14 +868,14 @@ class SM_Public {
             update_user_meta($user_id, 'sm_specialization', sanitize_text_field($_POST['specialization']));
         }
 
-        delete_user_meta($user_id, 'sm_assigned_sections');
-        delete_user_meta($user_id, 'sm_supervised_classes');
+        delete_user_meta($user_id, 'sm_assigned_specializations');
+        delete_user_meta($user_id, 'sm_supervised_grades');
 
         if (isset($_POST['assigned'])) {
             $assigned = array_map('sanitize_text_field', $_POST['assigned']);
             if ($role === 'sm_syndicate_member') {
-                update_user_meta($user_id, 'sm_assigned_sections', $assigned);
-                update_user_meta($user_id, 'sm_supervised_classes', $assigned);
+                update_user_meta($user_id, 'sm_assigned_specializations', $assigned);
+                update_user_meta($user_id, 'sm_supervised_grades', $assigned);
             }
         }
 
@@ -888,7 +885,7 @@ class SM_Public {
 
     public function ajax_bulk_delete_users() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
-        if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicate_member_action')) wp_send_json_error('Security check');
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check');
 
         $ids = array_map('intval', explode(',', $_POST['user_ids']));
         require_once(ABSPATH . 'wp-admin/includes/user.php');
@@ -1045,7 +1042,7 @@ class SM_Public {
             }
         }
 
-        $query = "SELECT r.*, s.name as member_name, s.class_name, s.section, s.member_code
+        $query = "SELECT r.*, s.name as member_name, s.professional_grade, s.specialization, s.national_id
                   FROM {$wpdb->prefix}sm_records r
                   JOIN {$wpdb->prefix}sm_members s ON r.member_id = s.id
                   WHERE 1=1";
@@ -1058,7 +1055,8 @@ class SM_Public {
         }
 
         if ($member_code) {
-            $query .= " AND s.member_code = %s";
+            $query .= " AND (s.national_id = %s OR s.membership_number = %s)";
+            $params[] = $member_code;
             $params[] = $member_code;
         }
 
@@ -1070,15 +1068,15 @@ class SM_Public {
         header('Content-Disposition: attachment; filename=violations_'.$range.'_'.date('Y-m-d').'.csv');
         $output = fopen('php://output', 'w');
         fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-        fputcsv($output, array('التاريخ', 'اسم العضو', 'كود العضو', 'الصف', 'الشعبة', 'النوع', 'الحدة', 'الدرجة', 'النقاط', 'التفاصيل', 'الإجراء المتخذ'));
+        fputcsv($output, array('التاريخ', 'اسم العضو', 'الرقم القومي', 'الدرجة المهنية', 'التخصص', 'النوع', 'الحدة', 'الدرجة', 'النقاط', 'التفاصيل', 'الإجراء المتخذ'));
 
         foreach ($records as $r) {
             fputcsv($output, array(
                 $r->created_at,
                 $r->member_name,
-                $r->member_code,
-                $r->class_name,
-                $r->section,
+                $r->national_id,
+                $r->professional_grade,
+                $r->specialization,
                 $r->type,
                 $r->severity,
                 $r->degree,
@@ -1157,7 +1155,7 @@ class SM_Public {
             }
         }
 
-        if (isset($_POST['sm_add_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) {
+        if (isset($_POST['sm_add_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             if (current_user_can('إدارة_المستخدمين')) {
                 $user_data = array(
                     'user_login' => sanitize_user($_POST['user_login']),
@@ -1168,7 +1166,7 @@ class SM_Public {
                 );
                 $user_id = wp_insert_user($user_data);
                 if (!is_wp_error($user_id)) {
-                    update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
+                    update_user_meta($user_id, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
                     update_user_meta($user_id, 'sm_job_title', sanitize_text_field($_POST['job_title']));
                     update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
                     wp_redirect(add_query_arg('sm_admin_msg', 'settings_saved', $_SERVER['REQUEST_URI']));
@@ -1177,7 +1175,7 @@ class SM_Public {
             }
         }
 
-        if (isset($_POST['sm_update_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) {
+        if (isset($_POST['sm_update_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             if (current_user_can('إدارة_المستخدمين')) {
                 $user_id = intval($_POST['edit_officer_id']);
                 $user_data = array(
@@ -1189,7 +1187,7 @@ class SM_Public {
                     $user_data['user_pass'] = $_POST['user_pass'];
                 }
                 wp_update_user($user_data);
-                update_user_meta($user_id, 'sm_syndicate_member_id', sanitize_text_field($_POST['officer_id']));
+                update_user_meta($user_id, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
                 update_user_meta($user_id, 'sm_job_title', sanitize_text_field($_POST['job_title']));
                 update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
                 wp_redirect(add_query_arg('sm_admin_msg', 'settings_saved', $_SERVER['REQUEST_URI']));
@@ -1197,7 +1195,7 @@ class SM_Public {
             }
         }
 
-        if (isset($_POST['sm_delete_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicate_member_action')) {
+        if (isset($_POST['sm_delete_staff']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             if (current_user_can('إدارة_المستخدمين')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
                 wp_delete_user(intval($_POST['delete_officer_id']));
@@ -1267,7 +1265,7 @@ class SM_Public {
             if (current_user_can('إدارة_النظام')) {
                 SM_Settings::save_syndicate_info(array(
                     'syndicate_name' => sanitize_text_field($_POST['syndicate_name']),
-                    'syndicate_principal_name' => sanitize_text_field($_POST['syndicate_principal_name']),
+                    'syndicate_officer_name' => sanitize_text_field($_POST['syndicate_officer_name']),
                     'syndicate_logo' => esc_url_raw($_POST['syndicate_logo']),
                     'address' => sanitize_text_field($_POST['syndicate_address']),
                     'email' => sanitize_email($_POST['syndicate_email']),
@@ -1501,7 +1499,7 @@ class SM_Public {
                         ));
                         if (!is_wp_error($user_id)) {
                             $count++;
-                            update_user_meta($user_id, 'sm_syndicate_member_id', isset($data[3]) ? $data[3] : '');
+                            update_user_meta($user_id, 'sm_syndicateMemberIdAttr', isset($data[3]) ? $data[3] : '');
                             update_user_meta($user_id, 'sm_job_title', isset($data[4]) ? $data[4] : '');
                             update_user_meta($user_id, 'sm_phone', isset($data[5]) ? $data[5] : '');
                         }
@@ -1544,5 +1542,198 @@ class SM_Public {
                 exit;
             }
         }
+    }
+
+    public function ajax_update_license() {
+        if (!current_user_can('إدارة_الأعضاء')) wp_send_json_error('Unauthorized');
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_add_member')) wp_send_json_error('Security check failed');
+
+        $member_id = intval($_POST['member_id']);
+        $data = [
+            'license_number' => sanitize_text_field($_POST['license_number']),
+            'license_issue_date' => sanitize_text_field($_POST['license_issue_date']),
+            'license_expiration_date' => sanitize_text_field($_POST['license_expiration_date'])
+        ];
+
+        if (SM_DB::update_member($member_id, $data)) {
+            SM_Logger::log('تحديث ترخيص مزاولة', "تم تحديث بيانات الترخيص للعضو ID: $member_id");
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('فشل في تحديث البيانات');
+        }
+    }
+
+    public function ajax_print_license() {
+        include SM_PLUGIN_DIR . 'templates/print-practice-license.php';
+        exit;
+    }
+
+    public function ajax_update_facility() {
+        if (!current_user_can('إدارة_الأعضاء')) wp_send_json_error('Unauthorized');
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_add_member')) wp_send_json_error('Security check failed');
+
+        $member_id = intval($_POST['member_id']);
+        $data = [
+            'facility_name' => sanitize_text_field($_POST['facility_name']),
+            'facility_number' => sanitize_text_field($_POST['facility_number']),
+            'facility_category' => sanitize_text_field($_POST['facility_category']),
+            'facility_license_expiration_date' => sanitize_text_field($_POST['facility_license_expiration_date']),
+            'facility_address' => sanitize_textarea_field($_POST['facility_address'])
+        ];
+
+        if (SM_DB::update_member($member_id, $data)) {
+            SM_Logger::log('تحديث منشأة', "تم تحديث بيانات المنشأة للعضو ID: $member_id");
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('فشل في تحديث البيانات');
+        }
+    }
+
+    public function ajax_print_facility() {
+        include SM_PLUGIN_DIR . 'templates/print-facility-license.php';
+        exit;
+    }
+
+    public function ajax_get_member_finance_html() {
+        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        $member_id = intval($_GET['member_id']);
+        $member = SM_DB::get_member_by_id($member_id);
+        if (!$member) wp_send_json_error('العضو غير موجود');
+
+        $dues = SM_Finance::calculate_member_dues($member_id);
+        $history = SM_Finance::get_payment_history($member_id);
+
+        ob_start();
+        ?>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <div>
+                <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">كشف الحساب المستحق</h4>
+                <div style="background: #fff; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                    <table class="sm-table" style="font-size: 13px;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th>البند</th>
+                                <th>القيمة</th>
+                                <th>الغرامة</th>
+                                <th>المجموع</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($dues['breakdown'] as $item): ?>
+                            <tr>
+                                <td><?php echo $item['item']; ?></td>
+                                <td><?php echo number_format($item['amount'], 2); ?></td>
+                                <td style="color:#e53e3e;"><?php echo number_format($item['penalty'], 2); ?></td>
+                                <td style="font-weight:700;"><?php echo number_format($item['total'], 2); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#f1f5f9; font-weight: 800;">
+                                <td colspan="3">الإجمالي المطلوب</td>
+                                <td style="color:var(--sm-primary-color); font-size:1.1em;"><?php echo number_format($dues['total_owed'], 2); ?> ج.م</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div style="margin-top: 25px; background: #fffaf0; border: 1px solid #feebc8; padding: 20px; border-radius: 8px;">
+                    <h5 style="margin: 0 0 15px 0; color: #744210;">تسجيل دفعة جديدة</h5>
+                    <form id="record-payment-form">
+                        <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div>
+                                <label class="sm-label" style="font-size:11px;">المبلغ:</label>
+                                <input type="number" name="amount" class="sm-input" value="<?php echo $dues['balance']; ?>" step="0.01" required>
+                            </div>
+                            <div>
+                                <label class="sm-label" style="font-size:11px;">التاريخ:</label>
+                                <input type="date" name="payment_date" class="sm-input" value="<?php echo date('Y-m-d'); ?>" required>
+                            </div>
+                            <div>
+                                <label class="sm-label" style="font-size:11px;">النوع:</label>
+                                <select name="payment_type" class="sm-select">
+                                    <option value="membership">اشتراك عضوية</option>
+                                    <option value="license">ترخيص مزاولة</option>
+                                    <option value="facility">ترخيص منشأة</option>
+                                    <option value="penalty">غرامة</option>
+                                    <option value="other">أخرى</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="sm-label" style="font-size:11px;">السنة (للعضوية):</label>
+                                <input type="number" name="target_year" class="sm-input" value="<?php echo date('Y'); ?>">
+                            </div>
+                        </div>
+                        <div class="sm-form-group">
+                            <label class="sm-label" style="font-size:11px;">ملاحظات:</label>
+                            <textarea name="notes" class="sm-input" rows="2"></textarea>
+                        </div>
+                        <button type="button" onclick="smSubmitPayment(this)" class="sm-btn" style="background:#27ae60; height: 38px;">تأكيد استلام المبلغ</button>
+                    </form>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">سجل المدفوعات السابقة</h4>
+                <div style="max-height: 500px; overflow-y: auto;">
+                    <?php if (empty($history)): ?>
+                        <div style="text-align:center; padding: 30px; color: #718096; background: #f8fafc; border-radius: 8px;">لا يوجد سجل مدفوعات لهذا العضو.</div>
+                    <?php else: ?>
+                        <table class="sm-table" style="font-size: 12px;">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>النوع</th>
+                                    <th>المبلغ</th>
+                                    <th>ملاحظات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($history as $p): ?>
+                                <tr>
+                                    <td><?php echo $p->payment_date; ?></td>
+                                    <td><?php
+                                        $types = ['membership' => 'عضوية', 'license' => 'ترخيص', 'facility' => 'منشأة', 'penalty' => 'غرامة', 'other' => 'أخرى'];
+                                        echo $types[$p->payment_type] ?? $p->payment_type;
+                                        if ($p->target_year) echo " ($p->target_year)";
+                                    ?></td>
+                                    <td style="font-weight:700; color:#27ae60;"><?php echo number_format($p->amount, 2); ?></td>
+                                    <td style="font-size:10px;"><?php echo esc_html($p->notes); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <script>
+        function smSubmitPayment(btn) {
+            const form = document.getElementById('record-payment-form');
+            const formData = new FormData(form);
+            formData.append('action', 'sm_record_payment_ajax');
+            formData.append('nonce', '<?php echo wp_create_nonce("sm_finance_action"); ?>');
+
+            btn.disabled = true;
+            btn.innerText = 'جاري المعالجة...';
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    smShowNotification('تم تسجيل الدفعة بنجاح');
+                    smOpenFinanceModal(<?php echo $member_id; ?>);
+                } else {
+                    smShowNotification('خطأ: ' + res.data, true);
+                    btn.disabled = false;
+                    btn.innerText = 'تأكيد استلام المبلغ';
+                }
+            });
+        }
+        </script>
+        <?php
+        $html = ob_get_clean();
+        wp_send_json_success(['html' => $html]);
     }
 }

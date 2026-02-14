@@ -130,7 +130,7 @@
                     ?>
                         <tr class="user-row" data-user-id="<?php echo $u->ID; ?>">
                             <td><input type="checkbox" class="user-cb" value="<?php echo $u->ID; ?>"></td>
-                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html(get_user_meta($u->ID, 'sm_syndicate_member_id', true) ?: $u->user_login); ?></td>
+                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html(get_user_meta($u->ID, 'sm_syndicateMemberIdAttr', true) ?: $u->user_login); ?></td>
                             <td style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($u->display_name); ?></td>
                             <td><span class="sm-badge sm-badge-low"><?php echo $role_labels[$role_slug] ?? $role_slug; ?></span></td>
                             <td dir="ltr" style="text-align: right;"><?php echo esc_html(get_user_meta($u->ID, 'sm_phone', true)); ?></td>
@@ -138,7 +138,7 @@
                             <td>
                                 <div style="display:flex; gap:8px; justify-content: flex-end;">
                                     <?php
-                                    $assigned = get_user_meta($u->ID, 'sm_assigned_sections', true) ?: (get_user_meta($u->ID, 'sm_supervised_classes', true) ?: array());
+                                    $assigned = get_user_meta($u->ID, 'sm_assigned_specializations', true) ?: (get_user_meta($u->ID, 'sm_supervised_grades', true) ?: array());
                                     ?>
                                     <button onclick='editSmUser(<?php echo json_encode(array(
                                         "id" => $u->ID,
@@ -147,12 +147,12 @@
                                         "login" => $u->user_login,
                                         "role" => $role_slug,
                                         "assigned" => $assigned,
-                                        "officer_id" => get_user_meta($u->ID, "sm_syndicate_member_id", true),
+                                        "officer_id" => get_user_meta($u->ID, "sm_syndicateMemberIdAttr", true),
                                         "phone" => get_user_meta($u->ID, "sm_phone", true)
                                     )); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px;">تعديل</button>
                                     
                                     <form method="post" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا الحساب؟')">
-                                        <?php wp_nonce_field('sm_syndicate_member_action', 'sm_nonce'); ?>
+                                        <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
                                         <input type="hidden" name="delete_officer_id" value="<?php echo $u->ID; ?>">
                                         <button type="submit" name="sm_delete_staff" class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; color:#e53e3e;">حذف</button>
                                     </form>
@@ -173,28 +173,28 @@
                 <button class="sm-modal-close" onclick="document.getElementById('edit-staff-modal').style.display='none'">&times;</button>
             </div>
             <form id="edit-staff-form">
-                <?php wp_nonce_field('sm_syndicate_member_action', 'sm_nonce'); ?>
-                <input type="hidden" name="edit_officer_id" id="edit_t_id">
+                <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
+                <input type="hidden" name="edit_officer_id" id="edit_off_db_id">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                     <div class="sm-form-group">
                         <label class="sm-label">الاسم الكامل:</label>
-                        <input type="text" name="display_name" id="edit_t_name" class="sm-input" required>
+                        <input type="text" name="display_name" id="edit_off_display_name" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">كود المستخدم (ID):</label>
-                        <input type="text" name="officer_id" id="edit_t_code" class="sm-input" required>
+                        <input type="text" name="officer_id" id="edit_off_code" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">رقم الهاتف:</label>
-                        <input type="text" name="phone" id="edit_t_phone" class="sm-input">
+                        <input type="text" name="phone" id="edit_off_phone" class="sm-input">
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">البريد الإلكتروني:</label>
-                        <input type="email" name="user_email" id="edit_t_email" class="sm-input" required>
+                        <input type="email" name="user_email" id="edit_off_email" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">تغيير الدور:</label>
-                        <select name="role" id="edit_t_role" class="sm-select">
+                        <select name="role" id="edit_off_role" class="sm-select">
                             <option value="sm_system_admin">مدير النظام</option>
                             <option value="sm_officer">مسؤول النقابة</option>
                             <option value="sm_syndicate_member">عضو النقابة</option>
@@ -202,7 +202,7 @@
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">حالة الحساب:</label>
-                        <select name="account_status" id="edit_t_status" class="sm-select">
+                        <select name="account_status" id="edit_off_status" class="sm-select">
                             <option value="active">نشط</option>
                             <option value="restricted">مقيد (لا يمكنه الدخول)</option>
                         </select>
@@ -224,7 +224,7 @@
                 <button class="sm-modal-close" onclick="document.getElementById('add-staff-modal').style.display='none'">&times;</button>
             </div>
             <form id="add-staff-form">
-                <?php wp_nonce_field('sm_syndicate_member_action', 'sm_nonce'); ?>
+                <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                     <div class="sm-form-group">
                         <label class="sm-label">الاسم الكامل:</label>
@@ -280,7 +280,7 @@
         const formData = new FormData();
         formData.append('action', 'sm_bulk_delete_users_ajax');
         formData.append('user_ids', ids.join(','));
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicate_member_action"); ?>');
+        formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicateMemberAction"); ?>');
 
         fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
         .then(r => r.json())
@@ -294,13 +294,13 @@
 
     (function() {
         window.editSmUser = function(u) {
-            document.getElementById('edit_t_id').value = u.id;
-            document.getElementById('edit_t_name').value = u.name;
-            document.getElementById('edit_t_code').value = u.officer_id;
-            document.getElementById('edit_t_phone').value = u.phone;
-            document.getElementById('edit_t_email').value = u.email;
-            document.getElementById('edit_t_status').value = u.status || 'active';
-            document.getElementById('edit_t_role').value = u.role;
+            document.getElementById('edit_off_db_id').value = u.id;
+            document.getElementById('edit_off_display_name').value = u.name;
+            document.getElementById('edit_off_code').value = u.officer_id;
+            document.getElementById('edit_off_phone').value = u.phone;
+            document.getElementById('edit_off_email').value = u.email;
+            document.getElementById('edit_off_status').value = u.status || 'active';
+            document.getElementById('edit_off_role').value = u.role;
             document.getElementById('edit-staff-modal').style.display = 'flex';
         };
 
