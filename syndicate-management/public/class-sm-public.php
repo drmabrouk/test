@@ -16,6 +16,65 @@ class SM_Public {
         return $show;
     }
 
+    private function can_manage_user($target_user_id) {
+        if (current_user_can('sm_full_access') || current_user_can('manage_options')) return true;
+
+        $current_user = wp_get_current_user();
+        $target_user = get_userdata($target_user_id);
+        if (!$target_user) return false;
+
+        // Syndicate Admins can only manage Syndicate Members
+        if (in_array('sm_syndicate_admin', (array)$current_user->roles)) {
+            // Cannot manage System Admins
+            if (in_array('sm_system_admin', (array)$target_user->roles)) return false;
+            // Cannot manage other Syndicate Admins
+            if (in_array('sm_syndicate_admin', (array)$target_user->roles)) return false;
+
+            // Must be in the same governorate
+            $my_gov = get_user_meta($current_user->ID, 'sm_governorate', true);
+            $target_gov = get_user_meta($target_user_id, 'sm_governorate', true);
+            if ($my_gov && $target_gov && $my_gov !== $target_gov) return false;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function can_access_member($member_id) {
+        if (current_user_can('sm_full_access') || current_user_can('manage_options')) return true;
+
+        $member = SM_DB::get_member_by_id($member_id);
+        if (!$member) return false;
+
+        $user = wp_get_current_user();
+
+        // Members can access their own record
+        if (in_array('sm_member', (array)$user->roles) && $member->wp_user_id == $user->ID) {
+            return true;
+        }
+
+        // Syndicate Admins check governorate
+        if (in_array('sm_syndicate_admin', (array)$user->roles)) {
+            $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+            if ($my_gov && $member->governorate !== $my_gov) {
+                return false;
+            }
+            return true;
+        }
+
+        // Syndicate Members check governorate
+        if (in_array('sm_syndicate_member', (array)$user->roles)) {
+             $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+             if ($my_gov && $member->governorate !== $my_gov) {
+                 return false;
+             }
+             return true;
+        }
+
+        return false;
+    }
+
     public function restrict_admin_access() {
         if (is_user_logged_in()) {
             $status = get_user_meta(get_current_user_id(), 'sm_account_status', true);
@@ -162,8 +221,12 @@ class SM_Public {
         if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($national_id);
-        if ($member) wp_send_json_success($member);
-        else wp_send_json_error('Member not found');
+        if ($member) {
+            if (!$this->can_access_member($member->id)) wp_send_json_error('Access denied');
+            wp_send_json_success($member);
+        } else {
+            wp_send_json_error('Member not found');
+        }
     }
 
     public function ajax_search_members() {
@@ -181,6 +244,9 @@ class SM_Public {
     public function ajax_update_member_photo() {
         if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_photo_action', 'sm_photo_nonce');
+
+        $member_id = intval($_POST['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
 
         require_once(ABSPATH . 'wp-admin/includes/file.php');
         require_once(ABSPATH . 'wp-admin/includes/image.php');
@@ -204,6 +270,11 @@ class SM_Public {
         $email = sanitize_email($_POST['user_email']) ?: $username . '@irseg.org';
         $role = sanitize_text_field($_POST['role']);
 
+        // Prevent role escalation
+        if ($role === 'sm_system_admin' && !current_user_can('sm_full_access') && !current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions to assign this role');
+        }
+
         $user_id = wp_insert_user(array(
             'user_login' => $username,
             'user_email' => $email,
@@ -217,8 +288,26 @@ class SM_Public {
         update_user_meta($user_id, 'sm_temp_pass', $pass);
         update_user_meta($user_id, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
         update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
+
+        $gov = sanitize_text_field($_POST['governorate'] ?? '');
+        if (in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)) {
+            $gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
+        }
+        update_user_meta($user_id, 'sm_governorate', $gov);
         SM_Logger::log('إضافة مستخدم', "الاسم: {$_POST['display_name']} الرتبة: $role");
         wp_send_json_success($user_id);
+    }
+
+    public function ajax_delete_staff() {
+        if (!current_user_can('sm_manage_users') && !current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
+
+        $user_id = intval($_POST['user_id']);
+        if ($user_id === get_current_user_id()) wp_send_json_error('Cannot delete yourself');
+        if (!$this->can_manage_user($user_id)) wp_send_json_error('Access denied');
+
+        wp_delete_user($user_id);
+        wp_send_json_success('Deleted');
     }
 
     public function ajax_update_staff() {
@@ -226,6 +315,15 @@ class SM_Public {
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
 
         $user_id = intval($_POST['edit_officer_id']);
+        if (!$this->can_manage_user($user_id)) wp_send_json_error('Access denied');
+
+        $role = sanitize_text_field($_POST['role']);
+
+        // Prevent role escalation
+        if ($role === 'sm_system_admin' && !current_user_can('sm_full_access') && !current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions to assign this role');
+        }
+
         $user_data = array('ID' => $user_id, 'display_name' => sanitize_text_field($_POST['display_name']), 'user_email' => sanitize_email($_POST['user_email']));
         if (!empty($_POST['user_pass'])) {
             $user_data['user_pass'] = $_POST['user_pass'];
@@ -234,10 +332,17 @@ class SM_Public {
         wp_update_user($user_data);
 
         $u = new WP_User($user_id);
-        $u->set_role(sanitize_text_field($_POST['role']));
+        $u->set_role($role);
 
         update_user_meta($user_id, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
         update_user_meta($user_id, 'sm_phone', sanitize_text_field($_POST['phone']));
+
+        if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)) {
+            if (isset($_POST['governorate'])) {
+                update_user_meta($user_id, 'sm_governorate', sanitize_text_field($_POST['governorate']));
+            }
+        }
+
         update_user_meta($user_id, 'sm_account_status', sanitize_text_field($_POST['account_status']));
         SM_Logger::log('تحديث مستخدم', "الاسم: {$_POST['display_name']}");
         wp_send_json_success('Updated');
@@ -254,14 +359,22 @@ class SM_Public {
     public function ajax_update_member() {
         if (!current_user_can('sm_manage_members')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_add_member', 'sm_nonce');
-        SM_DB::update_member(intval($_POST['member_id']), $_POST);
+
+        $member_id = intval($_POST['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
+
+        SM_DB::update_member($member_id, $_POST);
         wp_send_json_success('Updated');
     }
 
     public function ajax_delete_member() {
         if (!current_user_can('sm_manage_members')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_delete_member', 'nonce');
-        SM_DB::delete_member(intval($_POST['member_id']));
+
+        $member_id = intval($_POST['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
+
+        SM_DB::delete_member($member_id);
         wp_send_json_success('Deleted');
     }
 
@@ -269,6 +382,7 @@ class SM_Public {
         if (!current_user_can('sm_manage_licenses')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_add_member', 'nonce');
         $member_id = intval($_POST['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
         SM_DB::update_member($member_id, [
             'license_number' => sanitize_text_field($_POST['license_number']),
             'license_issue_date' => sanitize_text_field($_POST['license_issue_date']),
@@ -282,6 +396,7 @@ class SM_Public {
         if (!current_user_can('sm_manage_licenses')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_add_member', 'nonce');
         $member_id = intval($_POST['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
         SM_DB::update_member($member_id, [
             'facility_name' => sanitize_text_field($_POST['facility_name']),
             'facility_number' => sanitize_text_field($_POST['facility_number']),
@@ -297,6 +412,8 @@ class SM_Public {
     public function ajax_record_payment() {
         if (!current_user_can('sm_manage_finance')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_finance_action', 'nonce');
+        $member_id = intval($_POST['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
         if (SM_Finance::record_payment($_POST)) wp_send_json_success();
         else wp_send_json_error('Failed to record payment');
     }
@@ -365,6 +482,7 @@ class SM_Public {
         foreach ($ids as $id) {
             $id = intval($id);
             if ($id === get_current_user_id()) continue;
+            if (!$this->can_manage_user($id)) continue;
             wp_delete_user($id);
         }
         wp_send_json_success();
@@ -399,6 +517,8 @@ class SM_Public {
     public function ajax_get_member_finance_html() {
         if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
         $member_id = intval($_GET['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
+
         $dues = SM_Finance::calculate_member_dues($member_id);
         $history = SM_Finance::get_payment_history($member_id);
         ob_start();
@@ -407,8 +527,35 @@ class SM_Public {
         wp_send_json_success(['html' => $html]);
     }
 
-    public function ajax_print_license() { include SM_PLUGIN_DIR . 'templates/print-practice-license.php'; exit; }
-    public function ajax_print_facility() { include SM_PLUGIN_DIR . 'templates/print-facility-license.php'; exit; }
-    public function ajax_print_invoice() { include SM_PLUGIN_DIR . 'templates/print-invoice.php'; exit; }
-    public function handle_print() { /* Basic print handling */ exit; }
+    public function ajax_print_license() {
+        if (!current_user_can('sm_print_reports')) wp_die('Unauthorized');
+        $member_id = intval($_GET['member_id'] ?? 0);
+        if (!$this->can_access_member($member_id)) wp_die('Access denied');
+        include SM_PLUGIN_DIR . 'templates/print-practice-license.php';
+        exit;
+    }
+
+    public function ajax_print_facility() {
+        if (!current_user_can('sm_print_reports')) wp_die('Unauthorized');
+        $member_id = intval($_GET['member_id'] ?? 0);
+        if (!$this->can_access_member($member_id)) wp_die('Access denied');
+        include SM_PLUGIN_DIR . 'templates/print-facility-license.php';
+        exit;
+    }
+
+    public function ajax_print_invoice() {
+        if (!current_user_can('sm_manage_finance')) wp_die('Unauthorized');
+        $member_id = intval($_GET['member_id'] ?? 0);
+        if (!$this->can_access_member($member_id)) wp_die('Access denied');
+        include SM_PLUGIN_DIR . 'templates/print-invoice.php';
+        exit;
+    }
+
+    public function handle_print() {
+        if (!current_user_can('sm_print_reports')) wp_die('Unauthorized');
+        $member_id = intval($_GET['member_id'] ?? 0);
+        if ($member_id && !$this->can_access_member($member_id)) wp_die('Access denied');
+        /* Basic print handling logic would go here if needed */
+        exit;
+    }
 }

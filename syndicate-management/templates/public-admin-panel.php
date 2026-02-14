@@ -103,6 +103,7 @@ $is_sys_admin = in_array('sm_system_admin', $roles);
 $is_syndicate_admin = in_array('sm_syndicate_admin', $roles);
 $is_syndicate_member = in_array('sm_syndicate_member', $roles);
 $is_member = in_array('sm_member', $roles);
+$is_officer = $is_syndicate_admin || $is_syndicate_member;
 
 $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
 $syndicate = SM_Settings::get_syndicate_info();
@@ -219,6 +220,12 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <a href="<?php echo add_query_arg('sm_tab', 'summary'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-dashboard"></span> لوحة المعلومات</a>
                 </li>
 
+                <?php if ($is_member): ?>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'my-profile' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'my-profile'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-admin-users"></span> ملفي الشخصي</a>
+                    </li>
+                <?php endif; ?>
+
                 <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'members' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-groups"></span> إدارة الأعضاء</a>
@@ -276,7 +283,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     break;
 
                 case 'members':
-                    if ($is_admin || current_user_can('إدارة_الأعضاء')) {
+                    if ($is_admin || current_user_can('sm_manage_members')) {
                         echo '<h3 style="margin-top:0;">إدارة الأعضاء</h3>';
                         include SM_PLUGIN_DIR . 'templates/admin-members.php';
                     }
@@ -295,13 +302,13 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     break;
 
                 case 'practice-licenses':
-                    if ($is_admin || $is_sys_admin || $is_officer) {
+                    if ($is_admin || $is_sys_admin || $is_syndicate_admin) {
                         include SM_PLUGIN_DIR . 'templates/admin-practice-licenses.php';
                     }
                     break;
 
                 case 'facility-licenses':
-                    if ($is_admin || $is_sys_admin || $is_officer) {
+                    if ($is_admin || $is_sys_admin || $is_syndicate_admin) {
                         include SM_PLUGIN_DIR . 'templates/admin-facility-licenses.php';
                     }
                     break;
@@ -313,14 +320,23 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
                 case 'staff':
                 case 'staffs':
-                    if ($is_admin || current_user_can('إدارة_المستخدمين')) {
+                    if ($is_admin || current_user_can('sm_manage_users')) {
                         include SM_PLUGIN_DIR . 'templates/admin-staff.php';
                     }
                     break;
 
+                case 'member-profile':
+                case 'my-profile':
+                    if ($active_tab === 'my-profile') {
+                        $member_by_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", get_current_user_id()));
+                        if ($member_by_wp) $_GET['member_id'] = $member_by_wp->id;
+                    }
+                    include SM_PLUGIN_DIR . 'templates/admin-member-profile.php';
+                    break;
+
 
                 case 'printing':
-                    if ($is_admin || current_user_can('طباعة_التقارير')) {
+                    if ($is_admin || current_user_can('sm_print_reports')) {
                         include SM_PLUGIN_DIR . 'templates/printing-cards.php';
                     }
                     break;
@@ -334,7 +350,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     break;
 
                 case 'global-settings':
-                    if ($is_admin || current_user_can('إدارة_النظام')) {
+                    if ($is_admin || current_user_can('sm_manage_system')) {
                         ?>
                         <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
                             <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('syndicate-settings', this)">السلطة</button>
