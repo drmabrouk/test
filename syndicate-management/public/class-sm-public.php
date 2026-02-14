@@ -1001,6 +1001,32 @@ class SM_Public {
         exit;
     }
 
+    public function ajax_record_payment() {
+        if (!current_user_can('manage_options') && !in_array('sm_officer', (array)wp_get_current_user()->roles)) {
+            wp_send_json_error('Unauthorized');
+        }
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_finance_action')) wp_send_json_error('Security check failed');
+
+        if (SM_Finance::record_payment($_POST)) {
+            wp_send_json_success('Payment recorded');
+        } else {
+            wp_send_json_error('Failed to record payment');
+        }
+    }
+
+    public function ajax_get_member_finance() {
+        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        $member_id = intval($_POST['member_id']);
+
+        $finance_data = SM_Finance::calculate_member_dues($member_id);
+        $history = SM_Finance::get_payment_history($member_id);
+
+        wp_send_json_success([
+            'summary' => $finance_data,
+            'history' => $history
+        ]);
+    }
+
     public function ajax_export_violations_csv() {
         if (!is_user_logged_in() || !current_user_can('إدارة_المخالفات')) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_GET['nonce'] ?? '', 'sm_export_action')) wp_send_json_error('Security check failed');

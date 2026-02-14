@@ -167,6 +167,7 @@ if ($import_results) {
                     <th>الدرجة الوظيفية</th>
                     <th>التخصص</th>
                     <th>رقم العضوية</th>
+                    <th>الرصيد</th>
                     <th>الحالة</th>
                     <th>الإجراءات</th>
                 </tr>
@@ -174,7 +175,7 @@ if ($import_results) {
             <tbody>
                 <?php if (empty($members)): ?>
                     <tr>
-                        <td colspan="8" style="padding: 60px; text-align: center; color: var(--sm-text-gray);">
+                        <td colspan="9" style="padding: 60px; text-align: center; color: var(--sm-text-gray);">
                             <span class="dashicons dashicons-search" style="font-size: 40px; width:40px; height:40px; margin-bottom:10px;"></span>
                             <p>لا يوجد أعضاء يطابقون معايير البحث الحالية.</p>
                         </td>
@@ -183,7 +184,9 @@ if ($import_results) {
                     $grades = SM_Settings::get_professional_grades();
                     $specs = SM_Settings::get_specializations();
                     $statuses = SM_Settings::get_membership_statuses();
-                    foreach ($members as $member): ?>
+                    foreach ($members as $member):
+                        $finance = SM_Finance::calculate_member_dues($member->id);
+                    ?>
                         <tr id="stu-row-<?php echo $member->id; ?>">
                             <td><input type="checkbox" class="member-checkbox" value="<?php echo $member->id; ?>"></td>
                             <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html($member->national_id); ?></td>
@@ -191,6 +194,7 @@ if ($import_results) {
                             <td><?php echo esc_html($grades[$member->professional_grade] ?? $member->professional_grade); ?></td>
                             <td><?php echo esc_html($specs[$member->specialization] ?? $member->specialization); ?></td>
                             <td><?php echo esc_html($member->membership_number); ?></td>
+                            <td style="font-weight:700; color:<?php echo $finance['balance'] > 0 ? '#e53e3e' : '#38a169'; ?>;"><?php echo number_format($finance['balance'], 2); ?></td>
                             <td><span class="sm-badge sm-badge-low"><?php echo esc_html($statuses[$member->membership_status] ?? $member->membership_status); ?></span></td>
                             <td>
                                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
@@ -359,6 +363,14 @@ if ($import_results) {
                         <input name="sub_syndicate" type="text" class="sm-input">
                     </div>
                     <div class="sm-form-group">
+                        <label class="sm-label">فئة ترخيص المنشأة:</label>
+                        <select name="facility_category" class="sm-select">
+                            <option value="A">فئة A (9000 EGP)</option>
+                            <option value="B">فئة B (6000 EGP)</option>
+                            <option value="C" selected>فئة C (3000 EGP)</option>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
                         <label class="sm-label">البريد الإلكتروني:</label>
                         <input name="email" type="email" class="sm-input">
                     </div>
@@ -481,6 +493,18 @@ if ($import_results) {
                         <input name="sub_syndicate" id="edit_sub_syndicate" type="text" class="sm-input">
                     </div>
                     <div class="sm-form-group">
+                        <label class="sm-label">فئة ترخيص المنشأة:</label>
+                        <select name="facility_category" id="edit_facility_category" class="sm-select">
+                            <option value="A">فئة A</option>
+                            <option value="B">فئة B</option>
+                            <option value="C">فئة C</option>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">آخر سنة تم سداد العضوية لها:</label>
+                        <input name="last_paid_membership_year" id="edit_last_paid_membership_year" type="number" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
                         <label class="sm-label">البريد الإلكتروني:</label>
                         <input name="email" id="edit_email" type="email" class="sm-input">
                     </div>
@@ -535,16 +559,89 @@ if ($import_results) {
         <div class="sm-modal-content" style="max-width: 950px; background: #fdfdfd;">
             <div class="sm-modal-header" style="border-bottom: 3px solid var(--sm-primary-color); padding-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <h3 style="margin:0; font-size: 1.5em; font-weight: 900; color: #111F35;">السجل الانضباطي الشامل</h3>
+                    <h3 id="view-member-title" style="margin:0; font-size: 1.5em; font-weight: 900; color: #111F35;">الملف الشامل للعضو</h3>
                     <div style="display: flex; gap: 10px;">
                         <button id="print-full-record-btn" class="sm-btn" style="background: #27ae60; width: auto; font-size: 13px; font-weight: 700; height: 40px; display: flex; align-items: center; gap: 8px;">
-                            <span class="dashicons dashicons-printer"></span> طباعة السجل الكامل PDF
+                            <span class="dashicons dashicons-printer"></span> طباعة السجل PDF
                         </button>
                         <button class="sm-modal-close" style="position:static; margin:0;" onclick="document.getElementById('view-member-modal').style.display='none'">&times;</button>
                     </div>
                 </div>
             </div>
-            <div id="stu_details_content" style="padding: 20px 0; max-height: 70vh; overflow-y: auto;"></div>
+
+            <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-top: 20px; border-bottom: 2px solid #eee;">
+                <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('stu_details_content', this)">السجل الانضباطي</button>
+                <button class="sm-tab-btn" onclick="openFinanceTab(this)">الموقف المالي</button>
+            </div>
+
+            <div id="stu_details_content" class="sm-internal-tab" style="padding: 20px 0; max-height: 60vh; overflow-y: auto;"></div>
+
+            <div id="stu_finance_content" class="sm-internal-tab" style="display:none; padding: 20px 0; max-height: 60vh; overflow-y: auto;">
+                <div id="finance-loader" style="text-align:center; padding:30px;">جاري تحميل البيانات المالية...</div>
+                <div id="finance-data" style="display:none;">
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom:30px;">
+                        <div style="background:#fff5f5; border:1px solid #feb2b2; padding:15px; border-radius:10px; text-align:center;">
+                            <div style="font-size:12px; color:#c53030; font-weight:700;">إجمالي المستحق</div>
+                            <div id="finance-total-owed" style="font-size:24px; font-weight:900; color:#c53030;">0.00</div>
+                        </div>
+                        <div style="background:#f0fff4; border:1px solid #c6f6d5; padding:15px; border-radius:10px; text-align:center;">
+                            <div style="font-size:12px; color:#2f855a; font-weight:700;">إجمالي المسدد</div>
+                            <div id="finance-total-paid" style="font-size:24px; font-weight:900; color:#2f855a;">0.00</div>
+                        </div>
+                        <div style="background:#ebf8ff; border:1px solid #bee3f8; padding:15px; border-radius:10px; text-align:center;">
+                            <div style="font-size:12px; color:#2b6cb0; font-weight:700;">الرصيد المتبقي</div>
+                            <div id="finance-balance" style="font-size:24px; font-weight:900; color:#2b6cb0;">0.00</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
+                        <div>
+                            <h4 style="margin-top:0;">تفاصيل المستحقات</h4>
+                            <table class="sm-table" style="font-size:12px;">
+                                <thead><tr><th>البند</th><th>المبلغ</th><th>الغرامة</th><th>الإجمالي</th></tr></thead>
+                                <tbody id="finance-breakdown-body"></tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <h4 style="margin-top:0;">سجل المدفوعات</h4>
+                            <table class="sm-table" style="font-size:12px;">
+                                <thead><tr><th>التاريخ</th><th>المبلغ</th><th>النوع</th></tr></thead>
+                                <tbody id="finance-history-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <?php if ($is_admin || in_array('sm_officer', (array)wp_get_current_user()->roles)): ?>
+                    <div style="margin-top:30px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
+                        <h4 style="margin-top:0;">تسجيل دفعة جديدة</h4>
+                        <form id="record-payment-form" style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:15px; align-items:end;">
+                            <input type="hidden" name="member_id" id="payment_member_id">
+                            <input type="hidden" name="nonce" value="<?php echo wp_create_nonce('sm_finance_action'); ?>">
+                            <div class="sm-form-group" style="margin:0;">
+                                <label class="sm-label">المبلغ:</label>
+                                <input type="number" name="amount" class="sm-input" required step="0.01">
+                            </div>
+                            <div class="sm-form-group" style="margin:0;">
+                                <label class="sm-label">نوع الدفع:</label>
+                                <select name="payment_type" class="sm-select" required>
+                                    <option value="membership">اشتراك عضوية</option>
+                                    <option value="license">ترخيص مزاولة</option>
+                                    <option value="facility">ترخيص منشأة</option>
+                                    <option value="penalty">غرامات</option>
+                                    <option value="other">أخرى</option>
+                                </select>
+                            </div>
+                            <div class="sm-form-group" style="margin:0;">
+                                <label class="sm-label">التاريخ:</label>
+                                <input type="date" name="payment_date" class="sm-input" value="<?php echo date('Y-m-d'); ?>" required>
+                            </div>
+                            <button type="submit" class="sm-btn" style="height:45px; background:#38a169;">تأكيد الدفع</button>
+                        </form>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <div style="margin-top: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 20px;">
                 <button type="button" onclick="document.getElementById('view-member-modal').style.display='none'" class="sm-btn" style="width:auto; background:var(--sm-text-gray); height: 40px;">إغلاق النافذة</button>
             </div>
@@ -605,6 +702,8 @@ if ($import_results) {
             document.getElementById('edit_facility_license_expiration_date').value = s.facility_license_expiration_date || '';
             document.getElementById('edit_facility_address').value = s.facility_address || '';
             document.getElementById('edit_sub_syndicate').value = s.sub_syndicate || '';
+            document.getElementById('edit_facility_category').value = s.facility_category || 'C';
+            document.getElementById('edit_last_paid_membership_year').value = s.last_paid_membership_year || '';
             document.getElementById('edit_email').value = s.email || '';
             document.getElementById('edit_phone').value = s.phone || '';
             document.getElementById('edit_alt_phone').value = s.alt_phone || '';
@@ -640,16 +739,74 @@ if ($import_results) {
                 .then(r => r.text())
                 .then(html => {
                     const doc = new DOMParser().parseFromString(html, 'text/html');
-                    // Remove print buttons from the content
                     doc.querySelectorAll('.no-print').forEach(el => el.remove());
-                    // Enhance style for modal display
-                    const styles = doc.querySelectorAll('style');
                     content.innerHTML = doc.body.innerHTML;
-
-                    // Re-apply styles scoped to content if needed or just rely on existing report styling
-                    // The report is already RTL and has fonts.
                 });
+
+            // Set member ID for payment form
+            const paymentIdInput = document.getElementById('payment_member_id');
+            if (paymentIdInput) paymentIdInput.value = member.id;
         };
+
+        window.openFinanceTab = function(btn) {
+            smOpenInternalTab('stu_finance_content', btn);
+            const memberId = document.getElementById('payment_member_id').value;
+
+            document.getElementById('finance-loader').style.display = 'block';
+            document.getElementById('finance-data').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('action', 'sm_get_member_finance_ajax');
+            formData.append('member_id', memberId);
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    const data = res.data;
+                    document.getElementById('finance-total-owed').innerText = data.summary.total_owed.toFixed(2) + ' EGP';
+                    document.getElementById('finance-total-paid').innerText = data.summary.total_paid.toFixed(2) + ' EGP';
+                    document.getElementById('finance-balance').innerText = data.summary.balance.toFixed(2) + ' EGP';
+
+                    const breakdownBody = document.getElementById('finance-breakdown-body');
+                    breakdownBody.innerHTML = '';
+                    data.summary.breakdown.forEach(item => {
+                        breakdownBody.innerHTML += `<tr><td>${item.item}</td><td>${item.amount}</td><td>${item.penalty}</td><td><strong>${item.total}</strong></td></tr>`;
+                    });
+
+                    const historyBody = document.getElementById('finance-history-body');
+                    historyBody.innerHTML = '';
+                    data.history.forEach(h => {
+                        historyBody.innerHTML += `<tr><td>${h.payment_date}</td><td>${h.amount} EGP</td><td>${h.payment_type}</td></tr>`;
+                    });
+
+                    document.getElementById('finance-loader').style.display = 'none';
+                    document.getElementById('finance-data').style.display = 'block';
+                }
+            });
+        };
+
+        // Payment form submission
+        const paymentForm = document.getElementById('record-payment-form');
+        if (paymentForm) {
+            paymentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                formData.append('action', 'sm_record_payment_ajax');
+
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        smShowNotification('تم تسجيل الدفعة بنجاح');
+                        openFinanceTab(document.querySelector('[onclick="openFinanceTab(this)"]'));
+                        paymentForm.reset();
+                        document.getElementById('payment_member_id').value = formData.get('member_id');
+                    }
+                });
+            });
+        }
+    })();
 
         // Handle Add Member AJAX
         const addForm = document.getElementById('add-member-form');
