@@ -29,6 +29,33 @@
     window.smShowNotification = SM_UI.showNotification;
     window.smOpenInternalTab = SM_UI.openInternalTab;
 
+    window.smSubmitPayment = function(btn) {
+        const form = document.getElementById('record-payment-form');
+        const formData = new FormData(form);
+        formData.append('action', 'sm_record_payment_ajax');
+        formData.append('nonce', '<?php echo wp_create_nonce("sm_finance_action"); ?>');
+
+        btn.disabled = true;
+        btn.innerText = 'جاري المعالجة...';
+
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                smShowNotification('تم تسجيل الدفعة بنجاح');
+                if (typeof smOpenFinanceModal === 'function') {
+                    smOpenFinanceModal(form.querySelector('[name="member_id"]').value);
+                } else {
+                    location.reload();
+                }
+            } else {
+                smShowNotification('خطأ: ' + res.data, true);
+                btn.disabled = false;
+                btn.innerText = 'تأكيد استلام المبلغ';
+            }
+        });
+    };
+
     // MEDIA UPLOADER FOR LOGO
     window.smOpenMediaUploader = function(inputId) {
         const frame = wp.media({

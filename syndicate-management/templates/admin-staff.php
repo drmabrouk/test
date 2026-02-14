@@ -22,7 +22,7 @@
                         <th style="border:1px solid #cbd5e0; padding:5px;">اسم المستخدم</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">البريد</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">الاسم الكامل</th>
-                        <th style="border:1px solid #cbd5e0; padding:5px;">كود المستخدم</th>
+                        <th style="border:1px solid #cbd5e0; padding:5px;">الرقم القومي / كود المستخدم</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">المسمى</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">رقم الجوال</th>
                         <th style="border:1px solid #cbd5e0; padding:5px;">كلمة المرور</th>
@@ -105,7 +105,7 @@
             <thead>
                 <tr>
                     <th style="width: 40px;"><input type="checkbox" onclick="toggleAllUsers(this)"></th>
-                    <th>كود المستخدم</th>
+                    <th>الرقم القومي / كود المستخدم</th>
                     <th>الاسم الكامل</th>
                     <th>الدور / الرتبة</th>
                     <th>المحافظة</th>
@@ -192,7 +192,7 @@
                         <input type="text" name="display_name" id="edit_off_display_name" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
-                        <label class="sm-label">كود المستخدم (ID):</label>
+                        <label class="sm-label">الرقم القومي / كود المستخدم:</label>
                         <input type="text" name="officer_id" id="edit_off_code" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
@@ -251,7 +251,7 @@
                         <input type="text" name="display_name" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">
-                        <label class="sm-label">كود المستخدم (ID):</label>
+                        <label class="sm-label">الرقم القومي / كود المستخدم:</label>
                         <input type="text" name="officer_id" class="sm-input" required>
                     </div>
                     <div class="sm-form-group">

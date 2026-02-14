@@ -21,9 +21,21 @@
                 <?php
                 global $wpdb;
                 $surveys = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_surveys ORDER BY created_at DESC");
+                $user = wp_get_current_user();
+                $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+                $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
                 foreach ($surveys as $s):
                     $questions = json_decode($s->questions, true);
-                    $responses_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d", $s->id));
+
+                    $resp_where = $wpdb->prepare("survey_id = %d", $s->id);
+                    if ($is_syndicate_admin && $my_gov) {
+                        $resp_where .= $wpdb->prepare(" AND (
+                            EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
+                            OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = user_id AND m.governorate = %s)
+                        )", $my_gov, $my_gov);
+                    }
+                    $responses_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_survey_responses WHERE $resp_where");
                 ?>
                 <tr>
                     <td><strong><?php echo esc_html($s->title); ?></strong></td>
@@ -86,7 +98,7 @@
                     <option value="all">الجميع</option>
                     <option value="sm_member">الأعضاء فقط</option>
                     <option value="sm_syndicate_member">أعضاء النقابة فقط</option>
-                    <option value="sm_syndicate_member">أعضاء النقابة فقط</option>
+                    <option value="sm_syndicate_admin">مسؤولو النقابة فقط</option>
                 </select>
             </div>
             <div id="survey-questions-container">

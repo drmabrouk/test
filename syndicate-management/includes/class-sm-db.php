@@ -304,19 +304,31 @@ class SM_DB {
         global $wpdb;
         $stats = array();
 
-        $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members");
+        $user = wp_get_current_user();
+        $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
-        if (function_exists('get_users')) {
-            $stats['total_officers'] = count(get_users(array('role' => 'sm_syndicate_member'))) + count(get_users(array('role' => 'sm_syndicate_admin')));
-        } else {
-            $stats['total_officers'] = 0;
+        $where_member = "1=1";
+        if ($is_syndicate_admin && $my_gov) {
+            $where_member = $wpdb->prepare("governorate = %s", $my_gov);
         }
 
+        $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE $where_member");
+        $stats['total_officers'] = count(self::get_staff());
+
         // Financial Trends (Last 30 Days)
+        $join_member = "";
+        $where_finance = "payment_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+        if ($is_syndicate_admin && $my_gov) {
+            $join_member = "JOIN {$wpdb->prefix}sm_members m ON p.member_id = m.id";
+            $where_finance .= $wpdb->prepare(" AND m.governorate = %s", $my_gov);
+        }
+
         $stats['financial_trends'] = $wpdb->get_results("
             SELECT DATE(payment_date) as date, SUM(amount) as total
-            FROM {$wpdb->prefix}sm_payments
-            WHERE payment_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            FROM {$wpdb->prefix}sm_payments p
+            $join_member
+            WHERE $where_finance
             GROUP BY DATE(payment_date)
             ORDER BY date ASC
         ");
@@ -325,7 +337,7 @@ class SM_DB {
         $stats['specializations'] = $wpdb->get_results("
             SELECT specialization, COUNT(*) as count
             FROM {$wpdb->prefix}sm_members
-            WHERE specialization != ''
+            WHERE specialization != '' AND $where_member
             GROUP BY specialization
         ");
 
@@ -412,8 +424,20 @@ class SM_DB {
         $survey = self::get_survey($survey_id);
         if (!$survey) return array();
 
+        $user = wp_get_current_user();
+        $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $where = $wpdb->prepare("survey_id = %d", $survey_id);
+        if ($is_syndicate_admin && $my_gov) {
+            $where .= $wpdb->prepare(" AND (
+                EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
+                OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = user_id AND m.governorate = %s)
+            )", $my_gov, $my_gov);
+        }
+
         $questions = json_decode($survey->questions, true);
-        $responses = $wpdb->get_results($wpdb->prepare("SELECT responses FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d", $survey_id));
+        $responses = $wpdb->get_results("SELECT responses FROM {$wpdb->prefix}sm_survey_responses WHERE $where");
 
         $results = array();
         foreach ($questions as $index => $q) {

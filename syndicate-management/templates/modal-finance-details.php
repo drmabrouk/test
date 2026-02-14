@@ -105,27 +105,3 @@
         </div>
     </div>
 </div>
-<script>
-function smSubmitPayment(btn) {
-    const form = document.getElementById('record-payment-form');
-    const formData = new FormData(form);
-    formData.append('action', 'sm_record_payment_ajax');
-    formData.append('nonce', '<?php echo wp_create_nonce("sm_finance_action"); ?>');
-
-    btn.disabled = true;
-    btn.innerText = 'جاري المعالجة...';
-
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            smShowNotification('تم تسجيل الدفعة بنجاح');
-            smOpenFinanceModal(<?php echo $member_id; ?>);
-        } else {
-            smShowNotification('خطأ: ' + res.data, true);
-            btn.disabled = false;
-            btn.innerText = 'تأكيد استلام المبلغ';
-        }
-    });
-}
-</script>
