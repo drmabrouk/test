@@ -78,6 +78,11 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_export_survey_results', $plugin_public, 'ajax_export_survey_results');
         $this->loader->add_action('wp_ajax_sm_record_payment_ajax', $plugin_public, 'ajax_record_payment');
         $this->loader->add_action('wp_ajax_sm_get_member_finance_ajax', $plugin_public, 'ajax_get_member_finance');
+        $this->loader->add_action('wp_ajax_sm_get_member_finance_html', $plugin_public, 'ajax_get_member_finance_html');
+        $this->loader->add_action('wp_ajax_sm_update_license_ajax', $plugin_public, 'ajax_update_license');
+        $this->loader->add_action('wp_ajax_sm_print_license', $plugin_public, 'ajax_print_license');
+        $this->loader->add_action('wp_ajax_sm_update_facility_ajax', $plugin_public, 'ajax_update_facility');
+        $this->loader->add_action('wp_ajax_sm_print_facility', $plugin_public, 'ajax_print_facility');
     }
 
     public function run() {

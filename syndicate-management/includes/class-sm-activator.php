@@ -12,11 +12,12 @@ class SM_Activator {
 
         $sql = "";
 
-        // Members Table
+        // Members Table (Formerly Members)
         $table_name = $wpdb->prefix . 'sm_members';
         $sql .= "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             national_id varchar(14) NOT NULL,
+            member_code tinytext,
             name tinytext NOT NULL,
             gender enum('male', 'female') DEFAULT 'male',
             professional_grade tinytext,
@@ -152,20 +153,17 @@ class SM_Activator {
     }
 
     private static function migrate_settings() {
-        $old_info = get_option('sm_school_info');
+        $old_info = get_option('sm_syndicate_info');
         if ($old_info && !get_option('sm_syndicate_info')) {
-            // Rename school_name to syndicate_name and school_logo to syndicate_logo
-            if (isset($old_info['school_name'])) {
-                $old_info['syndicate_name'] = $old_info['school_name'];
-                unset($old_info['school_name']);
+            // Rename syndicate fields to syndicate fields
+            if (isset($old_info['syndicate_name'])) {
+                $old_info['syndicate_name'] = $old_info['syndicate_name'];
             }
-            if (isset($old_info['school_logo'])) {
-                $old_info['syndicate_logo'] = $old_info['school_logo'];
-                unset($old_info['school_logo']);
+            if (isset($old_info['syndicate_logo'])) {
+                $old_info['syndicate_logo'] = $old_info['syndicate_logo'];
             }
-            if (isset($old_info['school_principal_name'])) {
-                $old_info['syndicate_principal_name'] = $old_info['school_principal_name'];
-                unset($old_info['school_principal_name']);
+            if (isset($old_info['syndicate_officer_name'])) {
+                $old_info['syndicate_officer_name'] = $old_info['syndicate_officer_name'];
             }
             update_option('sm_syndicate_info', $old_info);
         }
@@ -173,8 +171,9 @@ class SM_Activator {
 
     private static function migrate_tables() {
         global $wpdb;
+        // We use hardcoded old names here to ensure migration from Syndicate version
         $mappings = array(
-            'sm_students' => 'sm_members'
+            'sm_members' => 'sm_members'
         );
         foreach ($mappings as $old => $new) {
             $old_table = $wpdb->prefix . $old;
@@ -183,34 +182,34 @@ class SM_Activator {
                 $wpdb->query("RENAME TABLE $old_table TO $new_table");
 
                 if ($new === 'sm_members') {
-                    $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $new_table LIKE 'student_code'");
+                    $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $new_table LIKE 'member_code'");
                     if (!empty($column_exists)) {
-                        $wpdb->query("ALTER TABLE $new_table CHANGE student_code member_code tinytext");
+                        $wpdb->query("ALTER TABLE $new_table CHANGE member_code member_code tinytext");
                     }
                 }
             }
         }
 
-        // Rename student_id to member_id and teacher_id to officer_id in other tables for data integrity
+        // Rename old column names to new ones in all relevant tables
         $tables_to_fix = array('sm_records', 'sm_messages', 'sm_members');
         foreach ($tables_to_fix as $table) {
             $full_table = $wpdb->prefix . $table;
             if ($wpdb->get_var("SHOW TABLES LIKE '$full_table'")) {
-                // Fix Student ID
-                $col_student = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'student_id'");
-                if (!empty($col_student)) {
-                    $wpdb->query("ALTER TABLE $full_table CHANGE student_id member_id mediumint(9)");
+                // Fix Member ID to Member ID
+                $col_member = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'member_id'");
+                if (!empty($col_member)) {
+                    $wpdb->query("ALTER TABLE $full_table CHANGE member_id member_id mediumint(9)");
                 }
 
-                // Fix Teacher ID / Supervisor ID
-                $col_teacher = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'teacher_id'");
-                if (!empty($col_teacher)) {
-                    $wpdb->query("ALTER TABLE $full_table CHANGE teacher_id officer_id bigint(20)");
+                // Fix Officer ID / Syndicate Member ID to Officer ID
+                $col_officer = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'officer_id'");
+                if (!empty($col_officer)) {
+                    $wpdb->query("ALTER TABLE $full_table CHANGE officer_id officer_id bigint(20)");
                 }
 
-                $col_supervisor = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'supervisor_id'");
-                if (!empty($col_supervisor)) {
-                    $wpdb->query("ALTER TABLE $full_table CHANGE supervisor_id officer_id bigint(20)");
+                $col_syndicate_member = $wpdb->get_results("SHOW COLUMNS FROM $full_table LIKE 'syndicate_member_id'");
+                if (!empty($col_syndicate_member)) {
+                    $wpdb->query("ALTER TABLE $full_table CHANGE syndicate_member_id officer_id bigint(20)");
                 }
             }
         }
@@ -229,7 +228,7 @@ class SM_Activator {
             'إدارة_أولياء_الأمور' => true
         ));
 
-        // Syndicate Officer (Formerly Principal)
+        // Syndicate Officer (Formerly Officer/Syndicate Admin)
         add_role('sm_officer', 'مسؤول النقابة', array(
             'read' => true,
             'إدارة_الأعضاء' => true,
@@ -239,7 +238,7 @@ class SM_Activator {
             'إدارة_أولياء_الأمور' => true
         ));
 
-        // Syndicate Member (Formerly Supervisor/Teacher/Coordinator)
+        // Syndicate Member (Formerly Syndicate Member/Officer)
         add_role('sm_syndicate_member', 'عضو النقابة', array(
             'read' => true,
             'تسجيل_مخالفة' => true,
@@ -247,7 +246,7 @@ class SM_Activator {
             'إدارة_الأعضاء' => true
         ));
 
-        // Member (Formerly Student)
+        // Member (Formerly Member)
         add_role('sm_member', 'عضو', array(
             'read' => true
         ));
@@ -262,14 +261,15 @@ class SM_Activator {
 
     private static function migrate_user_roles() {
         $role_migration = array(
-            'school_admin'          => 'sm_officer',
-            'sm_school_admin'       => 'sm_officer',
+            'syndicate_admin'          => 'sm_officer',
+            'sm_syndicate_admin'       => 'sm_officer',
             'discipline_officer'    => 'sm_officer',
-            'sm_principal'          => 'sm_officer',
-            'sm_supervisor'         => 'sm_syndicate_member',
-            'sm_teacher'            => 'sm_syndicate_member',
-            'sm_coordinator'        => 'sm_syndicate_member',
-            'sm_clinic'             => 'sm_officer'
+            'sm_officer'          => 'sm_officer',
+            'sm_syndicate_member'         => 'sm_syndicate_member',
+            'sm_syndicate_member'            => 'sm_syndicate_member',
+            'sm_syndicate_member'        => 'sm_syndicate_member',
+            'sm_officer'             => 'sm_officer',
+            'sm_member'            => 'sm_member'
         );
 
         foreach ($role_migration as $old => $new) {
@@ -280,8 +280,10 @@ class SM_Activator {
             }
         }
 
-        remove_role('sm_clinic');
-        remove_role('school_admin');
-        remove_role('discipline_officer');
+        // Remove old roles after migration
+        $roles_to_remove = array('sm_officer', 'syndicate_admin', 'discipline_officer', 'sm_officer', 'sm_syndicate_member', 'sm_syndicate_member', 'sm_syndicate_member', 'sm_member');
+        foreach ($roles_to_remove as $r) {
+            remove_role($r);
+        }
     }
 }

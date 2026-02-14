@@ -34,21 +34,21 @@
                 <select name="receiver_id" class="sm-select" required>
                     <?php 
                     $curr_user = wp_get_current_user();
-                    $is_stu = in_array('sm_member', (array)$curr_user->roles);
+                    $is_member_role = in_array('sm_member', (array)$curr_user->roles);
 
-                    if ($is_stu) {
+                    if ($is_member_role) {
                         $staff = get_users(array('role__in' => array('sm_officer', 'sm_syndicate_member')));
                         echo '<optgroup label="أعضاء ومسؤولي النقابة">';
                         foreach($staff as $u) echo '<option value="'.$u->ID.'">'.$u->display_name.'</option>';
                         echo '</optgroup>';
                     } else {
                         $admins = get_users(array('role' => 'sm_officer'));
-                        $supervisors = get_users(array('role' => 'sm_syndicate_member'));
+                        $syndicate_members = get_users(array('role' => 'sm_syndicate_member'));
                         echo '<optgroup label="مديري النقابة">';
                         foreach($admins as $a) echo '<option value="'.$a->ID.'">'.$a->display_name.'</option>';
                         echo '</optgroup>';
-                        echo '<optgroup label="أعضاء النقابة التربويين">';
-                        foreach($supervisors as $o) echo '<option value="'.$o->ID.'">'.$o->display_name.'</option>';
+                        echo '<optgroup label="أعضاء النقابة المهنيين">';
+                        foreach($syndicate_members as $o) echo '<option value="'.$o->ID.'">'.$o->display_name.'</option>';
                         echo '</optgroup>';
                     }
                     ?>

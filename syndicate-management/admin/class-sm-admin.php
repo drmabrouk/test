@@ -103,7 +103,7 @@ class SM_Admin {
             check_admin_referer('sm_admin_action', 'sm_admin_nonce');
             SM_Settings::save_syndicate_info(array(
                 'syndicate_name' => sanitize_text_field($_POST['syndicate_name']),
-                'syndicate_principal_name' => sanitize_text_field($_POST['syndicate_principal_name']),
+                'syndicate_officer_name' => sanitize_text_field($_POST['syndicate_officer_name']),
                 'phone' => sanitize_text_field($_POST['syndicate_phone']),
                 'email' => sanitize_email($_POST['syndicate_email']),
                 'syndicate_logo' => esc_url_raw($_POST['syndicate_logo']),

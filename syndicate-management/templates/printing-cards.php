@@ -102,7 +102,7 @@
                         <div style="width: 50px; height: 50px; background: #FAF5FF; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: #805AD5;">
                             <span class="dashicons dashicons-category" style="font-size: 28px; width: 28px; height: 28px;"></span>
                         </div>
-                        <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">التقارير حسب الصف</h4>
+                        <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">التقارير حسب الدرجة المهنية</h4>
                         <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">استخراج إحصائيات وتقارير مجمعة لمستوى انضباط صف أو شعبة محددة.</p>
                         <div class="sm-form-group">
                             <select id="grade_report_class" class="sm-select" style="font-size: 12px; padding: 8px;">
@@ -110,7 +110,7 @@
                             </select>
                         </div>
                     </div>
-                    <button onclick="alert('قريباً: تقارير الصفوف')" class="sm-btn" style="background: #805AD5; font-size: 12px;">توليد التقرير</button>
+                    <button onclick="alert('قريباً: تقارير الدرجة المهنيةوف')" class="sm-btn" style="background: #805AD5; font-size: 12px;">توليد التقرير</button>
                 </div>
             </div>
         </div>
@@ -128,7 +128,7 @@
                             <span class="dashicons dashicons-editor-ul" style="font-size: 28px; width: 28px; height: 28px;"></span>
                         </div>
                         <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">قائمة الأعضاء الكاملة</h4>
-                        <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">طباعة كشف بجميع أعضاء النقابة مصنفين حسب الصف والشعبة.</p>
+                        <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">طباعة كشف بجميع أعضاء النقابة مصنفين حسب الدرجة المهنية والتخصص.</p>
                     </div>
                     <button onclick="alert('قريباً: طباعة القائمة الكاملة')" class="sm-btn" style="background: #2B6CB0; font-size: 12px;">طباعة القائمة</button>
                 </div>
@@ -181,7 +181,7 @@
             <p style="font-size: 0.9em; color: #64748b; margin-bottom: 20px;">قم بتحميل النماذج التالية، املأ البيانات، ثم ارفعها في الأقسام المخصصة لتسريع عملية إدخال البيانات.</p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,الصف,البريد,الكود\nاسم العضو,الصف الأول,parent@example.com,MEM001"); ?>" download="members_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,الدرجة المهنية,البريد,الكود\nاسم العضو,الدرجة المهنية الأول,parent@example.com,MEM001"); ?>" download="members_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
                     <span class="dashicons dashicons-download"></span> نموذج الأعضاء
                 </a>
                 <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,كلمة السر\nاسم ولي الأمر,parent_user,parent@example.com,pass123"); ?>" download="parents_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">

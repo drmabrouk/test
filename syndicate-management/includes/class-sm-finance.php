@@ -153,4 +153,30 @@ class SM_Finance {
 
         return $insert;
     }
+
+    public static function get_financial_stats() {
+        global $wpdb;
+        $members = SM_DB::get_members();
+
+        $total_owed = 0;
+        $total_paid = 0;
+        $total_penalty = 0;
+
+        foreach ($members as $member) {
+            $dues = self::calculate_member_dues($member->id);
+            $total_owed += $dues['total_owed'];
+            $total_paid += $dues['total_paid'];
+
+            foreach ($dues['breakdown'] as $item) {
+                $total_penalty += $item['penalty'];
+            }
+        }
+
+        return [
+            'total_owed' => $total_owed,
+            'total_paid' => $total_paid,
+            'total_balance' => $total_owed - $total_paid,
+            'total_penalty' => $total_penalty
+        ];
+    }
 }

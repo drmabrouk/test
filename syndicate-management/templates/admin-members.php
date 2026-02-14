@@ -100,7 +100,7 @@ if ($import_results) {
     <div style="display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; align-items: center;">
         <button onclick="document.getElementById('add-single-member-modal').style.display='flex'" class="sm-btn">+ إضافة عضو جديد</button>
         <button onclick="document.getElementById('csv-import-form').style.display='block'" class="sm-btn sm-btn-secondary">استيراد أعضاء (Excel)</button>
-        <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم الكامل,الصف,الشعبة,الجنسية,البريد,الهاتف\nأحمد محمد,الصف 12,أ,إماراتي,parent@example.com,0501234567"); ?>" download="member_template.csv" class="sm-btn sm-btn-outline" style="text-decoration:none;">تحميل نموذج CSV</a>
+        <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم الكامل,الدرجة المهنية,التخصص,الجنسية,البريد,الهاتف\nأحمد محمد,الدرجة المهنية 12,أ,إماراتي,parent@example.com,0501234567"); ?>" download="member_template.csv" class="sm-btn sm-btn-outline" style="text-decoration:none;">تحميل نموذج CSV</a>
         <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>" target="_blank" class="sm-btn sm-btn-accent" style="background: #27ae60; text-decoration:none;">طباعة كافة البطاقات</a>
     </div>
     <?php endif; ?>
@@ -117,11 +117,11 @@ if ($import_results) {
                 </div>
                 <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; text-align: center;">
                     <div style="font-size: 11px; color: #64748b;">العمود B</div>
-                    <div style="font-weight: 800;">الصف الدراسي</div>
+                    <div style="font-weight: 800;">الدرجة المهنية الدراسي</div>
                 </div>
                 <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; text-align: center;">
                     <div style="font-size: 11px; color: #64748b;">العمود C</div>
-                    <div style="font-weight: 800;">الشعبة</div>
+                    <div style="font-weight: 800;">التخصص</div>
                 </div>
                 <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; text-align: center;">
                     <div style="font-size: 11px; color: #64748b;">العمود D</div>
@@ -187,7 +187,7 @@ if ($import_results) {
                     foreach ($members as $member):
                         $finance = SM_Finance::calculate_member_dues($member->id);
                     ?>
-                        <tr id="stu-row-<?php echo $member->id; ?>">
+                        <tr id="member-row-<?php echo $member->id; ?>">
                             <td><input type="checkbox" class="member-checkbox" value="<?php echo $member->id; ?>"></td>
                             <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html($member->national_id); ?></td>
                             <td style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($member->name); ?></td>
@@ -406,7 +406,7 @@ if ($import_results) {
             </div>
             <form id="edit-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
-                <input type="hidden" name="member_id" id="edit_stu_id">
+                <input type="hidden" name="member_id" id="edit_member_id_hidden">
 
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #edf2f7;">
                     <div class="sm-form-group">
@@ -546,7 +546,7 @@ if ($import_results) {
             <p id="delete-confirm-msg">هل أنت متأكد من حذف العضو وسجلاته بالكامل؟</p>
             <form method="post" id="delete-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
-                <input type="hidden" name="delete_member_id" id="confirm_delete_stu_id">
+                <input type="hidden" name="delete_member_id" id="confirm_delete_member_id">
                 <div style="display: flex; gap: 10px; margin-top: 25px;">
                     <button type="submit" name="delete_member" class="sm-btn" style="background: #e53e3e;">تأكيد الحذف النهائي</button>
                     <button type="button" onclick="document.getElementById('delete-member-modal').style.display='none'" class="sm-btn" style="background: #cbd5e0; color: #2d3748;">تراجع</button>
@@ -570,13 +570,13 @@ if ($import_results) {
             </div>
 
             <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-top: 20px; border-bottom: 2px solid #eee;">
-                <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('stu_details_content', this)">السجل الانضباطي</button>
+                <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('member_details_content', this)">السجل الانضباطي</button>
                 <button class="sm-tab-btn" onclick="openFinanceTab(this)">الموقف المالي</button>
             </div>
 
-            <div id="stu_details_content" class="sm-internal-tab" style="padding: 20px 0; max-height: 60vh; overflow-y: auto;"></div>
+            <div id="member_details_content" class="sm-internal-tab" style="padding: 20px 0; max-height: 60vh; overflow-y: auto;"></div>
 
-            <div id="stu_finance_content" class="sm-internal-tab" style="display:none; padding: 20px 0; max-height: 60vh; overflow-y: auto;">
+            <div id="member_finance_content" class="sm-internal-tab" style="display:none; padding: 20px 0; max-height: 60vh; overflow-y: auto;">
                 <div id="finance-loader" style="text-align:center; padding:30px;">جاري تحميل البيانات المالية...</div>
                 <div id="finance-data" style="display:none;">
                     <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom:30px;">
@@ -656,7 +656,7 @@ if ($import_results) {
                 <button class="sm-modal-close" onclick="document.getElementById('member-creds-modal').style.display='none'">&times;</button>
             </div>
             <div style="padding: 20px; background: #f8fafc; border-radius: 12px; margin-top: 15px; border: 1px solid #edf2f7;">
-                <div style="font-weight: 800; color: var(--sm-dark-color); margin-bottom: 15px; font-size: 1.1em;" id="cred-stu-name"></div>
+                <div style="font-weight: 800; color: var(--sm-dark-color); margin-bottom: 15px; font-size: 1.1em;" id="cred-member-name"></div>
 
                 <div style="margin-bottom: 15px;">
                     <div style="font-size: 11px; color: #718096; margin-bottom: 5px;">اسم المستخدم (كود العضو):</div>
@@ -682,7 +682,7 @@ if ($import_results) {
     (function() {
         // Edit Handlers
         window.editSmMember = function(s) {
-            document.getElementById('edit_stu_id').value = s.id;
+            document.getElementById('edit_member_id_hidden').value = s.id;
             document.getElementById('edit_national_id').value = s.national_id || '';
             document.getElementById('edit_name').value = s.name || '';
             document.getElementById('edit_gender').value = s.gender || 'male';
@@ -716,7 +716,7 @@ if ($import_results) {
         window.showMemberCreds = function(user, pass, name, id) {
             document.getElementById('cred-username').innerText = user;
             document.getElementById('cred-password').innerText = pass;
-            document.getElementById('cred-stu-name').innerText = name;
+            document.getElementById('cred-member-name').innerText = name;
             document.getElementById('cred-download-link').href = '<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=member_credentials_card&member_id='); ?>' + id;
             document.getElementById('member-creds-modal').style.display = 'flex';
         };
@@ -724,7 +724,7 @@ if ($import_results) {
         // Handle View Record
         window.viewSmMember = function(member) {
             const modal = document.getElementById('view-member-modal');
-            const content = document.getElementById('stu_details_content');
+            const content = document.getElementById('member_details_content');
             const printBtn = document.getElementById('print-full-record-btn');
             if (!modal || !content) return;
 
@@ -749,7 +749,7 @@ if ($import_results) {
         };
 
         window.openFinanceTab = function(btn) {
-            smOpenInternalTab('stu_finance_content', btn);
+            smOpenInternalTab('member_finance_content', btn);
             const memberId = document.getElementById('payment_member_id').value;
 
             document.getElementById('finance-loader').style.display = 'block';
@@ -858,7 +858,7 @@ if ($import_results) {
 
         // Handle Delete
         window.confirmDeleteMember = function(id, name) {
-            document.getElementById('confirm_delete_stu_id').value = id;
+            document.getElementById('confirm_delete_member_id').value = id;
             document.getElementById('delete-confirm-msg').innerText = `هل أنت متأكد من حذف العضو "${name}" وكافة سجلاته؟`;
             document.getElementById('delete-member-modal').style.display = 'flex';
         };
@@ -870,7 +870,7 @@ if ($import_results) {
                 const formData = new FormData(this);
                 formData.append('action', 'sm_delete_member_ajax');
                 formData.append('nonce', '<?php echo wp_create_nonce("sm_delete_member"); ?>');
-                formData.append('member_id', document.getElementById('confirm_delete_stu_id').value);
+                formData.append('member_id', document.getElementById('confirm_delete_member_id').value);
 
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
                 .then(r => r.json())

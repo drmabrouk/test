@@ -4,9 +4,9 @@
         <div style="flex-shrink: 0;">
             <div style="position: relative; cursor: pointer;" onclick="document.getElementById('member_photo_input').click()">
                 <?php if ($member->photo_url): ?>
-                    <img id="stu_main_photo" src="<?php echo esc_url($member->photo_url); ?>" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid rgba(255,255,255,0.3); box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
+                    <img id="member_main_photo" src="<?php echo esc_url($member->photo_url); ?>" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid rgba(255,255,255,0.3); box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
                 <?php else: ?>
-                    <div id="stu_main_photo_placeholder" style="width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 50px; border: 4px solid rgba(255,255,255,0.3);">👤</div>
+                    <div id="member_main_photo_placeholder" style="width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 50px; border: 4px solid rgba(255,255,255,0.3);">👤</div>
                 <?php endif; ?>
                 <div style="position: absolute; bottom: 0; right: 0; background: var(--sm-primary-color); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
                     <span class="dashicons dashicons-camera" style="font-size: 16px; color: white;"></span>
@@ -54,7 +54,7 @@ foreach ($active_surveys as $survey):
 <div class="sm-survey-card" style="background: #fffdf2; border: 2px solid #fef3c7; border-radius: 12px; padding: 25px; margin-bottom: 30px; position: relative; overflow: hidden;">
     <div style="position: absolute; top: 0; right: 0; background: #fbbf24; color: #78350f; font-size: 10px; font-weight: 800; padding: 4px 15px; border-radius: 0 0 0 12px;">استطلاع رأي هام</div>
     <h3 style="margin: 0 0 10px 0; color: #92400e;"><?php echo esc_html($survey->title); ?></h3>
-    <p style="margin: 0 0 20px 0; font-size: 14px; color: #b45309;">يرجى المشاركة في هذا الاستطلاع القصير للمساهمة في تحسين جودة العملية التعليمية.</p>
+    <p style="margin: 0 0 20px 0; font-size: 14px; color: #b45309;">يرجى المشاركة في هذا الاستطلاع القصير للمساهمة في تحسين جودة العملية المهنية.</p>
 
     <button class="sm-btn" style="background: #d97706; width: auto;" onclick="smOpenSurveyModal(<?php echo $survey->id; ?>)">المشاركة الآن</button>
 </div>
@@ -189,13 +189,13 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
 
     <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color);">
         <h3 style="margin-top:0; border-bottom: 2px solid var(--sm-accent-color); padding-bottom: 10px;">نظام الاستشارات والاستفسارات</h3>
-        <?php if (!$supervisor): ?>
-            <p style="padding: 20px; text-align: center; color: var(--sm-text-gray);">لم يتم تعيين عضو النقابة لهذا الصف بعد.</p>
+        <?php if (!$syndicate_member): ?>
+            <p style="padding: 20px; text-align: center; color: var(--sm-text-gray);">لم يتم تعيين عضو النقابة لهذا الدرجة المهنية بعد.</p>
         <?php else: ?>
             <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
-                <?php echo get_avatar($supervisor->ID, 40, '', '', array('style' => 'border-radius:50%;')); ?>
+                <?php echo get_avatar($syndicate_member->ID, 40, '', '', array('style' => 'border-radius:50%;')); ?>
                 <div>
-                    <div style="font-weight: 800; font-size: 0.9em;">عضو النقابة: <?php echo esc_html($supervisor->display_name); ?></div>
+                    <div style="font-weight: 800; font-size: 0.9em;">عضو النقابة: <?php echo esc_html($syndicate_member->display_name); ?></div>
                     <div style="font-size: 11px; color: #38a169;">متاح لاستلام استفساراتك</div>
                 </div>
             </div>
@@ -203,7 +203,7 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
                 <label class="sm-label">موضوع الاستفسار:</label>
                 <textarea id="member-inquiry-msg" class="sm-textarea" rows="4" placeholder="اكتب استفسارك هنا وسيتم إرساله للعضو نقابة مباشرة..."></textarea>
             </div>
-            <button onclick="sendMemberInquiry(<?php echo $supervisor->ID; ?>)" class="sm-btn" style="background: var(--sm-accent-color);">إرسال الاستفسار الآن</button>
+            <button onclick="sendMemberInquiry(<?php echo $syndicate_member->ID; ?>)" class="sm-btn" style="background: var(--sm-accent-color);">إرسال الاستفسار الآن</button>
         <?php endif; ?>
     </div>
 </div>
@@ -217,13 +217,13 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
 </div>
 
 <script>
-function sendMemberInquiry(supervisorId) {
+function sendMemberInquiry(syndicateMemberId) {
     const msg = document.getElementById('member-inquiry-msg').value;
     if (!msg) { alert('يرجى كتابة نص الاستفسار'); return; }
 
     const formData = new FormData();
     formData.append('action', 'sm_send_message_ajax');
-    formData.append('receiver_id', supervisorId);
+    formData.append('receiver_id', syndicateMemberId);
     formData.append('message', "استفسار عضو: " + msg);
     formData.append('member_id', <?php echo $member->id; ?>);
     formData.append('sm_message_nonce', '<?php echo wp_create_nonce("sm_message_action"); ?>');
@@ -287,7 +287,7 @@ function uploadMemberPhoto(input, memberId) {
     .then(res => {
         if (res.success) {
             smShowNotification('تم تحديث الصورة الشخصية');
-            const img = document.getElementById('stu_main_photo');
+            const img = document.getElementById('member_main_photo');
             if (img) img.src = res.data.photo_url;
             else location.reload();
         } else {

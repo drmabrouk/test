@@ -328,7 +328,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         <?php if ($is_admin): ?>
                             <a href="<?php echo add_query_arg('sm_tab', 'global-settings'); ?>" class="sm-dropdown-item"><span class="dashicons dashicons-admin-generic"></span> إعدادات النظام</a>
                         <?php endif; ?>
-                        <a href="javascript:location.reload()" class="sm-dropdown-item"><span class="dashicons dashicons-update"></span> تحديث الصفحة</a>
+                        <a href="javascript:location.reload()" class="sm-dropdown-item"><span class="dashicons dashicons-update"></span> تحديث الدرجة المهنيةحة</a>
                     </div>
 
                     <div id="sm-profile-edit" style="display: none; padding: 15px;">
@@ -375,6 +375,18 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'members' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-groups"></span> إدارة الأعضاء</a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($is_admin || $is_sys_admin || $is_officer): ?>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'finance' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'finance'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-money-alt"></span> الاستحقاقات المالية</a>
+                    </li>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'practice-licenses' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> تراخيص مزاولة المهنة</a>
+                    </li>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'facility-licenses' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-building"></span> تراخيص المنشآت</a>
                     </li>
                 <?php endif; ?>
 
@@ -432,6 +444,24 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     if ($is_admin || current_user_can('إدارة_الأعضاء')) {
                         echo '<h3 style="margin-top:0;">إدارة الأعضاء</h3>';
                         include SM_PLUGIN_DIR . 'templates/admin-members.php';
+                    }
+                    break;
+
+                case 'finance':
+                    if ($is_admin || $is_sys_admin || $is_officer) {
+                        include SM_PLUGIN_DIR . 'templates/admin-finance.php';
+                    }
+                    break;
+
+                case 'practice-licenses':
+                    if ($is_admin || $is_sys_admin || $is_officer) {
+                        include SM_PLUGIN_DIR . 'templates/admin-practice-licenses.php';
+                    }
+                    break;
+
+                case 'facility-licenses':
+                    if ($is_admin || $is_sys_admin || $is_officer) {
+                        include SM_PLUGIN_DIR . 'templates/admin-facility-licenses.php';
                     }
                     break;
 
@@ -511,7 +541,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
                                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                                     <div class="sm-form-group"><label class="sm-label">اسم النقابة:</label><input type="text" name="syndicate_name" value="<?php echo esc_attr($syndicate['syndicate_name']); ?>" class="sm-input"></div>
-                                    <div class="sm-form-group"><label class="sm-label">اسم مسؤول النقابة:</label><input type="text" name="syndicate_principal_name" value="<?php echo esc_attr($syndicate['syndicate_principal_name'] ?? ''); ?>" class="sm-input"></div>
+                                    <div class="sm-form-group"><label class="sm-label">اسم مسؤول النقابة:</label><input type="text" name="syndicate_officer_name" value="<?php echo esc_attr($syndicate['syndicate_officer_name'] ?? ''); ?>" class="sm-input"></div>
                                     <div class="sm-form-group"><label class="sm-label">رقم الهاتف:</label><input type="text" name="syndicate_phone" value="<?php echo esc_attr($syndicate['phone']); ?>" class="sm-input"></div>
                                     <div class="sm-form-group"><label class="sm-label">البريد الإلكتروني:</label><input type="email" name="syndicate_email" value="<?php echo esc_attr($syndicate['email']); ?>" class="sm-input"></div>
                                     <div class="sm-form-group">

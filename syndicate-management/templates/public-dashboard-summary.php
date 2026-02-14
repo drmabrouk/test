@@ -18,7 +18,7 @@ foreach ($active_surveys as $survey):
 <div class="sm-survey-card" style="background: #fffdf2; border: 2px solid #fef3c7; border-radius: 12px; padding: 25px; margin-bottom: 30px; position: relative; overflow: hidden;">
     <div style="position: absolute; top: 0; right: 0; background: #fbbf24; color: #78350f; font-size: 10px; font-weight: 800; padding: 4px 15px; border-radius: 0 0 0 12px;">استطلاع رأي هام</div>
     <h3 style="margin: 0 0 10px 0; color: #92400e;"><?php echo esc_html($survey->title); ?></h3>
-    <p style="margin: 0 0 20px 0; font-size: 14px; color: #b45309;">يرجى المشاركة في هذا الاستطلاع القصير للمساهمة في تحسين جودة العملية التعليمية.</p>
+    <p style="margin: 0 0 20px 0; font-size: 14px; color: #b45309;">يرجى المشاركة في هذا الاستطلاع القصير للمساهمة في تحسين جودة العملية المهنية.</p>
 
     <button class="sm-btn" style="background: #d97706; width: auto;" onclick="smOpenSurveyModal(<?php echo $survey->id; ?>)">المشاركة الآن</button>
 </div>
@@ -137,29 +137,6 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 40px;">
-    <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); position: relative; max-height: 380px; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-            <h3 style="margin:0; font-size: 1.1em;">توزيع المخالفات حسب الحدة</h3>
-            <button onclick="smDownloadChart('severityChart', 'توزيع_الحدة')" class="sm-action-btn" title="تحميل كصورة" style="background:none; border:none; color:var(--sm-text-gray); cursor:pointer;"><span class="dashicons dashicons-download"></span></button>
-        </div>
-        <div style="height: 250px;"><canvas id="severityChart"></canvas></div>
-    </div>
-    <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); position: relative; max-height: 380px; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-            <h3 style="margin:0; font-size: 1.1em;">أكثر الأعضاء مخالفة (تكرار)</h3>
-            <button onclick="smDownloadChart('topMembersChart', 'أكثر_الأعضاء_مخالفة')" class="sm-action-btn" title="تحميل كصورة" style="background:none; border:none; color:var(--sm-text-gray); cursor:pointer;"><span class="dashicons dashicons-download"></span></button>
-        </div>
-        <div style="height: 250px;"><canvas id="topMembersChart"></canvas></div>
-    </div>
-    <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); position: relative; max-height: 380px; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
-            <h3 style="margin:0; font-size: 1.1em;">توزيع المخالفات حسب الدرجة</h3>
-            <button onclick="smDownloadChart('degreeChart', 'توزيع_الدرجة')" class="sm-action-btn" title="تحميل كصورة" style="background:none; border:none; color:var(--sm-text-gray); cursor:pointer;"><span class="dashicons dashicons-download"></span></button>
-        </div>
-        <div style="height: 250px;"><canvas id="degreeChart"></canvas></div>
-    </div>
-</div>
 
 <script>
 function smDownloadChart(chartId, fileName) {
@@ -227,43 +204,6 @@ function smDownloadChart(chartId, fileName) {
             options: chartOptions
         });
 
-        createOrUpdateChart('severityChart', {
-            type: 'doughnut',
-            data: {
-                labels: <?php echo json_encode(array_map(function($s) use ($severityLabels){ return $severityLabels[$s->severity] ?? $s->severity; }, $stats['by_severity'] ?? [])); ?>,
-                datasets: [{
-                    data: <?php echo json_encode(array_map(function($s){ return $s->count; }, $stats['by_severity'] ?? [])); ?>,
-                    backgroundColor: ['#111F35', '#D02752', '#F63049']
-                }]
-            },
-            options: chartOptions
-        });
-
-        createOrUpdateChart('topMembersChart', {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_map(function($s){ return $s->name; }, $stats['top_members'] ?? [])); ?>,
-                datasets: [{
-                    label: 'عدد المخالفات',
-                    data: <?php echo json_encode(array_map(function($s){ return $s->count; }, $stats['top_members'] ?? [])); ?>,
-                    backgroundColor: '#F63049'
-                }]
-            },
-            options: { ...chartOptions, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
-
-        createOrUpdateChart('degreeChart', {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_map(function($s){ return 'الدرجة ' . $s->degree; }, $stats['by_degree'] ?? [])); ?>,
-                datasets: [{
-                    label: 'عدد الحالات',
-                    data: <?php echo json_encode(array_map(function($s){ return $s->count; }, $stats['by_degree'] ?? [])); ?>,
-                    backgroundColor: '#111F35'
-                }]
-            },
-            options: { ...chartOptions, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
     };
 
     if (document.readyState === 'complete') initSummaryCharts();

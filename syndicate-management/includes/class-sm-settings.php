@@ -58,7 +58,7 @@ class SM_Settings {
     public static function get_syndicate_info() {
         $default = array(
             'syndicate_name' => 'نقابتي النموذجية',
-            'syndicate_principal_name' => 'أحمد علي',
+            'syndicate_officer_name' => 'أحمد علي',
             'syndicate_logo' => '',
             'address' => 'الرياض، المملكة العربية السعودية',
             'email' => 'info@syndicate.edu',
@@ -75,11 +75,11 @@ class SM_Settings {
 
     public static function format_grade_name($grade, $section = '', $format = 'full') {
         if (empty($grade)) return '---';
-        $grade_num = str_replace('الصف ', '', $grade);
+        $grade_num = str_replace('الدرجة المهنية ', '', $grade);
         if ($format === 'short') {
             return trim($grade_num . ' ' . $section);
         }
-        $output = 'الصف ' . $grade_num;
+        $output = 'الدرجة المهنية ' . $grade_num;
         if (!empty($section)) {
             $output .= ' شعبة ' . $section;
         }
@@ -114,7 +114,7 @@ class SM_Settings {
 
     public static function get_suggested_actions() {
         $default = array(
-            'low' => "تنبيه شفوي\nتسجيل ملاحظة\nنصيحة تربوية",
+            'low' => "تنبيه شفوي\nتسجيل ملاحظة\nنصيحة مهنية",
             'medium' => "إنذار خطي\nاستدعاء ولي أمر\nحسم درجات سلوك",
             'high' => "فصل مؤقت\nمجلس انضباط\nتعهد خطي شديد"
         );
