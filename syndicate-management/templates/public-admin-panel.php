@@ -29,24 +29,6 @@
     window.smShowNotification = SM_UI.showNotification;
     window.smOpenInternalTab = SM_UI.openInternalTab;
 
-    // REAL-TIME COUNTERS
-    function updateRealTimeCounters() {
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_counts_ajax')
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                const badgeReports = document.getElementById('pending-reports-badge');
-                if (badgeReports) {
-                    const count = parseInt(res.data.pending_reports);
-                    badgeReports.innerText = count;
-                    badgeReports.style.display = count > 0 ? 'block' : 'none';
-                }
-            }
-        });
-    }
-    setInterval(updateRealTimeCounters, 10000); // Every 10 seconds
-    window.addEventListener('load', updateRealTimeCounters);
-
     // MEDIA UPLOADER FOR LOGO
     window.smOpenMediaUploader = function(inputId) {
         const frame = wp.media({
@@ -59,67 +41,6 @@
             document.getElementById(inputId).value = attachment.url;
         });
         frame.open();
-    };
-
-
-    window.updateRecordStatus = function(id, status) {
-        const formData = new FormData();
-        formData.append('action', 'sm_update_record_status');
-        formData.append('record_id', id);
-        formData.append('status', status);
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_record_action"); ?>');
-
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                smShowNotification('تم تحديث حالة المخالفة');
-                setTimeout(() => location.reload(), 500);
-            }
-        });
-    };
-
-    window.smDeleteAllLogs = function() {
-        if (!confirm('هل أنت متأكد من مسح كافة سجلات النشاط؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-
-        const formData = new FormData();
-        formData.append('action', 'sm_delete_all_logs_ajax');
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                smShowNotification('تم مسح كافة النشاطات بنجاح');
-                setTimeout(() => location.reload(), 500);
-            }
-        });
-    };
-
-    window.smDeleteLog = function(logId) {
-        if (!confirm('هل أنت متأكد من حذف هذا السجل نهائياً؟')) return;
-
-        const formData = new FormData();
-        formData.append('action', 'sm_delete_log_ajax');
-        formData.append('log_id', logId);
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                smShowNotification('تم حذف السجل بنجاح');
-                setTimeout(() => location.reload(), 500);
-            }
-        });
-    };
-
-    window.smOpenViolationModal = function() {
-        document.getElementById('sm-global-violation-modal').style.display = 'flex';
-    };
-
-    window.smCloseViolationModal = function() {
-        document.getElementById('sm-global-violation-modal').style.display = 'none';
     };
 
     window.smToggleUserDropdown = function() {
@@ -171,78 +92,17 @@
         }
     });
 
-    window.smBulkDelete = function(type) {
-        if (!confirm('هل أنت متأكد من مسح كافة البيانات المحددة؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-
-        const formData = new FormData();
-        formData.append('action', 'sm_bulk_delete_ajax');
-        formData.append('delete_type', type);
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                smShowNotification('تم مسح البيانات بنجاح');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                smShowNotification('خطأ: ' + res.data, true);
-            }
-        });
-    };
-
-    window.smRollbackLog = function(logId) {
-        if (!confirm('هل أنت متأكد من استعادة هذه البيانات المحذوفة؟')) return;
-
-        const formData = new FormData();
-        formData.append('action', 'sm_rollback_log_ajax');
-        formData.append('log_id', logId);
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                smShowNotification('تمت الاستعادة بنجاح');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                smShowNotification('خطأ: ' + res.data, true);
-            }
-        });
-    };
-
-    window.smInitializeSystem = function() {
-        const code = prompt('لتأكيد تهيأة النظام بالكامل، يرجى إدخال كود التأكيد (1011996):');
-        if (!code) return;
-
-        const formData = new FormData();
-        formData.append('action', 'sm_initialize_system_ajax');
-        formData.append('confirm_code', code);
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                smShowNotification('تمت تهيأة النظام بالكامل بنجاح');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                smShowNotification('خطأ: ' + res.data, true);
-            }
-        });
-    };
 })(window);
 </script>
 
-<?php 
+<?php
 $user = wp_get_current_user();
 $roles = (array)$user->roles;
 $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');
 $is_sys_admin = in_array('sm_system_admin', $roles);
-$is_officer = in_array('sm_officer', $roles);
+$is_syndicate_admin = in_array('sm_syndicate_admin', $roles);
 $is_syndicate_member = in_array('sm_syndicate_member', $roles);
 $is_member = in_array('sm_member', $roles);
-$is_parent = in_array('sm_parent', $roles);
 
 $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
 $syndicate = SM_Settings::get_syndicate_info();
@@ -250,14 +110,6 @@ $stats = array();
 
 if ($active_tab === 'summary') {
     $stats = SM_DB::get_statistics();
-
-    // For parents, filter stats to their member
-    if ($is_parent) {
-        $member = SM_DB::get_member_by_parent(get_current_user_id());
-        if ($member) {
-            $stats = SM_DB::get_member_stats($member->id);
-        }
-    }
 }
 
 // Dynamic Greeting logic
@@ -282,14 +134,13 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <h1 style="margin:0; border: none; padding: 0; color: var(--sm-dark-color); font-weight: 800; font-size: 1.3em; text-decoration: none; line-height: 1;">
                     <?php echo esc_html($syndicate['syndicate_name']); ?>
                 </h1>
-                <div style="display: inline-block; padding: 3px 12px; background: #fff5f5; color: #F63049; border-radius: 50px; font-size: 11px; font-weight: 700; margin-top: 6px; border: 1px solid #fed7d7;">
-                    <?php 
-                    if ($is_admin) echo 'مدير النظام';
-                    elseif ($is_sys_admin) echo 'مدير النظام التقني';
-                    elseif ($is_officer) echo 'مسؤول النقابة';
-                    elseif ($is_syndicate_member) echo 'عضو النقابة';
-                    elseif ($is_member) echo 'عضو';
-                    else echo 'مستخدم النظام';
+                <div style="display: inline-block; padding: 3px 12px; background: #f0f4f8; color: #111F35; border-radius: 50px; font-size: 11px; font-weight: 700; margin-top: 6px; border: 1px solid #cbd5e0;">
+                    <?php
+                    if ($is_admin) echo 'System Administrator';
+                    elseif ($is_sys_admin) echo 'System Administrator';
+                    elseif ($is_syndicate_admin) echo 'Syndicate Administrator';
+                    elseif ($is_syndicate_member) echo 'Syndicate Member';
+                    else echo 'System User';
                     ?>
                 </div>
             </div>
@@ -300,9 +151,11 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <div style="font-size: 0.85em; font-weight: 700; color: var(--sm-dark-color);"><?php echo date_i18n('l j F Y'); ?></div>
             </div>
 
-
-            <?php if ($is_admin || current_user_can('تسجيل_مخالفة')): ?>
-                <button onclick="smOpenViolationModal()" class="sm-btn" style="background: var(--sm-primary-color); height: 38px; font-size: 12px; color: white !important;">+ تسجيل مخالفة</button>
+            <?php if (current_user_can('sm_manage_licenses')): ?>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>&action=new'" class="sm-btn" style="background: #2c3e50; height: 38px; font-size: 11px; color: white !important; width: auto;">+ إصدار ترخيص مزاولة</button>
+                    <button onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>&action=new'" class="sm-btn" style="background: #27ae60; height: 38px; font-size: 11px; color: white !important; width: auto;">+ تسجيل منشأة جديدة</button>
+                </div>
             <?php endif; ?>
 
             <div class="sm-user-dropdown" style="position: relative;">
@@ -319,10 +172,10 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             <div style="font-weight: 800; color: var(--sm-dark-color);"><?php echo $user->display_name; ?></div>
                             <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo $user->user_email; ?></div>
                         </div>
-                        <?php if (!$is_member && !$is_parent): ?>
+                        <?php if (!$is_member): ?>
                             <a href="javascript:smEditProfile()" class="sm-dropdown-item"><span class="dashicons dashicons-edit"></span> تعديل البيانات الشخصية</a>
                         <?php endif; ?>
-                        <?php if ($is_member || $is_parent): ?>
+                        <?php if ($is_member): ?>
                             <a href="javascript:smEditProfile()" class="sm-dropdown-item"><span class="dashicons dashicons-lock"></span> تغيير كلمة المرور</a>
                         <?php endif; ?>
                         <?php if ($is_admin): ?>
@@ -335,11 +188,11 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         <div style="font-weight: 800; margin-bottom: 15px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 10px;">تعديل الملف الشخصي</div>
                         <div class="sm-form-group" style="margin-bottom: 10px;">
                             <label class="sm-label" style="font-size: 11px;">الاسم المفضل:</label>
-                            <input type="text" id="sm_edit_display_name" class="sm-input" style="padding: 8px; font-size: 12px;" value="<?php echo esc_attr($user->display_name); ?>" <?php if ($is_member || $is_parent) echo 'disabled style="background:#f1f5f9; cursor:not-allowed;"'; ?>>
+                            <input type="text" id="sm_edit_display_name" class="sm-input" style="padding: 8px; font-size: 12px;" value="<?php echo esc_attr($user->display_name); ?>" <?php if ($is_member) echo 'disabled style="background:#f1f5f9; cursor:not-allowed;"'; ?>>
                         </div>
                         <div class="sm-form-group" style="margin-bottom: 10px;">
                             <label class="sm-label" style="font-size: 11px;">البريد الإلكتروني:</label>
-                            <input type="email" id="sm_edit_user_email" class="sm-input" style="padding: 8px; font-size: 12px;" value="<?php echo esc_attr($user->user_email); ?>" <?php if ($is_member || $is_parent) echo 'disabled style="background:#f1f5f9; cursor:not-allowed;"'; ?>>
+                            <input type="email" id="sm_edit_user_email" class="sm-input" style="padding: 8px; font-size: 12px;" value="<?php echo esc_attr($user->user_email); ?>" <?php if ($is_member) echo 'disabled style="background:#f1f5f9; cursor:not-allowed;"'; ?>>
                         </div>
                         <div class="sm-form-group" style="margin-bottom: 15px;">
                             <label class="sm-label" style="font-size: 11px;">كلمة مرور جديدة (اختياري):</label>
@@ -366,21 +219,18 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <a href="<?php echo add_query_arg('sm_tab', 'summary'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-dashboard"></span> لوحة المعلومات</a>
                 </li>
 
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member || $is_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'stats' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'stats'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-list-view"></span> سجل المخالفات</a>
-                    </li>
-                <?php endif; ?>
-
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'members' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-groups"></span> إدارة الأعضاء</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_officer): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'finance' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'finance'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-money-alt"></span> الاستحقاقات المالية</a>
+                    </li>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'financial-logs' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'financial-logs'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-media-spreadsheet"></span> سجل العمليات المالية</a>
                     </li>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'practice-licenses' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> تراخيص مزاولة المهنة</a>
@@ -390,29 +240,19 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'staffs' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'staffs'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-admin-users"></span> إدارة مستخدمي النظام</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'staff-reports' ? 'sm-active' : ''; ?>" style="position:relative;">
-                        <a href="<?php echo add_query_arg('sm_tab', 'staff-reports'); ?>" class="sm-sidebar-link">
-                            <span class="dashicons dashicons-warning"></span> بلاغات أعضاء النقابة
-                            <span id="pending-reports-badge" class="sm-sidebar-badge" style="display:none;">0</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
-
-
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'printing' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'printing'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-printer"></span> مركز الطباعة</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin || $is_syndicate_member): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'surveys' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'surveys'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-clipboard"></span> استطلاعات الرأي</a>
                     </li>
@@ -428,16 +268,11 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
         <!-- CONTENT AREA -->
         <div class="sm-main-panel" style="flex: 1; min-width: 0; padding: 40px; background: #fff;">
-            
-            <?php 
+
+            <?php
             switch ($active_tab) {
                 case 'summary':
-                    if ($is_parent) {
-                        if (isset($member) && $member) include SM_PLUGIN_DIR . 'templates/parent-member-summary.php';
-                        else echo '<p>لا يوجد بيانات لعرضها.</p>';
-                    } else {
-                        include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php'; 
-                    }
+                    include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php';
                     break;
 
                 case 'members':
@@ -448,8 +283,14 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     break;
 
                 case 'finance':
-                    if ($is_admin || $is_sys_admin || $is_officer) {
+                    if ($is_admin || $is_sys_admin || $is_syndicate_admin) {
                         include SM_PLUGIN_DIR . 'templates/admin-finance.php';
+                    }
+                    break;
+
+                case 'financial-logs':
+                    if ($is_admin || $is_sys_admin || $is_syndicate_admin) {
+                        include SM_PLUGIN_DIR . 'templates/admin-financial-logs.php';
                     }
                     break;
 
@@ -465,11 +306,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     }
                     break;
 
-                case 'stats':
-                    if ($is_admin || current_user_can('إدارة_المخالفات') || $is_parent) {
-                        include SM_PLUGIN_DIR . 'templates/public-dashboard-stats.php'; 
-                    }
-                    break;
 
                 case 'messaging':
                     include SM_PLUGIN_DIR . 'templates/messaging-center.php';
@@ -490,9 +326,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     break;
 
 
-                case 'staff-reports':
-                    include SM_PLUGIN_DIR . 'templates/admin-syndicate-member-reports.php';
-                    break;
 
                 case 'surveys':
                     if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member) {
@@ -507,7 +340,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('syndicate-settings', this)">السلطة</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-settings', this)">الدرجات والتخصصات</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('design-settings', this)">تصميم النظام</button>
-                            <button class="sm-tab-btn" onclick="smOpenInternalTab('user-settings', this)">إدارة المستخدمين</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('backup-settings', this)">مركز النسخ الاحتياطي</button>
                             <?php if ($is_admin): ?>
                                 <button class="sm-tab-btn" onclick="smOpenInternalTab('activity-logs', this)">سجل النشاطات</button>
@@ -600,10 +432,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             </form>
                         </div>
 
-                        <div id="user-settings" class="sm-internal-tab" style="display:none;">
-                            <?php include SM_PLUGIN_DIR . 'templates/admin-users-view.php'; ?>
-                        </div>
-
                         <div id="backup-settings" class="sm-internal-tab" style="display:none;">
                             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:30px;">
                                 <h4 style="margin-top:0;">مركز النسخ الاحتياطي وإدارة البيانات</h4>
@@ -621,33 +449,13 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
                                     <div style="background:white; padding:20px; border-radius:8px; border:1px solid #eee;">
                                         <h5 style="margin-top:0;">تصدير البيانات الشاملة</h5>
-                                        <p style="font-size:12px; color:#666; margin-bottom:15px;">قم بتحميل نسخة كاملة من بيانات الأعضاء والمخالفات بصيغة JSON.</p>
+                                        <p style="font-size:12px; color:#666; margin-bottom:15px;">قم بتحميل نسخة كاملة من بيانات الأعضاء بصيغة JSON.</p>
                                         <div style="display:flex; gap:10px;">
                                             <form method="post">
                                                 <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
                                                 <button type="submit" name="sm_download_backup" class="sm-btn" style="background:#27ae60; width:auto;">تصدير الآن (JSON)</button>
                                             </form>
-                                            <form method="get" action="<?php echo admin_url('admin-ajax.php'); ?>">
-                                                <input type="hidden" name="action" value="sm_export_violations_csv">
-                                                <input type="hidden" name="range" value="all">
-                                                <input type="hidden" name="nonce" value="<?php echo wp_create_nonce('sm_export_action'); ?>">
-                                                <button type="submit" class="sm-btn" style="background:#111F35; width:auto;">سجل الانضباط الشامل (CSV)</button>
-                                            </form>
                                         </div>
-                                    </div>
-                                    <div style="background:white; padding:20px; border-radius:8px; border:1px solid #eee;">
-                                        <h5 style="margin-top:0;">تصدير سجلات عضو محدد</h5>
-                                        <p style="font-size:12px; color:#666; margin-bottom:15px;">تصدير كافة مخالفات عضو معين باستخدام الكود الخاص به.</p>
-                                        <form method="get" action="<?php echo admin_url('admin-ajax.php'); ?>" target="_blank">
-                                            <input type="hidden" name="action" value="sm_export_violations_csv">
-                                            <input type="hidden" name="range" value="all">
-                                            <?php $ex_nonce = wp_create_nonce('sm_export_action'); ?>
-                                            <input type="hidden" name="nonce" value="<?php echo $ex_nonce; ?>">
-                                            <div class="sm-form-group">
-                                                <input type="text" name="member_code" class="sm-input" placeholder="أدخل كود العضو (مثال: MB00001)" required style="font-size:11px;">
-                                            </div>
-                                            <button type="submit" class="sm-btn" style="background:#3182ce; width:auto; font-size:11px;">تصدير سجلات العضو</button>
-                                        </form>
                                     </div>
                                     <div style="background:white; padding:20px; border-radius:8px; border:1px solid #eee;">
                                         <h5 style="margin-top:0;">استيراد البيانات</h5>
@@ -657,21 +465,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                             <input type="file" name="backup_file" required style="margin-bottom:10px; font-size:11px;">
                                             <button type="submit" name="sm_restore_backup" class="sm-btn" style="background:#2980b9; width:auto;">بدء الاستيراد</button>
                                         </form>
-                                    </div>
-                                    <div style="background:white; padding:20px; border-radius:8px; border:1px solid #eee;">
-                                        <h5 style="margin-top:0;">مسح البيانات المخصص</h5>
-                                        <p style="font-size:12px; color:#666; margin-bottom:15px;">اختر القسم الذي تريد مسح كافة بياناته نهائياً:</p>
-                                        <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                                            <button onclick="smBulkDelete('members')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح الأعضاء</button>
-                                            <button onclick="smBulkDelete('staffs')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح أعضاء النقابة</button>
-                                            <button onclick="smBulkDelete('parents')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح أولياء الأمور</button>
-                                            <button onclick="smBulkDelete('records')" class="sm-btn sm-btn-outline" style="font-size:11px; color:#e53e3e; border-color:#feb2b2;">مسح المخالفات</button>
-                                        </div>
-                                    </div>
-                                    <div style="background:#fff5f5; padding:20px; border-radius:8px; border:2px dashed #feb2b2;">
-                                        <h5 style="margin-top:0; color:#c53030;">تهيأة النظام (إعادة ضبط المصنع)</h5>
-                                        <p style="font-size:12px; color:#666; margin-bottom:15px;">هذا الإجراء سيقوم بمسح **كافة** البيانات من جميع الأقسام بما في ذلك الإعدادات والمستخدمين والأعضاء.</p>
-                                        <button onclick="smInitializeSystem()" class="sm-btn" style="background:#c53030; width:auto;">تهيأة النظام بالكامل</button>
                                     </div>
                                 </div>
                             </div>
@@ -698,7 +491,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php 
+                                            <?php
                                             $limit = 20;
                                             $page_num = isset($_GET['log_page']) ? max(1, intval($_GET['log_page'])) : 1;
                                             $offset = ($page_num - 1) * $limit;
@@ -719,10 +512,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                                     <td style="font-size:0.9em;"><?php echo $details_display; ?></td>
                                                     <td>
                                                         <div style="display:flex; gap:8px;">
-                                                            <?php if ($can_rollback): ?>
-                                                                <button onclick="smRollbackLog(<?php echo $log->id; ?>)" class="sm-btn" style="width:auto; height:28px; padding:0 12px; font-size:11px; background:#2d3748;">استعادة</button>
-                                                            <?php endif; ?>
-                                                            <button onclick="smDeleteLog(<?php echo $log->id; ?>)" class="sm-btn" style="width:auto; height:28px; padding:0 12px; font-size:11px; background:#e53e3e;">حذف</button>
+                                                            <span style="font-size:11px; color:#718096;">لا يوجد إجراءات</span>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -755,32 +545,20 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
     </div>
 </div>
 
-<!-- GLOBAL VIOLATION MODAL -->
-<div id="sm-global-violation-modal" class="sm-modal-overlay">
-    <div class="sm-modal-content" style="max-width: 800px;">
-        <div class="sm-modal-header">
-            <h3>تسجيل مخالفة جديدة</h3>
-            <button class="sm-modal-close" onclick="smCloseViolationModal()">&times;</button>
-        </div>
-        <div id="sm-violation-modal-body">
-            <?php include SM_PLUGIN_DIR . 'templates/system-form.php'; ?>
-        </div>
-    </div>
-</div>
 
 <style>
 .sm-sidebar-item { border-bottom: 1px solid #e2e8f0; transition: 0.2s; }
-.sm-sidebar-link { 
-    padding: 15px 25px; 
+.sm-sidebar-link {
+    padding: 15px 25px;
     cursor: pointer; font-weight: 600; color: #4a5568 !important;
     display: flex; align-items: center; gap: 12px;
     text-decoration: none !important;
     width: 100%;
 }
 .sm-sidebar-item:hover { background: #edf2f7; }
-.sm-sidebar-item.sm-active { 
-    background: #fff !important; 
-    border-right: 4px solid var(--sm-primary-color) !important; 
+.sm-sidebar-item.sm-active {
+    background: #fff !important;
+    border-right: 4px solid var(--sm-primary-color) !important;
 }
 .sm-sidebar-item.sm-active .sm-sidebar-link {
     color: var(--sm-primary-color) !important;

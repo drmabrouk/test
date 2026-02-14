@@ -57,9 +57,9 @@
 
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee;">
         <a href="<?php echo remove_query_arg('role_filter'); ?>" class="sm-tab-btn <?php echo empty($_GET['role_filter']) ? 'sm-active' : ''; ?>" style="text-decoration:none;">الكل</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_member'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_member' ? 'sm-active' : ''; ?>" style="text-decoration:none;">أعضاء النقابة</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_officer'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_officer' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مسؤولو النقابة</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_system_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مديرو النظام</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_system_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">System Administrator</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">Syndicate Administrator</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_member'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_member' ? 'sm-active' : ''; ?>" style="text-decoration:none;">Syndicate Member</a>
     </div>
 
     <div style="background: white; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 30px; box-shadow: var(--sm-shadow);">
@@ -76,9 +76,9 @@
                 <label class="sm-label">تصفية حسب الدور:</label>
                 <select name="role_filter" class="sm-select">
                     <option value="">كل الأدوار</option>
-                    <option value="sm_system_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_system_admin'); ?>>مدير النظام</option>
-                    <option value="sm_officer" <?php selected($_GET['role_filter'] ?? '', 'sm_officer'); ?>>مسؤول النقابة</option>
-                    <option value="sm_syndicate_member" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_member'); ?>>عضو نقابة</option>
+                    <option value="sm_system_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_system_admin'); ?>>System Administrator</option>
+                    <option value="sm_syndicate_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_admin'); ?>>Syndicate Administrator</option>
+                    <option value="sm_syndicate_member" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_member'); ?>>Syndicate Member</option>
                 </select>
             </div>
 
@@ -105,9 +105,9 @@
             <tbody>
                 <?php 
                 $role_labels = array(
-                    'sm_system_admin' => 'مدير النظام',
-                    'sm_officer' => 'مسؤول النقابة',
-                    'sm_syndicate_member' => 'عضو النقابة'
+                    'sm_system_admin' => 'System Administrator',
+                    'sm_syndicate_admin' => 'Syndicate Administrator',
+                    'sm_syndicate_member' => 'Syndicate Member'
                 );
 
                 $args = array('role__in' => array_keys($role_labels));
@@ -195,9 +195,9 @@
                     <div class="sm-form-group">
                         <label class="sm-label">تغيير الدور:</label>
                         <select name="role" id="edit_off_role" class="sm-select">
-                            <option value="sm_system_admin">مدير النظام</option>
-                            <option value="sm_officer">مسؤول النقابة</option>
-                            <option value="sm_syndicate_member">عضو النقابة</option>
+                            <option value="sm_system_admin">System Administrator</option>
+                            <option value="sm_syndicate_admin">Syndicate Administrator</option>
+                            <option value="sm_syndicate_member">Syndicate Member</option>
                         </select>
                     </div>
                     <div class="sm-form-group">
@@ -237,9 +237,9 @@
                     <div class="sm-form-group">
                         <label class="sm-label">اختيار الدور:</label>
                         <select name="role" class="sm-select">
-                            <option value="sm_system_admin">مدير النظام</option>
-                            <option value="sm_officer">مسؤول النقابة</option>
-                            <option value="sm_syndicate_member">عضو النقابة</option>
+                            <option value="sm_system_admin">System Administrator</option>
+                            <option value="sm_syndicate_admin">Syndicate Administrator</option>
+                            <option value="sm_syndicate_member">Syndicate Member</option>
                         </select>
                     </div>
                     <div class="sm-form-group">

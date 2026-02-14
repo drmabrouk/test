@@ -149,6 +149,10 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     </select>
                 </div>
                 <div class="sm-form-group">
+                    <label class="sm-label">تاريخ الإصدار:</label>
+                    <input type="date" name="facility_license_issue_date" id="fac_issue" class="sm-input" value="<?php echo date('Y-m-d'); ?>" required>
+                </div>
+                <div class="sm-form-group">
                     <label class="sm-label">تاريخ الانتهاء:</label>
                     <input type="date" name="facility_license_expiration_date" id="fac_expiry" class="sm-input" required>
                 </div>
@@ -166,7 +170,20 @@ $registry = $wpdb->get_results($wpdb->prepare(
 function smOpenFacilityModal() {
     document.getElementById('sm-facility-form').reset();
     document.getElementById('sm-facility-modal').style.display = 'flex';
+    document.getElementById('fac_issue').value = '<?php echo date('Y-m-d'); ?>';
+    smCalculateFacilityExpiry();
 }
+
+function smCalculateFacilityExpiry() {
+    const startDate = document.getElementById('fac_issue').value;
+    if (startDate) {
+        const date = new Date(startDate);
+        date.setFullYear(date.getFullYear() + 1);
+        document.getElementById('fac_expiry').value = date.toISOString().split('T')[0];
+    }
+}
+
+document.getElementById('fac_issue').addEventListener('change', smCalculateFacilityExpiry);
 
 document.getElementById('facility_owner_select').addEventListener('change', function() {
     const opt = this.options[this.selectedIndex];
@@ -174,8 +191,22 @@ document.getElementById('facility_owner_select').addEventListener('change', func
         document.getElementById('fac_name').value = opt.dataset.fname || '';
         document.getElementById('fac_num').value = opt.dataset.fnum || '';
         document.getElementById('fac_cat').value = opt.dataset.fcat || 'C';
-        document.getElementById('fac_expiry').value = opt.dataset.fexpiry || '';
+        document.getElementById('fac_issue').value = opt.dataset.fissue || '<?php echo date('Y-m-d'); ?>';
+
+        if (opt.dataset.fexpiry) {
+            document.getElementById('fac_expiry').value = opt.dataset.fexpiry;
+        } else {
+            smCalculateFacilityExpiry();
+        }
+
         document.getElementById('fac_addr').value = opt.dataset.faddr || '';
+    }
+});
+
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'new') {
+        smOpenFacilityModal();
     }
 });
 

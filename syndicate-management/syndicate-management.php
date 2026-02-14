@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Syndicate Management (إدارة النقابة)
- * Description: نظام شامل لإدارة السلوك، المخالفات، والتقارير النقابية.
+ * Description: نظام شامل لإدارة الأعضاء، التراخيص، والتقارير النقابية والمالية.
  * Version: 97.0.0
  * Author: AHMED MABROUK
  * Language: ar

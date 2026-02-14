@@ -156,14 +156,41 @@ $registry = $wpdb->get_results($wpdb->prepare(
 function smOpenLicenseIssuanceModal() {
     document.getElementById('sm-license-form').reset();
     document.getElementById('sm-license-modal').style.display = 'flex';
+    document.getElementById('lic_issue').value = '<?php echo date('Y-m-d'); ?>';
+    smCalculateExpiry('lic_issue', 'lic_expiry');
 }
+
+function smCalculateExpiry(startId, endId) {
+    const startDate = document.getElementById(startId).value;
+    if (startDate) {
+        const date = new Date(startDate);
+        date.setFullYear(date.getFullYear() + 1);
+        document.getElementById(endId).value = date.toISOString().split('T')[0];
+    }
+}
+
+document.getElementById('lic_issue').addEventListener('change', function() {
+    smCalculateExpiry('lic_issue', 'lic_expiry');
+});
 
 document.getElementById('license_member_select').addEventListener('change', function() {
     const opt = this.options[this.selectedIndex];
     if (opt.value) {
         document.getElementById('lic_num').value = opt.dataset.license || '';
         document.getElementById('lic_issue').value = opt.dataset.issue || '<?php echo date('Y-m-d'); ?>';
-        document.getElementById('lic_expiry').value = opt.dataset.expiry || '<?php echo date('Y-m-d', strtotime('+1 year')); ?>';
+
+        if (opt.dataset.expiry) {
+            document.getElementById('lic_expiry').value = opt.dataset.expiry;
+        } else {
+            smCalculateExpiry('lic_issue', 'lic_expiry');
+        }
+    }
+});
+
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'new') {
+        smOpenLicenseIssuanceModal();
     }
 });
 

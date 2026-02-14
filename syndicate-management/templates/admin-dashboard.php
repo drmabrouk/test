@@ -3,15 +3,8 @@
     <h1>نظام إدارة النقابة - لوحة التحكم</h1>
     <hr>
 
-    <?php if (current_user_can('إدارة_المخالفات')): ?>
-        <?php include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php'; ?>
-    <?php else: ?>
-        <div class="welcome-panel" style="padding: 20px; margin-top: 20px;">
-            <h2>أهلاً بك، <?php echo wp_get_current_user()->display_name; ?></h2>
-            <p>لديك صلاحية الوصول المحدود لنظام إدارة النقابة. استخدم القائمة الجانبية للوصول للوظائف المتاحة لك.</p>
-        </div>
-    <?php endif; ?>
-    
+    <?php include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php'; ?>
+
     <div style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
         <?php if (current_user_can('إدارة_الأعضاء')): ?>
         <div style="flex: 1; min-width: 300px; background: #fff; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); box-shadow: var(--sm-shadow);">
@@ -21,14 +14,7 @@
         </div>
         <?php endif; ?>
 
-        <?php if (current_user_can('تسجيل_مخالفة')): ?>
-        <div style="flex: 1; min-width: 300px; background: #fff; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); box-shadow: var(--sm-shadow);">
-            <h3 style="color: var(--sm-primary-color);">تسجيل سريع</h3>
-            <p>استخدم هذا القسم لتسجيل مخالفة جديدة بسرعة أو استخدام ماسح الباركود.</p>
-            <button onclick="smOpenViolationModal()" class="sm-btn">تسجيل مخالفة الآن</button>
-        </div>
-        <?php endif; ?>
-        
+
         <?php if (current_user_can('manage_options')): ?>
         <div style="flex: 1; min-width: 300px; background: #fff; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); box-shadow: var(--sm-shadow);">
             <h3 style="color: var(--sm-primary-color);">الأكواد المختصرة للمطور</h3>

@@ -45,7 +45,7 @@ $syndicate = SM_Settings::get_syndicate_info();
             <?php
             $count = 1;
             foreach ($members as $s):
-                $pass = get_user_meta($s->parent_user_id, 'sm_temp_pass', true);
+                $pass = get_user_meta($s->wp_user_id, 'sm_temp_pass', true);
                 if (empty($pass)) $pass = '********';
             ?>
                 <tr>
