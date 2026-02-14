@@ -70,10 +70,17 @@
                 <select name="receiver_id" class="sm-select" required>
                     <option value="">بحث عن مستخدم...</option>
                     <?php 
-                    $users = get_users(array('exclude' => array($my_id)));
-                    foreach ($users as $u) {
+                    $staff = SM_DB::get_staff(array('exclude' => array($my_id)));
+                    foreach ($staff as $u) {
                         $role = !empty($u->roles) ? $u->roles[0] : '';
-                        echo '<option value="'.$u->ID.'">'.$u->display_name.' ('.$role.')</option>';
+                        echo '<option value="'.$u->ID.'">'.$u->display_name.' (موظف)</option>';
+                    }
+
+                    $members = SM_DB::get_members();
+                    foreach ($members as $m) {
+                        if ($m->wp_user_id && $m->wp_user_id != $my_id) {
+                            echo '<option value="'.$m->wp_user_id.'">'.$m->name.' (عضو)</option>';
+                        }
                     }
                     ?>
                 </select>

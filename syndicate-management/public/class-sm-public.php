@@ -120,6 +120,37 @@ class SM_Public {
     public function register_shortcodes() {
         add_shortcode('sm_login', array($this, 'shortcode_login'));
         add_shortcode('sm_admin', array($this, 'shortcode_admin_dashboard'));
+        add_filter('authenticate', array($this, 'custom_authenticate'), 20, 3);
+    }
+
+    public function custom_authenticate($user, $username, $password) {
+        if (empty($username) || empty($password)) return $user;
+
+        // If already authenticated by standard means, return
+        if ($user instanceof WP_User) return $user;
+
+        // 1. Check for Syndicate Admin/Member ID Code (meta)
+        $code_query = new WP_User_Query(array(
+            'meta_query' => array(
+                array('key' => 'sm_syndicateMemberIdAttr', 'value' => $username)
+            ),
+            'number' => 1
+        ));
+        $found = $code_query->get_results();
+        if (!empty($found)) {
+            $u = $found[0];
+            if (wp_check_password($password, $u->user_pass, $u->ID)) return $u;
+        }
+
+        // 2. Check for National ID in sm_members table (if user_login is different)
+        global $wpdb;
+        $member_wp_id = $wpdb->get_var($wpdb->prepare("SELECT wp_user_id FROM {$wpdb->prefix}sm_members WHERE national_id = %s", $username));
+        if ($member_wp_id) {
+            $u = get_userdata($member_wp_id);
+            if ($u && wp_check_password($password, $u->user_pass, $u->ID)) return $u;
+        }
+
+        return $user;
     }
 
     public function shortcode_login() {

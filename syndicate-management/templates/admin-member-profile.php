@@ -11,6 +11,7 @@ if (!$member) {
 $user = wp_get_current_user();
 $is_sys_manager = in_array('sm_system_admin', (array)$user->roles);
 $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+$is_member = in_array('sm_member', (array)$user->roles);
 
 // GEOGRAPHIC ACCESS CHECK
 if ($is_syndicate_admin) {
@@ -43,7 +44,9 @@ $finance = SM_Finance::calculate_member_dues($member->id);
             </div>
         </div>
         <div style="display: flex; gap: 10px;">
-            <button onclick="editSmMember(JSON.parse(this.dataset.member))" data-member='<?php echo esc_attr(wp_json_encode($member)); ?>' class="sm-btn" style="background: #3182ce; width: auto;"><span class="dashicons dashicons-edit"></span> تعديل البيانات</button>
+            <?php if (!$is_member): ?>
+                <button onclick="editSmMember(JSON.parse(this.dataset.member))" data-member='<?php echo esc_attr(wp_json_encode($member)); ?>' class="sm-btn" style="background: #3182ce; width: auto;"><span class="dashicons dashicons-edit"></span> تعديل البيانات</button>
+            <?php endif; ?>
             <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card&member_id='.$member->id); ?>" target="_blank" class="sm-btn" style="background: #27ae60; width: auto; text-decoration:none; display:flex; align-items:center; gap:8px;"><span class="dashicons dashicons-id-alt"></span> طباعة الكارنيه</a>
             <?php if ($is_sys_manager): ?>
                 <button onclick="deleteMember(<?php echo $member->id; ?>, '<?php echo esc_js($member->name); ?>')" class="sm-btn" style="background: #e53e3e; width: auto;"><span class="dashicons dashicons-trash"></span> حذف العضو</button>
@@ -102,7 +105,9 @@ $finance = SM_Finance::calculate_member_dues($member->id);
                     <div style="display: flex; justify-content: space-between;"><span>إجمالي المستحق:</span> <strong><?php echo number_format($finance['total_owed'], 2); ?></strong></div>
                     <div style="display: flex; justify-content: space-between;"><span>إجمالي المسدد:</span> <strong style="color:#38a169;"><?php echo number_format($finance['total_paid'], 2); ?></strong></div>
                 </div>
-                <button onclick="smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-btn" style="margin-top: 20px; background: var(--sm-dark-color);">إدارة المدفوعات والفواتير</button>
+                <button onclick="smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-btn" style="margin-top: 20px; background: var(--sm-dark-color);">
+                    <?php echo $is_member ? 'عرض كشف الحساب' : 'إدارة المدفوعات والفواتير'; ?>
+                </button>
             </div>
 
             <!-- Account Status -->
