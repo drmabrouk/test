@@ -150,21 +150,28 @@ class SM_Activator {
 
     private static function migrate_tables() {
         global $wpdb;
-        // We use hardcoded old names here to ensure migration from Syndicate version
+        // Migration from School version (sm_students -> sm_members)
         $mappings = array(
-            'sm_members' => 'sm_members'
+            'sm_students' => 'sm_members'
         );
         foreach ($mappings as $old => $new) {
             $old_table = $wpdb->prefix . $old;
             $new_table = $wpdb->prefix . $new;
             if ($wpdb->get_var("SHOW TABLES LIKE '$old_table'") && !$wpdb->get_var("SHOW TABLES LIKE '$new_table'")) {
                 $wpdb->query("RENAME TABLE $old_table TO $new_table");
+            }
+        }
 
-                if ($new === 'sm_members') {
-                    $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $new_table LIKE 'member_code'");
-                    if (!empty($column_exists)) {
-                        $wpdb->query("ALTER TABLE $new_table CHANGE member_code member_code tinytext");
-                    }
+        $members_table = $wpdb->prefix . 'sm_members';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$members_table'")) {
+            // Ensure column names are updated from legacy 'student' to 'member'
+            $column_renames = [
+                'student_code' => 'member_code'
+            ];
+            foreach ($column_renames as $old_col => $new_col) {
+                $col_exists = $wpdb->get_results("SHOW COLUMNS FROM $members_table LIKE '$old_col'");
+                if (!empty($col_exists)) {
+                    $wpdb->query("ALTER TABLE $members_table CHANGE $old_col $new_col tinytext");
                 }
             }
         }
@@ -200,7 +207,7 @@ class SM_Activator {
             'sm_system_admin', 'sm_officer', 'sm_syndicate_member', 'sm_member', 'sm_parent',
             'sm_syndicate_admin', 'syndicate_admin', 'sm_school_admin', 'school_admin',
             'discipline_officer', 'sm_principal', 'sm_supervisor', 'sm_teacher',
-            'sm_coordinator', 'sm_clinic'
+            'sm_coordinator', 'sm_clinic', 'sm_student'
         );
         foreach ($roles_to_clean as $role_slug) {
             remove_role($role_slug);
@@ -235,6 +242,11 @@ class SM_Activator {
             'sm_print_reports' => true
         ));
 
+        // 4. Member (End-user)
+        add_role('sm_member', 'Member', array(
+            'read' => true
+        ));
+
         self::migrate_user_roles();
     }
 
@@ -244,11 +256,12 @@ class SM_Activator {
             'sm_officer'            => 'sm_syndicate_admin',
             'sm_syndicate_admin'    => 'sm_syndicate_admin',
             'sm_syndicate_member'   => 'sm_syndicate_member',
-            'sm_member'             => 'sm_syndicate_member',
-            'sm_parent'             => 'sm_syndicate_member',
+            'sm_member'             => 'sm_member',
+            'sm_parent'             => 'sm_member',
             'sm_principal'          => 'sm_syndicate_admin',
             'school_admin'          => 'sm_syndicate_admin',
-            'sm_school_admin'       => 'sm_syndicate_admin'
+            'sm_school_admin'       => 'sm_syndicate_admin',
+            'sm_student'            => 'sm_member'
         );
 
         foreach ($role_migration as $old => $new) {

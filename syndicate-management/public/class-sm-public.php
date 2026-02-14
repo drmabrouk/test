@@ -319,6 +319,57 @@ class SM_Public {
         exit;
     }
 
+    public function handle_form_submission() {
+        // Placeholder for legacy form handling if needed
+    }
+
+    public function ajax_get_counts() {
+        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        $stats = SM_DB::get_statistics();
+        wp_send_json_success([
+            'pending_reports' => SM_DB::get_pending_reports_count()
+        ]);
+    }
+
+    public function ajax_bulk_delete_users() {
+        if (!current_user_can('sm_manage_users')) wp_send_json_error('Unauthorized');
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
+
+        $ids = explode(',', $_POST['user_ids']);
+        foreach ($ids as $id) {
+            $id = intval($id);
+            if ($id === get_current_user_id()) continue;
+            wp_delete_user($id);
+        }
+        wp_send_json_success();
+    }
+
+    public function ajax_send_message() {
+        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_message_action', 'sm_message_nonce');
+        $sender_id = get_current_user_id();
+        $receiver_id = intval($_POST['receiver_id']);
+        $message = sanitize_textarea_field($_POST['message']);
+        SM_DB::send_message($sender_id, $receiver_id, $message);
+        wp_send_json_success();
+    }
+
+    public function ajax_get_conversation() {
+        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_message_action', 'nonce');
+        $user1 = get_current_user_id();
+        $user2 = intval($_POST['other_user_id']);
+        wp_send_json_success(SM_DB::get_conversation_messages($user1, $user2));
+    }
+
+    public function ajax_mark_read() {
+        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_message_action', 'nonce');
+        global $wpdb;
+        $wpdb->update("{$wpdb->prefix}sm_messages", ['is_read' => 1], ['receiver_id' => get_current_user_id(), 'sender_id' => intval($_POST['other_user_id'])]);
+        wp_send_json_success();
+    }
+
     public function ajax_get_member_finance_html() {
         if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
         $member_id = intval($_GET['member_id']);

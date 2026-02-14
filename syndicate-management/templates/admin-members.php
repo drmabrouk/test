@@ -190,6 +190,25 @@ if ($import_results) {
             document.getElementById('edit-member-modal').style.display = 'flex';
         };
 
+        window.viewSmMember = function(s) {
+            alert('بيانات العضو: ' + s.name + '\nالرقم القومي: ' + s.national_id);
+        };
+
+        window.confirmDeleteMember = function(id, name) {
+            if (!confirm('هل أنت متأكد من حذف العضو: ' + name + '؟')) return;
+            const formData = new FormData();
+            formData.append('action', 'sm_delete_member_ajax');
+            formData.append('member_id', id);
+            formData.append('nonce', '<?php echo wp_create_nonce("sm_delete_member"); ?>');
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+            .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
+        };
+
+        window.toggleAllMembers = function(master) {
+            document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = master.checked);
+        };
+
         // Form submissions...
         document.getElementById('add-member-form').onsubmit = function(e) {
             e.preventDefault();

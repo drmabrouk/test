@@ -234,6 +234,31 @@ class SM_DB {
         ));
     }
 
+    public static function get_conversations($user_id) {
+        global $wpdb;
+        $other_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT DISTINCT CASE WHEN sender_id = %d THEN receiver_id ELSE sender_id END
+             FROM {$wpdb->prefix}sm_messages
+             WHERE sender_id = %d OR receiver_id = %d",
+            $user_id, $user_id, $user_id
+        ));
+
+        $conversations = [];
+        foreach ($other_ids as $oid) {
+            $last_msg = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}sm_messages
+                 WHERE (sender_id = %d AND receiver_id = %d) OR (sender_id = %d AND receiver_id = %d)
+                 ORDER BY created_at DESC LIMIT 1",
+                $user_id, $oid, $oid, $user_id
+            ));
+            $conversations[] = [
+                'user' => get_userdata($oid),
+                'last_message' => $last_msg
+            ];
+        }
+        return $conversations;
+    }
+
     public static function get_statistics($filters = array()) {
         global $wpdb;
         $stats = array();
