@@ -35,6 +35,9 @@ class SM_Activator {
             facility_license_expiration_date date,
             facility_address text,
             sub_syndicate tinytext,
+            facility_category enum('A', 'B', 'C') DEFAULT 'C',
+            last_paid_membership_year int DEFAULT 0,
+            last_paid_license_year int DEFAULT 0,
             email tinytext,
             phone tinytext,
             alt_phone tinytext,
@@ -125,6 +128,21 @@ class SM_Activator {
             PRIMARY KEY  (id),
             KEY survey_id (survey_id),
             KEY user_id (user_id)
+        ) $charset_collate;\n";
+
+        // Payments Table
+        $table_name = $wpdb->prefix . 'sm_payments';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            member_id mediumint(9) NOT NULL,
+            amount decimal(10,2) NOT NULL,
+            payment_type enum('membership', 'license', 'facility', 'penalty', 'other') NOT NULL,
+            payment_date date NOT NULL,
+            target_year int,
+            notes text,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id),
+            KEY member_id (member_id)
         ) $charset_collate;\n";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

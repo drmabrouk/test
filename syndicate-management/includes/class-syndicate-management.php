@@ -17,6 +17,7 @@ class Syndicate_Management {
         require_once SM_PLUGIN_DIR . 'includes/class-sm-loader.php';
         require_once SM_PLUGIN_DIR . 'includes/class-sm-db.php';
         require_once SM_PLUGIN_DIR . 'includes/class-sm-settings.php';
+        require_once SM_PLUGIN_DIR . 'includes/class-sm-finance.php';
         require_once SM_PLUGIN_DIR . 'includes/class-sm-logger.php';
         require_once SM_PLUGIN_DIR . 'includes/class-sm-notifications.php';
         require_once SM_PLUGIN_DIR . 'admin/class-sm-admin.php';
@@ -75,6 +76,8 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_submit_survey_response', $plugin_public, 'ajax_submit_survey_response');
         $this->loader->add_action('wp_ajax_sm_get_survey_results', $plugin_public, 'ajax_get_survey_results');
         $this->loader->add_action('wp_ajax_sm_export_survey_results', $plugin_public, 'ajax_export_survey_results');
+        $this->loader->add_action('wp_ajax_sm_record_payment_ajax', $plugin_public, 'ajax_record_payment');
+        $this->loader->add_action('wp_ajax_sm_get_member_finance_ajax', $plugin_public, 'ajax_get_member_finance');
     }
 
     public function run() {

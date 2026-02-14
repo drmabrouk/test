@@ -169,4 +169,23 @@ class SM_Settings {
             'expired' => 'منتهي'
         );
     }
+
+    public static function get_finance_settings() {
+        $default = array(
+            'membership_new' => 480,
+            'membership_renewal' => 280,
+            'membership_penalty' => 50,
+            'license_new' => 2500,
+            'license_renewal' => 1000,
+            'license_penalty' => 500,
+            'facility_a' => 9000,
+            'facility_b' => 6000,
+            'facility_c' => 3000
+        );
+        return get_option('sm_finance_settings', $default);
+    }
+
+    public static function save_finance_settings($settings) {
+        update_option('sm_finance_settings', $settings);
+    }
 }
