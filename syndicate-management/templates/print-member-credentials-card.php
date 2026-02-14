@@ -5,8 +5,8 @@ if (!empty($_GET['member_id'])) {
     $members_to_print = array(SM_DB::get_member_by_id(intval($_GET['member_id'])));
 } else {
     $filters = array();
-    if (!empty($_GET['class_name'])) {
-        $filters['class_name'] = sanitize_text_field($_GET['class_name']);
+    if (!empty($_GET['grade_filter'])) {
+        $filters['professional_grade'] = sanitize_text_field($_GET['grade_filter']);
     }
     $members_to_print = SM_DB::get_members($filters);
 }
@@ -55,11 +55,11 @@ if (empty($members_to_print) || !$members_to_print[0]) wp_die('Member(s) not fou
             </div>
             <div class="card-body">
                 <div class="member-name"><?php echo esc_html($member->name); ?></div>
-                <div class="member-class"><?php echo SM_Settings::format_grade_name($member->class_name, $member->section); ?></div>
+                <div class="member-class"><?php echo esc_html(SM_Settings::get_professional_grades()[$member->professional_grade] ?? $member->professional_grade); ?></div>
 
                 <div class="cred-box">
-                    <div class="cred-label">اسم المستخدم (User ID):</div>
-                    <div class="cred-value"><?php echo esc_html($member->member_code); ?></div>
+                    <div class="cred-label">اسم المستخدم (القومي):</div>
+                    <div class="cred-value"><?php echo esc_html($member->national_id); ?></div>
                 </div>
 
                 <div class="cred-box" style="margin-bottom: 0;">

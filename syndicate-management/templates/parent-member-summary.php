@@ -15,12 +15,12 @@
             </div>
         </div>
         <div style="flex: 1;">
-            <h2 style="margin: 0 0 12px 0; border: none; padding: 0; color: white; font-size: 2em; font-weight: 800;">عضو: <?php echo esc_html($member->name); ?></h2>
+            <h2 style="margin: 0 0 12px 0; border: none; padding: 0; color: white; font-size: 2em; font-weight: 800;">العضو: <?php echo esc_html($member->name); ?></h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.95em; opacity: 0.9;">
-                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-welcome-learn-more"></span> <?php echo SM_Settings::format_grade_name($member->class_name, $member->section); ?></span>
-                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-id"></span> كود العضو: <?php echo esc_html($member->member_code); ?></span>
-                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-admin-site"></span> الجنسية: <?php echo esc_html($member->nationality ?: 'غير محدد'); ?></span>
-                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-calendar-alt"></span> تاريخ التسجيل: <?php echo esc_html($member->registration_date); ?></span>
+                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-id"></span> الرقم القومي: <?php echo esc_html($member->national_id); ?></span>
+                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-awards"></span> الدرجة: <?php echo esc_html(SM_Settings::get_professional_grades()[$member->professional_grade] ?? $member->professional_grade); ?></span>
+                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-admin-tools"></span> التخصص: <?php echo esc_html(SM_Settings::get_specializations()[$member->specialization] ?? $member->specialization); ?></span>
+                <span style="display: flex; align-items: center; gap: 8px;"><span class="dashicons dashicons-calendar-alt"></span> رقم العضوية: <?php echo esc_html($member->membership_number); ?></span>
             </div>
         </div>
         <div style="text-align: left; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
@@ -208,28 +208,6 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
     </div>
 </div>
 
-<div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); margin-bottom: 30px; grid-column: span 2;">
-    <h3 style="margin-top:0; border-bottom: 2px solid var(--sm-secondary-color); padding-bottom: 10px;">أعضاء النقابة المكلفون بالصف</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 15px;">
-        <?php
-        $grade_num = preg_replace('/[^0-9]/', '', $member->class_name);
-        $assigned_staffs = SM_DB::get_staff_by_section($grade_num, $member->section);
-        if (empty($assigned_staffs)):
-            echo '<p style="grid-column: 1/-1; text-align:center; color:#718096;">لا يوجد أعضاء النقابة مكلفون حالياً.</p>';
-        else:
-            foreach ($assigned_staffs as $t):
-                $spec = get_user_meta($t->ID, 'sm_specialization', true);
-        ?>
-        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px;">
-            <?php echo get_avatar($t->ID, 40, '', '', array('style' => 'border-radius:50%; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);')); ?>
-            <div>
-                <div style="font-weight: 800; font-size: 13px; color: var(--sm-dark-color);"><?php echo esc_html($t->display_name); ?></div>
-                <div style="font-size: 11px; color: var(--sm-primary-color); font-weight: 600;"><?php echo esc_html($spec ?: 'عضو النقابة'); ?></div>
-            </div>
-        </div>
-        <?php endforeach; endif; ?>
-    </div>
-</div>
 
 <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color);">
     <h3 style="margin-top:0;">توزيع المخالفات حسب النوع</h3>

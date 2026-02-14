@@ -40,7 +40,7 @@
             <tr>
                 <th>التاريخ</th>
                 <th>اسم العضو</th>
-                <th>الصف</th>
+                <th>الرقم القومي</th>
                 <th>نوع المخالفة</th>
                 <th>الحدة</th>
                 <th>الإجراء المتخذ</th>
@@ -54,7 +54,7 @@
                 <tr class="<?php echo $r->severity === 'high' ? 'severity-high' : ''; ?>">
                     <td style="white-space: nowrap;"><?php echo date('Y-m-d', strtotime($r->created_at)); ?></td>
                     <td><strong><?php echo esc_html($r->member_name); ?></strong></td>
-                    <td><?php echo esc_html($r->class_name); ?></td>
+                    <td style="font-family: monospace;"><?php echo esc_html($r->national_id); ?></td>
                     <td><?php echo $type_labels[$r->type] ?? $r->type; ?></td>
                     <td><?php echo $sev_labels[$r->severity] ?? $r->severity; ?></td>
                     <td><?php echo esc_html($r->action_taken); ?></td>

@@ -152,7 +152,7 @@ document.getElementById('member_unified_search').addEventListener('input', funct
                             ${s.photo_url ? `<img src="${s.photo_url}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">` : '<span class="dashicons dashicons-admin-users"></span>'}
                             <div>
                                 <div style="font-weight:700;">${s.name}</div>
-                                <div style="font-size:11px; color:#666;">كود: ${s.member_code} | فصل: ${s.class_name} ${s.section || ''}</div>
+                                <div style="font-size:11px; color:#666;">قومي: ${s.national_id} | عضوية: ${s.membership_number || '---'}</div>
                             </div>
                         `;
                         div.onclick = () => selectMember(s);
@@ -215,12 +215,12 @@ document.getElementById('start-scanner').addEventListener('click', function() {
             reader.style.display = 'none';
             const formData = new FormData();
             formData.append('action', 'sm_get_member');
-            formData.append('code', decodedText);
+            formData.append('national_id', decodedText);
             fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
             .then(r => r.json())
             .then(res => {
                 if (res.success) selectMember(res.data);
-                else alert('عذراً، كود غير معروف: ' + decodedText);
+                else alert('عذراً، رقم قومي غير معروف: ' + decodedText);
             });
         });
     }

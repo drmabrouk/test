@@ -117,7 +117,7 @@ class SM_Public {
         $user = wp_get_current_user();
         $roles = (array) $user->roles;
         $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
-        
+
         // Data Preparation based on tab
         $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');
         $is_sys_admin = in_array('sm_system_admin', $roles);
@@ -161,10 +161,9 @@ class SM_Public {
             case 'members':
                 $args = array();
                 if (isset($_GET['member_search'])) $args['search'] = sanitize_text_field($_GET['member_search']);
-                if (isset($_GET['class_filter'])) $args['class_name'] = sanitize_text_field($_GET['class_filter']);
-                if (isset($_GET['section_filter'])) $args['section'] = sanitize_text_field($_GET['section_filter']);
-                if (isset($_GET['officer_filter']) && !empty($_GET['officer_filter'])) $args['officer_id'] = intval($_GET['officer_filter']);
-                if ($is_syndicate_member && !$is_admin) $args['officer_id'] = $user->ID;
+                if (isset($_GET['grade_filter'])) $args['professional_grade'] = sanitize_text_field($_GET['grade_filter']);
+                if (isset($_GET['spec_filter'])) $args['specialization'] = sanitize_text_field($_GET['spec_filter']);
+                if (isset($_GET['status_filter'])) $args['membership_status'] = sanitize_text_field($_GET['status_filter']);
                 $members = SM_DB::get_members($args);
                 break;
 
@@ -177,8 +176,6 @@ class SM_Public {
                     if (isset($_GET['member_filter'])) $filters['member_id'] = intval($_GET['member_filter']);
                     if ($is_syndicate_member && !$is_admin) $filters['officer_id'] = $user->ID;
 
-                    if (isset($_GET['class_filter'])) $filters['class_name'] = sanitize_text_field($_GET['class_filter']);
-                    if (isset($_GET['section_filter'])) $filters['section'] = sanitize_text_field($_GET['section_filter']);
                     if (isset($_GET['member_search'])) $filters['search'] = sanitize_text_field($_GET['member_search']);
                 }
                 if (isset($_GET['start_date'])) $filters['start_date'] = sanitize_text_field($_GET['start_date']);
@@ -243,8 +240,8 @@ class SM_Public {
                 $members = array(SM_DB::get_member_by_id($member_id));
             } else {
                 $filters = array();
-                if (!empty($_GET['class_name'])) {
-                    $filters['class_name'] = sanitize_text_field($_GET['class_name']);
+                if (!empty($_GET['grade_filter'])) {
+                    $filters['professional_grade'] = sanitize_text_field($_GET['grade_filter']);
                 }
                 $members = SM_DB::get_members($filters);
             }
@@ -260,7 +257,7 @@ class SM_Public {
             if (!$record_id) wp_die('Record ID missing');
             $record = SM_DB::get_record_by_id($record_id);
             if (!$record) wp_die('Record not found');
-            
+
             if (in_array('sm_parent', (array) $user->roles)) {
                 $member = SM_DB::get_member_by_parent($user->ID);
                 if (!$member || $record->member_id != $member->id) wp_die('Unauthorized');
@@ -276,8 +273,8 @@ class SM_Public {
             include SM_PLUGIN_DIR . 'templates/print-general-log.php';
         } elseif ($type === 'member_credentials') {
             $filters = array();
-            if (!empty($_GET['class_name'])) {
-                $filters['class_name'] = sanitize_text_field($_GET['class_name']);
+            if (!empty($_GET['grade_filter'])) {
+                $filters['professional_grade'] = sanitize_text_field($_GET['grade_filter']);
             }
             $members = SM_DB::get_members($filters);
             include SM_PLUGIN_DIR . 'templates/print-member-credentials.php';
@@ -286,8 +283,7 @@ class SM_Public {
         } elseif ($type === 'violation_report') {
             $filters = array();
             if (!empty($_GET['search'])) $filters['search'] = sanitize_text_field($_GET['search']);
-            if (!empty($_GET['class_filter'])) $filters['class_name'] = sanitize_text_field($_GET['class_filter']);
-            if (!empty($_GET['section_filter'])) $filters['section'] = sanitize_text_field($_GET['section_filter']);
+            if (!empty($_GET['grade_filter'])) $filters['professional_grade'] = sanitize_text_field($_GET['grade_filter']);
             if (!empty($_GET['type_filter'])) $filters['type'] = sanitize_text_field($_GET['type_filter']);
 
             $range = $_GET['range'] ?? '';
@@ -310,8 +306,8 @@ class SM_Public {
 
     public function ajax_get_member() {
         if (!is_user_logged_in() || !current_user_can('تسجيل_مخالفة')) wp_send_json_error('Unauthorized');
-        $code = sanitize_text_field($_POST['code']);
-        $member = SM_DB::get_member_by_code($code);
+        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+        $member = SM_DB::get_member_by_national_id($national_id);
         if ($member) {
             wp_send_json_success($member);
         } else {
@@ -349,12 +345,12 @@ class SM_Public {
 
     public function ajax_refresh_dashboard() {
         if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
-        
+
         $user_id = get_current_user_id();
         $stats = SM_DB::get_statistics();
         $records = SM_DB::get_records();
         $logs = SM_Logger::get_logs(50);
-        
+
         global $wpdb;
         $unread_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_messages WHERE receiver_id = %d AND is_read = 0", $user_id));
 
@@ -375,7 +371,7 @@ class SM_Public {
         $member_ids = array_filter(array_map('intval', explode(',', $_POST['member_ids'])));
         $last_record_id = 0;
         $count = 0;
-        
+
         foreach ($member_ids as $sid) {
             $data = $_POST;
             $data['member_id'] = $sid;
@@ -404,10 +400,10 @@ class SM_Public {
     public function ajax_update_member_photo() {
         if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_POST['sm_photo_nonce'], 'sm_photo_action')) wp_send_json_error('Security check failed');
-        
+
         $user_id = get_current_user_id();
         $member_id = intval($_POST['member_id']);
-        
+
         if (!current_user_can('إدارة_الأعضاء')) {
             $my_children = SM_DB::get_members_by_parent($user_id);
             $is_mine = false;
@@ -430,7 +426,7 @@ class SM_Public {
 
         $photo_url = wp_get_attachment_url($attachment_id);
         $member_id = intval($_POST['member_id']);
-        
+
         SM_DB::update_member_photo($member_id, $photo_url);
         wp_send_json_success(array('photo_url' => $photo_url));
     }
@@ -509,31 +505,12 @@ class SM_Public {
         if (!current_user_can('إدارة_الأعضاء')) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_add_member')) wp_send_json_error('Security check failed');
 
-        $name = sanitize_text_field($_POST['name'] ?? '');
-        $class = sanitize_text_field($_POST['class'] ?? '');
+        $res = SM_DB::add_member($_POST);
 
-        if (empty($name) || empty($class)) {
-            wp_send_json_error('الاسم والصف حقول إجبارية');
-        }
-
-        $parent_user_id = !empty($_POST['parent_user_id']) ? intval($_POST['parent_user_id']) : null;
-        $section = !empty($_POST['section']) ? sanitize_text_field($_POST['section']) : '';
-        $email = !empty($_POST['email']) ? sanitize_email($_POST['email']) : '';
-
-        $extra = array(
-            'guardian_phone' => sanitize_text_field($_POST['guardian_phone'] ?? ''),
-            'nationality' => sanitize_text_field($_POST['nationality'] ?? ''),
-            'registration_date' => sanitize_text_field($_POST['registration_date'] ?? '')
-        );
-
-        if (SM_DB::member_exists($name, $class, $section)) {
-            wp_send_json_error('هذا العضو مسجل بالفعل في هذا الصف والشعبة.');
-        }
-
-        $id = SM_DB::add_member($name, $class, $email, '', $parent_user_id, null, $section, $extra);
-
-        if ($id) {
-            wp_send_json_success($id);
+        if (is_wp_error($res)) {
+            wp_send_json_error($res->get_error_message());
+        } elseif ($res) {
+            wp_send_json_success($res);
         } else {
             wp_send_json_error('فشل في إضافة العضو. يرجى التحقق من البيانات والمحاولة مرة أخرى.');
         }
@@ -649,14 +626,14 @@ class SM_Public {
         }
         $result = wp_update_user($user_data);
         if (is_wp_error($result)) wp_send_json_error($result->get_error_message());
-        
+
         if (!empty($_POST['specialization'])) {
             update_user_meta($user_id, 'sm_specialization', sanitize_text_field($_POST['specialization']));
         }
 
         $u = new WP_User($user_id);
         $u->set_role(sanitize_text_field($_POST['user_role']));
-        
+
         SM_Logger::log('تعديل بيانات مستخدم', "تم تحديث بيانات المستخدم: {$_POST['display_name']} (ID: $user_id)");
         wp_send_json_success('Updated');
     }
@@ -1111,7 +1088,7 @@ class SM_Public {
                     $user_data['user_pass'] = $_POST['user_pass'];
                 }
                 wp_update_user($user_data);
-                
+
                 $u = new WP_User($user_id);
                 $u->set_role(sanitize_text_field($_POST['user_role']));
 
@@ -1213,9 +1190,7 @@ class SM_Public {
 
         if (isset($_POST['add_member']) && wp_verify_nonce($_POST['sm_nonce'], 'sm_add_member')) {
             if (current_user_can('إدارة_الأعضاء')) {
-                $parent_user_id = !empty($_POST['parent_user_id']) ? intval($_POST['parent_user_id']) : null;
-                $officer_id = !empty($_POST['officer_id']) ? intval($_POST['officer_id']) : null;
-                SM_DB::add_member($_POST['name'], $_POST['class'], $_POST['email'], $_POST['code'], $parent_user_id, $officer_id);
+                SM_DB::add_member($_POST);
                 wp_redirect(add_query_arg('sm_admin_msg', 'member_added', $_SERVER['REQUEST_URI']));
                 exit;
             }
@@ -1276,6 +1251,34 @@ class SM_Public {
                 SM_Settings::save_retention_settings(array(
                     'message_retention_days' => intval($_POST['message_retention_days'])
                 ));
+                wp_redirect(add_query_arg('sm_admin_msg', 'settings_saved', $_SERVER['REQUEST_URI']));
+                exit;
+            }
+        }
+
+        if (isset($_POST['sm_save_professional_options']) && wp_verify_nonce($_POST['sm_admin_nonce'], 'sm_admin_action')) {
+            if (current_user_can('إدارة_النظام')) {
+                $grades_raw = explode("\n", str_replace("\r", "", $_POST['professional_grades']));
+                $grades = array();
+                foreach ($grades_raw as $line) {
+                    $parts = explode("|", $line);
+                    if (count($parts) == 2) {
+                        $grades[trim($parts[0])] = trim($parts[1]);
+                    }
+                }
+                if (!empty($grades)) SM_Settings::save_professional_grades($grades);
+
+                $specs_raw = explode("\n", str_replace("\r", "", $_POST['specializations']));
+                $specs = array();
+                foreach ($specs_raw as $line) {
+                    $parts = explode("|", $line);
+                    if (count($parts) == 2) {
+                        $specs[trim($parts[0])] = trim($parts[1]);
+                    }
+                }
+                if (!empty($specs)) SM_Settings::save_specializations($specs);
+
+                SM_Logger::log('تحديث الخيارات المهنية', "تم تحديث قائمة الدرجات والتخصصات.");
                 wp_redirect(add_query_arg('sm_admin_msg', 'settings_saved', $_SERVER['REQUEST_URI']));
                 exit;
             }
@@ -1415,44 +1418,36 @@ class SM_Public {
                         }
                     }
 
-                    $full_display_name = isset($data[0]) ? trim($data[0]) : '';
-                    $class_name        = isset($data[1]) ? trim($data[1]) : '';
-                    $section           = isset($data[2]) ? trim($data[2]) : '';
-                    $nationality       = isset($data[3]) ? trim($data[3]) : '';
-                    $guardian_email    = isset($data[4]) ? trim($data[4]) : '';
-                    $guardian_phone    = isset($data[5]) ? trim($data[5]) : '';
+                    $national_id = isset($data[0]) ? trim($data[0]) : '';
+                    $name        = isset($data[1]) ? trim($data[1]) : '';
+                    $grade       = isset($data[2]) ? trim($data[2]) : '';
+                    $spec        = isset($data[3]) ? trim($data[3]) : '';
+                    $email       = isset($data[4]) ? trim($data[4]) : '';
+                    $phone       = isset($data[5]) ? trim($data[5]) : '';
 
-                    if (!empty($class_name)) {
-                        $grade_number = preg_replace('/[^0-9]/', '', $class_name);
-                        if (!empty($grade_number)) {
-                            $class_name = 'الصف ' . $grade_number;
-                        }
-                    }
-
-                    if (empty($full_display_name) || empty($class_name)) {
+                    if (empty($national_id) || empty($name)) {
                         $results['error']++;
                         $results['details'][] = array('type' => 'error', 'msg' => "بيانات مفقودة في السطر " . $row_index);
                         continue;
                     }
 
-                    $existing_id = SM_DB::member_exists($full_display_name, $class_name, $section);
-                    $extra = array('guardian_phone' => $guardian_phone, 'nationality' => $nationality);
+                    $existing_id = SM_DB::member_exists($national_id);
+
+                    $member_data = array(
+                        'national_id' => $national_id,
+                        'name' => $name,
+                        'professional_grade' => $grade,
+                        'specialization' => $spec,
+                        'email' => $email,
+                        'phone' => $phone
+                    );
 
                     if ($existing_id) {
-                        $update_data = array(
-                            'name' => $full_display_name,
-                            'class_name' => $class_name,
-                            'section' => $section,
-                            'parent_email' => $guardian_email,
-                            'guardian_phone' => $guardian_phone,
-                            'nationality' => $nationality
-                        );
-                        SM_DB::update_member($existing_id, $update_data);
+                        SM_DB::update_member($existing_id, $member_data);
                         $results['success']++;
                     } else {
-                        $extra['sort_order'] = $next_sort_order++;
-                        $imported_id = SM_DB::add_member($full_display_name, $class_name, $guardian_email, '', null, null, $section, $extra);
-                        if ($imported_id) $results['success']++;
+                        $res = SM_DB::add_member($member_data);
+                        if (!is_wp_error($res) && $res) $results['success']++;
                         else $results['error']++;
                     }
                 }
@@ -1500,7 +1495,7 @@ class SM_Public {
                 $count = 0;
                 while (($data = fgetcsv($handle)) !== FALSE) {
                     if (count($data) >= 4) {
-                        $member = SM_DB::get_member_by_code($data[0]);
+                        $member = SM_DB::get_member_by_national_id($data[0]);
                         if ($member) {
                             $rid = SM_DB::add_record(array(
                                 'member_id' => $member->id,

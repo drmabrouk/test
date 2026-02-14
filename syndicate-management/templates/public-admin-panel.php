@@ -61,22 +61,6 @@
         frame.open();
     };
 
-    // GLOBAL EDIT HANDLERS
-    window.editSmMember = function(s) {
-        document.getElementById('edit_stu_id').value = s.id;
-        document.getElementById('edit_stu_name').value = s.name;
-        document.getElementById('edit_stu_class').value = s.class_name || s.class;
-        if (document.getElementById('edit_stu_section')) document.getElementById('edit_stu_section').value = s.section || '';
-        document.getElementById('edit_stu_email').value = s.parent_email || '';
-        document.getElementById('edit_stu_code').value = s.member_id || '';
-
-        if (document.getElementById('edit_stu_phone')) document.getElementById('edit_stu_phone').value = s.guardian_phone || '';
-        if (document.getElementById('edit_stu_nationality')) document.getElementById('edit_stu_nationality').value = s.nationality || '';
-        if (document.getElementById('edit_stu_reg_date')) document.getElementById('edit_stu_reg_date').value = s.registration_date || '';
-
-        if (document.getElementById('edit_stu_parent_user')) document.getElementById('edit_stu_parent_user').value = s.parent_id || '';
-        document.getElementById('edit-member-modal').style.display = 'flex';
-    };
 
     window.updateRecordStatus = function(id, status) {
         const formData = new FormData();
@@ -491,6 +475,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         ?>
                         <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
                             <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('syndicate-settings', this)">السلطة</button>
+                            <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-settings', this)">الدرجات والتخصصات</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('design-settings', this)">تصميم النظام</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('user-settings', this)">إدارة المستخدمين</button>
                             <button class="sm-tab-btn" onclick="smOpenInternalTab('backup-settings', this)">مركز النسخ الاحتياطي</button>
@@ -498,6 +483,29 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <button class="sm-tab-btn" onclick="smOpenInternalTab('activity-logs', this)">سجل النشاطات</button>
                             <?php endif; ?>
                         </div>
+                        <div id="professional-settings" class="sm-internal-tab" style="display:none;">
+                            <form method="post">
+                                <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
+                                    <div class="sm-form-group">
+                                        <label class="sm-label">الدرجات الوظيفية (درجة واحدة في كل سطر):</label>
+                                        <textarea name="professional_grades" class="sm-textarea" rows="8"><?php
+                                            foreach (SM_Settings::get_professional_grades() as $k => $v) echo "$k|$v\n";
+                                        ?></textarea>
+                                        <p style="font-size:11px; color:#666; margin-top:5px;">التنسيق: key|Label (مثال: expert|خبير)</p>
+                                    </div>
+                                    <div class="sm-form-group">
+                                        <label class="sm-label">التخصصات المهنية (تخصص واحد في كل سطر):</label>
+                                        <textarea name="specializations" class="sm-textarea" rows="8"><?php
+                                            foreach (SM_Settings::get_specializations() as $k => $v) echo "$k|$v\n";
+                                        ?></textarea>
+                                        <p style="font-size:11px; color:#666; margin-top:5px;">التنسيق: key|Label (مثال: massage|تدليك رياضي)</p>
+                                    </div>
+                                </div>
+                                <button type="submit" name="sm_save_professional_options" class="sm-btn" style="width:auto; margin-top:10px;">حفظ الخيارات المهنية</button>
+                            </form>
+                        </div>
+
                         <div id="syndicate-settings" class="sm-internal-tab">
                             <form method="post">
                                 <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>

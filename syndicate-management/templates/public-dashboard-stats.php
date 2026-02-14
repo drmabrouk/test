@@ -26,28 +26,14 @@
             <?php if (!$is_parent): ?>
             <div class="sm-form-group" style="margin-bottom:0; flex: 2; min-width: 300px;">
                 <label class="sm-label">البحث عن عضو:</label>
-                <input type="text" name="member_search" class="sm-input" value="<?php echo esc_attr($_GET['member_search'] ?? ''); ?>" placeholder="ادخل اسم العضو أو الكود الخاص به للبحث المباشر..." style="width: 100%;">
+                <input type="text" name="member_search" class="sm-input" value="<?php echo esc_attr($_GET['member_search'] ?? ''); ?>" placeholder="الاسم، الرقم القومي، رقم العضوية..." style="width: 100%;">
             </div>
             <div class="sm-form-group" style="margin-bottom:0; flex: 1; min-width: 150px;">
-                <label class="sm-label">الصف:</label>
-                <select name="class_filter" class="sm-select">
-                    <option value="">كل الصفوف</option>
-                    <?php
-                    global $wpdb;
-                    $classes = $wpdb->get_col("SELECT DISTINCT class_name FROM {$wpdb->prefix}sm_members ORDER BY CAST(REPLACE(class_name, 'الصف ', '') AS UNSIGNED) ASC");
-                    foreach ($classes as $c): ?>
-                        <option value="<?php echo esc_attr($c); ?>" <?php selected(isset($_GET['class_filter']) && $_GET['class_filter'] == $c); ?>><?php echo esc_html($c); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="sm-form-group" style="margin-bottom:0; flex: 1; min-width: 100px;">
-                <label class="sm-label">الشعبة:</label>
-                <select name="section_filter" class="sm-select">
-                    <option value="">كل الشعب</option>
-                    <?php 
-                    $sections = $wpdb->get_col("SELECT DISTINCT section FROM {$wpdb->prefix}sm_members WHERE section != '' ORDER BY section ASC");
-                    foreach ($sections as $s): ?>
-                        <option value="<?php echo esc_attr($s); ?>" <?php selected(isset($_GET['section_filter']) && $_GET['section_filter'] == $s); ?>><?php echo esc_html($s); ?></option>
+                <label class="sm-label">الدرجة الوظيفية:</label>
+                <select name="grade_filter" class="sm-select">
+                    <option value="">كل الدرجات</option>
+                    <?php foreach (SM_Settings::get_professional_grades() as $k => $v): ?>
+                        <option value="<?php echo esc_attr($k); ?>" <?php selected(isset($_GET['grade_filter']) && $_GET['grade_filter'] == $k); ?>><?php echo esc_html($v); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -241,7 +227,7 @@
                         <tr id="record-row-<?php echo $row->id; ?>">
                             <td>
                                 <div style="font-weight: 800;"><?php echo esc_html($row->member_name); ?></div>
-                                <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo SM_Settings::format_grade_name($row->class_name, $row->section, 'short'); ?></div>
+                                <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo esc_html($row->national_id); ?></div>
                             </td>
                             <td><?php echo date('Y-m-d', strtotime($row->created_at)); ?></td>
                             <td>
@@ -298,14 +284,12 @@
     <script>
     function exportViolationPDF() {
         const member = document.querySelector('input[name="member_search"]').value;
-        const grade = document.querySelector('select[name="class_filter"]').value;
-        const section = document.querySelector('select[name="section_filter"]').value;
+        const grade = document.querySelector('select[name="grade_filter"]').value;
         const type = document.querySelector('select[name="type_filter"]').value;
 
         let url = '<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=violation_report'); ?>';
         if (member) url += '&search=' + encodeURIComponent(member);
-        if (grade) url += '&class_filter=' + encodeURIComponent(grade);
-        if (section) url += '&section_filter=' + encodeURIComponent(section);
+        if (grade) url += '&grade_filter=' + encodeURIComponent(grade);
         if (type) url += '&type_filter=' + encodeURIComponent(type);
 
         window.open(url, '_blank');

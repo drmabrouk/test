@@ -125,30 +125,48 @@ class SM_Settings {
         update_option('sm_suggested_actions', $actions);
     }
 
-    public static function get_academic_structure() {
+    public static function get_professional_grades() {
         $default = array(
-            'active_grades' => array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+            'assistant_specialist' => 'أخصائي مساعد',
+            'specialist' => 'أخصائي',
+            'consultant' => 'استشاري',
+            'expert' => 'خبير'
         );
-        return wp_parse_args(get_option('sm_academic_structure', array()), $default);
+        return get_option('sm_professional_grades', $default);
     }
 
-    public static function get_sections_from_db() {
-        global $wpdb;
-        $results = $wpdb->get_results("SELECT DISTINCT class_name, section FROM {$wpdb->prefix}sm_members WHERE section != '' ORDER BY class_name ASC, section ASC");
+    public static function save_professional_grades($grades) {
+        update_option('sm_professional_grades', $grades);
+    }
 
-        $structure = array();
-        foreach ($results as $row) {
-            $grade_num = (int)str_replace('الصف ', '', $row->class_name);
-            if (!isset($structure[$grade_num])) {
-                $structure[$grade_num] = array();
-            }
-            if (!in_array($row->section, $structure[$grade_num])) {
-                $structure[$grade_num][] = $row->section;
-            }
-        }
-        foreach ($structure as $grade => $sections) {
-            sort($structure[$grade]);
-        }
-        return $structure;
+    public static function get_specializations() {
+        $default = array(
+            'injuries' => 'إصابات وتأهيل',
+            'massage' => 'تدليك رياضي',
+            'nutrition' => 'تغذية رياضية',
+            'special_needs' => 'تأهيل ذوي الاحتياجات الخاصة'
+        );
+        return get_option('sm_specializations', $default);
+    }
+
+    public static function save_specializations($specs) {
+        update_option('sm_specializations', $specs);
+    }
+
+    public static function get_academic_degrees() {
+        return array(
+            'bachelor' => 'بكالوريوس',
+            'master' => 'ماجستير',
+            'doctorate' => 'دكتوراه'
+        );
+    }
+
+    public static function get_membership_statuses() {
+        return array(
+            'active' => 'نشط',
+            'inactive' => 'غير نشط',
+            'pending' => 'قيد الانتظار',
+            'expired' => 'منتهي'
+        );
     }
 }

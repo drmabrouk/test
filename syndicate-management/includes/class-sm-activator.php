@@ -12,23 +12,40 @@ class SM_Activator {
 
         $sql = "";
 
-        // Members Table (formerly Students)
+        // Members Table
         $table_name = $wpdb->prefix . 'sm_members';
         $sql .= "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
+            national_id varchar(14) NOT NULL,
             name tinytext NOT NULL,
+            gender enum('male', 'female') DEFAULT 'male',
+            professional_grade tinytext,
+            specialization tinytext,
+            academic_degree enum('bachelor', 'master', 'doctorate'),
+            membership_number tinytext,
+            membership_start_date date,
+            membership_expiration_date date,
+            membership_status tinytext,
+            license_number tinytext,
+            license_issue_date date,
+            license_expiration_date date,
+            facility_number tinytext,
+            facility_name tinytext,
+            facility_license_issue_date date,
+            facility_license_expiration_date date,
+            facility_address text,
+            sub_syndicate tinytext,
             email tinytext,
-            member_code tinytext,
+            phone tinytext,
+            alt_phone tinytext,
+            notes text,
             photo_url text,
-            class_name tinytext,
-            section tinytext,
             parent_user_id bigint(20),
             officer_id bigint(20),
-            guardian_phone tinytext,
-            nationality tinytext,
             registration_date date,
             sort_order int DEFAULT 0,
             PRIMARY KEY  (id),
+            UNIQUE KEY national_id (national_id),
             KEY parent_user_id (parent_user_id),
             KEY officer_id (officer_id)
         ) $charset_collate;\n";

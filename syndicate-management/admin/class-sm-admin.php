@@ -148,6 +148,30 @@ class SM_Admin {
             echo '<div class="updated"><p>تم حفظ إعدادات المخالفات بنجاح.</p></div>';
         }
 
+        if (isset($_POST['sm_save_professional_options'])) {
+            check_admin_referer('sm_admin_action', 'sm_admin_nonce');
+            $grades_raw = explode("\n", str_replace("\r", "", $_POST['professional_grades']));
+            $grades = array();
+            foreach ($grades_raw as $line) {
+                $parts = explode("|", $line);
+                if (count($parts) == 2) {
+                    $grades[trim($parts[0])] = trim($parts[1]);
+                }
+            }
+            if (!empty($grades)) SM_Settings::save_professional_grades($grades);
+
+            $specs_raw = explode("\n", str_replace("\r", "", $_POST['specializations']));
+            $specs = array();
+            foreach ($specs_raw as $line) {
+                $parts = explode("|", $line);
+                if (count($parts) == 2) {
+                    $specs[trim($parts[0])] = trim($parts[1]);
+                }
+            }
+            if (!empty($specs)) SM_Settings::save_specializations($specs);
+            echo '<div class="updated"><p>تم حفظ الخيارات المهنية بنجاح.</p></div>';
+        }
+
         $member_filters = array();
         $stats = SM_DB::get_statistics();
         $records = SM_DB::get_records();
