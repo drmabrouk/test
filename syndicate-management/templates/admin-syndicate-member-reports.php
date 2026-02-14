@@ -41,7 +41,7 @@
                         <tr>
                             <td>
                                 <div style="font-weight: 800;"><?php echo esc_html($row->member_name); ?></div>
-                                <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo esc_html($row->class_name); ?></div>
+                                <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo esc_html($row->national_id); ?></div>
                             </td>
                             <td style="font-weight: 600; color: var(--sm-primary-color);">
                                 <?php echo $staff ? esc_html($staff->display_name) : 'غير معروف'; ?>

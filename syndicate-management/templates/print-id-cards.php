@@ -67,11 +67,11 @@
                 </div>
                 <div class="info">
                     <p><strong>العضو:</strong> <?php echo esc_html($s->name); ?></p>
-                    <p><strong>الصف:</strong> <?php echo SM_Settings::format_grade_name($s->class_name, $s->section, 'short'); ?></p>
-                    <p><strong>الكود:</strong> <?php echo esc_html($s->member_code); ?></p>
+                    <p><strong>الدرجة:</strong> <?php echo esc_html(SM_Settings::get_professional_grades()[$s->professional_grade] ?? $s->professional_grade); ?></p>
+                    <p><strong>القومي:</strong> <?php echo esc_html($s->national_id); ?></p>
                 </div>
                 <div class="barcode">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=<?php echo urlencode($s->member_code); ?>" alt="QR Code">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=<?php echo urlencode($s->national_id); ?>" alt="QR Code">
                 </div>
             </div>
             <div class="footer">

@@ -76,10 +76,10 @@
         </div>
         <div style="padding-right: 20px;">
             <h2 style="margin:0 0 15px 0; color:#111F35; border:none; padding:0; font-size: 24px; font-weight: 800;"><?php echo esc_html($member->name); ?></h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div><span style="color: #718096; font-size: 12px; display: block;">الصف والشعبة</span><strong style="color: #2D3748;"><?php echo SM_Settings::format_grade_name($member->class_name, $member->section); ?></strong></div>
-                <div><span style="color: #718096; font-size: 12px; display: block;">الرقم الأكاديمي</span><strong style="color: #2D3748; font-family: sans-serif;"><?php echo esc_html($member->member_code); ?></strong></div>
-                <div><span style="color: #718096; font-size: 12px; display: block;">تاريخ التسجيل</span><strong style="color: #2D3748;"><?php echo esc_html($member->registration_date); ?></strong></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div><span style="color: #718096; font-size: 12px; display: block;">الرقم القومي</span><strong style="color: #2D3748;"><?php echo esc_html($member->national_id); ?></strong></div>
+                <div><span style="color: #718096; font-size: 12px; display: block;">الدرجة الوظيفية</span><strong style="color: #2D3748;"><?php echo esc_html(SM_Settings::get_professional_grades()[$member->professional_grade] ?? $member->professional_grade); ?></strong></div>
+                <div><span style="color: #718096; font-size: 12px; display: block;">رقم العضوية</span><strong style="color: #2D3748;"><?php echo esc_html($member->membership_number); ?></strong></div>
             </div>
         </div>
         <div style="text-align: center; border-right: 1px solid #CBD5E0; padding-right: 30px;">
@@ -96,9 +96,9 @@
         <thead>
             <tr>
                 <th>اسم العضو</th>
-                <th>كود العضو</th>
+                <th>الرقم القومي</th>
                 <th>نص بند المخالفة</th>
-                <th>الصف الدراسي</th>
+                <th>الدرجة الوظيفية</th>
                 <th>تاريخ المخالفة</th>
             </tr>
         </thead>
@@ -109,9 +109,9 @@
                 <?php foreach ($records as $r): ?>
                 <tr>
                     <td style="font-weight: 800; text-align: right;"><?php echo esc_html($member->name); ?></td>
-                    <td style="font-family: monospace; font-weight: 700;"><?php echo esc_html($member->member_code); ?></td>
+                    <td style="font-family: monospace; font-weight: 700;"><?php echo esc_html($member->national_id); ?></td>
                     <td style="text-align: right;"><?php echo esc_html($r->violation_code) . ' - ' . esc_html($r->type); ?></td>
-                    <td><?php echo SM_Settings::format_grade_name($member->class_name, $member->section); ?></td>
+                    <td><?php echo esc_html(SM_Settings::get_professional_grades()[$member->professional_grade] ?? $member->professional_grade); ?></td>
                     <td><?php echo date('Y-m-d', strtotime($r->created_at)); ?></td>
                 </tr>
                 <?php endforeach; ?>

@@ -36,8 +36,8 @@ $syndicate = SM_Settings::get_syndicate_info();
             <tr>
                 <th style="width: 50px;">#</th>
                 <th>اسم العضو</th>
-                <th>الصف والشعبة</th>
-                <th>اسم المستخدم (الكود)</th>
+                <th>الرقم القومي</th>
+                <th>الدرجة الوظيفية</th>
                 <th>كلمة المرور المؤقتة</th>
             </tr>
         </thead>
@@ -51,8 +51,8 @@ $syndicate = SM_Settings::get_syndicate_info();
                 <tr>
                     <td><?php echo $count++; ?></td>
                     <td style="font-weight: 700;"><?php echo esc_html($s->name); ?></td>
-                    <td><?php echo SM_Settings::format_grade_name($s->class_name, $s->section); ?></td>
-                    <td class="code"><?php echo esc_html($s->member_code); ?></td>
+                    <td class="code"><?php echo esc_html($s->national_id); ?></td>
+                    <td><?php echo esc_html(SM_Settings::get_professional_grades()[$s->professional_grade] ?? $s->professional_grade); ?></td>
                     <td class="code"><?php echo esc_html($pass); ?></td>
                 </tr>
             <?php endforeach; ?>
@@ -60,7 +60,7 @@ $syndicate = SM_Settings::get_syndicate_info();
     </table>
 
     <div class="footer">
-        * يتم استخدام الكود كاسم مستخدم للدخول للنظام لكل من العضو وولي الأمر.<br>
+        * يتم استخدام الرقم القومي كاسم مستخدم للدخول للنظام.<br>
         * ينصح بتغيير كلمة المرور فور الدخول الأول للنظام.
     </div>
 

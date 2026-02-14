@@ -194,24 +194,11 @@
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">تغيير الدور:</label>
-                        <select name="role" id="edit_t_role" class="sm-select" onchange="toggleAssignFields(this, 'edit')">
+                        <select name="role" id="edit_t_role" class="sm-select">
                             <option value="sm_system_admin">مدير النظام</option>
                             <option value="sm_officer">مسؤول النقابة</option>
                             <option value="sm_syndicate_member">عضو النقابة</option>
                         </select>
-                    </div>
-                    <div class="sm-form-group" id="edit_assign_fields" style="grid-column: span 2; display: none;">
-                        <label class="sm-label">الشعب المسندة للمستخدم:</label>
-                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; max-height: 150px; overflow-y: auto; background:#fff; padding:10px; border:1px solid #ddd; border-radius:8px;">
-                            <?php
-                            $struct = SM_Settings::get_sections_from_db();
-                            foreach($struct as $g => $secs) {
-                                foreach($secs as $s) {
-                                    echo "<label style='font-size:11px; display:flex; align-items:center; gap:5px;'><input type='checkbox' name='assigned[]' value='$g|$s'> $g - $s</label>";
-                                }
-                            }
-                            ?>
-                        </div>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">حالة الحساب:</label>
@@ -249,23 +236,11 @@
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">اختيار الدور:</label>
-                        <select name="role" class="sm-select" onchange="toggleAssignFields(this, 'add')">
+                        <select name="role" class="sm-select">
                             <option value="sm_system_admin">مدير النظام</option>
                             <option value="sm_officer">مسؤول النقابة</option>
                             <option value="sm_syndicate_member">عضو النقابة</option>
                         </select>
-                    </div>
-                    <div class="sm-form-group" id="add_assign_fields" style="grid-column: span 2; display: none;">
-                        <label class="sm-label">الشعب المسندة:</label>
-                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; max-height: 150px; overflow-y: auto; background:#fff; padding:10px; border:1px solid #ddd; border-radius:8px;">
-                            <?php
-                            foreach($struct as $g => $secs) {
-                                foreach($secs as $s) {
-                                    echo "<label style='font-size:11px; display:flex; align-items:center; gap:5px;'><input type='checkbox' name='assigned[]' value='$g|$s'> $g - $s</label>";
-                                }
-                            }
-                            ?>
-                        </div>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label">رقم الهاتف:</label>
@@ -317,15 +292,6 @@
         });
     }
 
-    function toggleAssignFields(select, mode) {
-        const fields = document.getElementById(mode + '_assign_fields');
-        if (select.value === 'sm_syndicate_member') {
-            fields.style.display = 'block';
-        } else {
-            fields.style.display = 'none';
-        }
-    }
-
     (function() {
         window.editSmUser = function(u) {
             document.getElementById('edit_t_id').value = u.id;
@@ -334,17 +300,7 @@
             document.getElementById('edit_t_phone').value = u.phone;
             document.getElementById('edit_t_email').value = u.email;
             document.getElementById('edit_t_status').value = u.status || 'active';
-            const roleSel = document.getElementById('edit_t_role');
-            roleSel.value = u.role;
-            toggleAssignFields(roleSel, 'edit');
-
-            document.querySelectorAll('#edit_assign_fields input').forEach(cb => cb.checked = false);
-            if (u.assigned) {
-                u.assigned.forEach(val => {
-                    const cb = document.querySelector(`#edit_assign_fields input[value="${val}"]`);
-                    if (cb) cb.checked = true;
-                });
-            }
+            document.getElementById('edit_t_role').value = u.role;
             document.getElementById('edit-staff-modal').style.display = 'flex';
         };
 

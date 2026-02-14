@@ -73,12 +73,12 @@
                 <span class="value"><?php echo esc_html($record->member_name); ?></span>
             </div>
             <div class="row">
-                <span class="label">الصف الدراسي:</span>
-                <span class="value"><?php echo SM_Settings::format_grade_name($record->class_name, $record->section); ?></span>
+                <span class="label">الرقم القومي:</span>
+                <span class="value"><?php echo esc_html($record->national_id); ?></span>
             </div>
             <div class="row">
-                <span class="label">الرقم الأكاديمي:</span>
-                <span class="value"><?php echo esc_html($record->member_code); ?></span>
+                <span class="label">الدرجة الوظيفية:</span>
+                <span class="value"><?php echo esc_html(SM_Settings::get_professional_grades()[$record->professional_grade] ?? $record->professional_grade); ?></span>
             </div>
             <div class="row">
                 <span class="label">تاريخ المخالفة:</span>

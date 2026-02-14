@@ -22,14 +22,12 @@
                             <span class="dashicons dashicons-groups" style="font-size: 28px; width: 28px; height: 28px;"></span>
                         </div>
                         <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">بطاقات الأعضاء (الكل)</h4>
-                <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">طباعة بطاقات التعريف لكافة الأعضاء في النظام أو حسب صف محدد.</p>
+                <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">طباعة بطاقات التعريف لكافة الأعضاء في النظام أو حسب درجة محددة.</p>
                 <div class="sm-form-group">
-                    <select id="card_class_filter" class="sm-select" style="font-size: 12px; padding: 8px;">
-                        <option value="">كافة الصفوف</option>
+                    <select id="card_grade_filter" class="sm-select" style="font-size: 12px; padding: 8px;">
+                        <option value="">كافة الدرجات</option>
                         <?php
-                        global $wpdb;
-                        $classes = $wpdb->get_col("SELECT DISTINCT class_name FROM {$wpdb->prefix}sm_members ORDER BY CAST(REPLACE(class_name, 'الصف ', '') AS UNSIGNED) ASC");
-                        foreach($classes as $c) echo '<option value="'.$c.'">'.$c.'</option>';
+                        foreach(SM_Settings::get_professional_grades() as $k => $v) echo '<option value="'.$k.'">'.$v.'</option>';
                         ?>
                     </select>
                 </div>
@@ -142,11 +140,11 @@
                             <span class="dashicons dashicons-lock" style="font-size: 28px; width: 28px; height: 28px;"></span>
                         </div>
                         <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">بيانات دخول الأعضاء</h4>
-                        <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">توليد كشف بأسماء الأعضاء مع اسم المستخدم (الكود) وكلمة المرور المؤقتة.</p>
+                        <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">توليد كشف بأسماء الأعضاء مع اسم المستخدم (الرقم القومي) وكلمة المرور المؤقتة.</p>
                         <div class="sm-form-group">
-                            <select id="creds_class_filter" class="sm-select" style="font-size: 12px; padding: 8px;">
-                                <option value="">كافة الصفوف</option>
-                                <?php foreach($classes as $c) echo '<option value="'.$c.'">'.$c.'</option>'; ?>
+                            <select id="creds_grade_filter" class="sm-select" style="font-size: 12px; padding: 8px;">
+                                <option value="">كافة الدرجات</option>
+                                <?php foreach(SM_Settings::get_professional_grades() as $k => $v) echo '<option value="'.$k.'">'.$v.'</option>'; ?>
                             </select>
                         </div>
                     </div>
@@ -199,8 +197,8 @@
 
 <script>
 function printCards() {
-    const classFilter = document.getElementById('card_class_filter').value;
-    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>&class_name=' + encodeURIComponent(classFilter), '_blank');
+    const gradeFilter = document.getElementById('card_grade_filter').value;
+    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>&grade_filter=' + encodeURIComponent(gradeFilter), '_blank');
 }
 
 function printSpecificCard() {
@@ -220,13 +218,13 @@ function printGeneralLog() {
 }
 
 function printCredentials() {
-    const classFilter = document.getElementById('creds_class_filter').value;
-    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=member_credentials'); ?>&class_name=' + encodeURIComponent(classFilter), '_blank');
+    const gradeFilter = document.getElementById('creds_grade_filter').value;
+    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=member_credentials'); ?>&grade_filter=' + encodeURIComponent(gradeFilter), '_blank');
 }
 
 function printCredentialsCard() {
-    const classFilter = document.getElementById('creds_class_filter').value;
-    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=member_credentials_card'); ?>&class_name=' + encodeURIComponent(classFilter), '_blank');
+    const gradeFilter = document.getElementById('creds_grade_filter').value;
+    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=member_credentials_card'); ?>&grade_filter=' + encodeURIComponent(gradeFilter), '_blank');
 }
 
 function printSingleMemberCreds() {

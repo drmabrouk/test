@@ -8,26 +8,44 @@ class SM_Activator {
 
         // Migration: Rename old tables if they exist
         self::migrate_tables();
+        self::migrate_settings();
 
         $sql = "";
 
-        // Members Table (formerly Students)
+        // Members Table
         $table_name = $wpdb->prefix . 'sm_members';
         $sql .= "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
+            national_id varchar(14) NOT NULL,
             name tinytext NOT NULL,
+            gender enum('male', 'female') DEFAULT 'male',
+            professional_grade tinytext,
+            specialization tinytext,
+            academic_degree enum('bachelor', 'master', 'doctorate'),
+            membership_number tinytext,
+            membership_start_date date,
+            membership_expiration_date date,
+            membership_status tinytext,
+            license_number tinytext,
+            license_issue_date date,
+            license_expiration_date date,
+            facility_number tinytext,
+            facility_name tinytext,
+            facility_license_issue_date date,
+            facility_license_expiration_date date,
+            facility_address text,
+            sub_syndicate tinytext,
             email tinytext,
-            member_code tinytext,
+            phone tinytext,
+            alt_phone tinytext,
+            notes text,
             photo_url text,
-            class_name tinytext,
-            section tinytext,
             parent_user_id bigint(20),
             officer_id bigint(20),
-            guardian_phone tinytext,
-            nationality tinytext,
             registration_date date,
             sort_order int DEFAULT 0,
             PRIMARY KEY  (id),
+            UNIQUE KEY national_id (national_id),
             KEY parent_user_id (parent_user_id),
             KEY officer_id (officer_id)
         ) $charset_collate;\n";
@@ -82,22 +100,6 @@ class SM_Activator {
             KEY user_id (user_id)
         ) $charset_collate;\n";
 
-        // Assignments / Lesson Plans Table
-        $table_name = $wpdb->prefix . 'sm_assignments';
-        $sql .= "CREATE TABLE $table_name (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            sender_id bigint(20) NOT NULL,
-            receiver_id bigint(20),
-            title tinytext NOT NULL,
-            description text,
-            file_url text,
-            type enum('assignment', 'lesson_plan') DEFAULT 'assignment',
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY sender_id (sender_id),
-            KEY receiver_id (receiver_id)
-        ) $charset_collate;\n";
-
         // Surveys Table
         $table_name = $wpdb->prefix . 'sm_surveys';
         $sql .= "CREATE TABLE $table_name (
@@ -129,6 +131,26 @@ class SM_Activator {
         dbDelta($sql);
 
         self::setup_roles();
+    }
+
+    private static function migrate_settings() {
+        $old_info = get_option('sm_school_info');
+        if ($old_info && !get_option('sm_syndicate_info')) {
+            // Rename school_name to syndicate_name and school_logo to syndicate_logo
+            if (isset($old_info['school_name'])) {
+                $old_info['syndicate_name'] = $old_info['school_name'];
+                unset($old_info['school_name']);
+            }
+            if (isset($old_info['school_logo'])) {
+                $old_info['syndicate_logo'] = $old_info['school_logo'];
+                unset($old_info['school_logo']);
+            }
+            if (isset($old_info['school_principal_name'])) {
+                $old_info['syndicate_principal_name'] = $old_info['school_principal_name'];
+                unset($old_info['school_principal_name']);
+            }
+            update_option('sm_syndicate_info', $old_info);
+        }
     }
 
     private static function migrate_tables() {
@@ -196,8 +218,7 @@ class SM_Activator {
             'إدارة_المخالفات' => true,
             'طباعة_التقارير' => true,
             'تسجيل_مخالفة' => true,
-            'إدارة_أولياء_الأمور' => true,
-            'مراجعة_التحضير' => true
+            'إدارة_أولياء_الأمور' => true
         ));
 
         // Syndicate Member (Formerly Supervisor/Teacher/Coordinator)

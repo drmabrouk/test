@@ -62,9 +62,9 @@ $academic = SM_Settings::get_academic_structure();
         <thead>
             <tr>
                 <th>اسم العضو</th>
-                <th>كود العضو</th>
+                <th>الرقم القومي</th>
+                <th>رقم العضوية</th>
                 <th>نص بند المخالفة</th>
-                <th>الصف / الفصل</th>
                 <th>تاريخ المخالفة</th>
             </tr>
         </thead>
@@ -72,9 +72,9 @@ $academic = SM_Settings::get_academic_structure();
             <?php foreach ($records as $r): ?>
                 <tr>
                     <td style="font-weight: 800; text-align: right;"><?php echo esc_html($r->member_name); ?></td>
-                    <td style="font-family: monospace; font-weight: 700;"><?php echo esc_html($r->member_code); ?></td>
+                    <td style="font-family: monospace; font-weight: 700;"><?php echo esc_html($r->national_id); ?></td>
+                    <td><?php echo esc_html($r->membership_number); ?></td>
                     <td style="text-align: right;"><?php echo esc_html($r->violation_code) . ' - ' . esc_html($r->type); ?></td>
-                    <td><?php echo SM_Settings::format_grade_name($r->class_name, $r->section); ?></td>
                     <td><?php echo date('Y-m-d', strtotime($r->created_at)); ?></td>
                 </tr>
             <?php endforeach; ?>

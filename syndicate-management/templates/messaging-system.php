@@ -37,13 +37,10 @@
                     $is_stu = in_array('sm_member', (array)$curr_user->roles);
 
                     if ($is_stu) {
-                        $member = SM_DB::get_member_by_parent($curr_user->ID);
-                        if ($member) {
-                            $staff = SM_DB::get_staff_by_section($member->class_name, $member->section);
-                            echo '<optgroup label="أعضاء النقابة وأعضاء النقابة الخاصون بك">';
-                            foreach($staff as $u) echo '<option value="'.$u->ID.'">'.$u->display_name.'</option>';
-                            echo '</optgroup>';
-                        }
+                        $staff = get_users(array('role__in' => array('sm_officer', 'sm_syndicate_member')));
+                        echo '<optgroup label="أعضاء ومسؤولي النقابة">';
+                        foreach($staff as $u) echo '<option value="'.$u->ID.'">'.$u->display_name.'</option>';
+                        echo '</optgroup>';
                     } else {
                         $admins = get_users(array('role' => 'sm_officer'));
                         $supervisors = get_users(array('role' => 'sm_syndicate_member'));

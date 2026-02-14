@@ -61,42 +61,37 @@ if ($import_results) {
 
     <div style="background: white; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 30px; box-shadow: var(--sm-shadow);">
         <form method="get" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
-            <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page']); ?>">
+            <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page'] ?? ''); ?>">
             <input type="hidden" name="sm_tab" value="members">
 
             <div class="sm-form-group" style="margin-bottom:0;">
-                <label class="sm-label">اسم العضو:</label>
-                <input type="text" name="member_search" class="sm-input" value="<?php echo esc_attr(isset($_GET['member_search']) ? $_GET['member_search'] : ''); ?>" placeholder="بحث بالاسم أو الكود...">
+                <label class="sm-label">بحث:</label>
+                <input type="text" name="member_search" class="sm-input" value="<?php echo esc_attr(isset($_GET['member_search']) ? $_GET['member_search'] : ''); ?>" placeholder="الاسم، الرقم القومي، رقم العضوية...">
             </div>
-            
+
             <div class="sm-form-group" style="margin-bottom:0;">
-                <label class="sm-label">الصف:</label>
-                <select name="class_filter" class="sm-select">
-                    <option value="">كل الصفوف</option>
-                    <?php 
-                    global $wpdb;
-                    $classes = $wpdb->get_col("SELECT DISTINCT class_name FROM {$wpdb->prefix}sm_members ORDER BY CAST(REPLACE(class_name, 'الصف ', '') AS UNSIGNED) ASC");
-                    foreach ($classes as $c): ?>
-                        <option value="<?php echo esc_attr($c); ?>" <?php selected(isset($_GET['class_filter']) && $_GET['class_filter'] == $c); ?>><?php echo esc_html($c); ?></option>
+                <label class="sm-label">الدرجة الوظيفية:</label>
+                <select name="grade_filter" class="sm-select">
+                    <option value="">كل الدرجات</option>
+                    <?php foreach (SM_Settings::get_professional_grades() as $k => $v): ?>
+                        <option value="<?php echo esc_attr($k); ?>" <?php selected(isset($_GET['grade_filter']) && $_GET['grade_filter'] == $k); ?>><?php echo esc_html($v); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div class="sm-form-group" style="margin-bottom:0;">
-                <label class="sm-label">الشعبة:</label>
-                <select name="section_filter" class="sm-select">
-                    <option value="">كل الشعب</option>
-                    <?php
-                    $sections = $wpdb->get_col("SELECT DISTINCT section FROM {$wpdb->prefix}sm_members WHERE section != '' ORDER BY section ASC");
-                    foreach ($sections as $s): ?>
-                        <option value="<?php echo esc_attr($s); ?>" <?php selected(isset($_GET['section_filter']) && $_GET['section_filter'] == $s); ?>><?php echo esc_html($s); ?></option>
+                <label class="sm-label">التخصص:</label>
+                <select name="spec_filter" class="sm-select">
+                    <option value="">كل التخصصات</option>
+                    <?php foreach (SM_Settings::get_specializations() as $k => $v): ?>
+                        <option value="<?php echo esc_attr($k); ?>" <?php selected(isset($_GET['spec_filter']) && $_GET['spec_filter'] == $k); ?>><?php echo esc_html($v); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
 
             <div style="display: flex; gap: 10px;">
                 <button type="submit" class="sm-btn">بحث</button>
-                <a href="<?php echo add_query_arg('sm_tab', 'members', remove_query_arg(['member_search', 'class_filter', 'section_filter', 'officer_filter'])); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none;">إعادة ضبط</a>
+                <a href="<?php echo add_query_arg('sm_tab', 'members', remove_query_arg(['member_search', 'grade_filter', 'spec_filter', 'status_filter'])); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none;">إعادة ضبط</a>
             </div>
         </form>
     </div>
@@ -112,7 +107,7 @@ if ($import_results) {
 
     <div id="csv-import-form" style="display:none; background: #f8fafc; padding: 30px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 30px;">
         <h3 style="margin-top:0; color:var(--sm-secondary-color);">دليل استيراد الأعضاء (Excel Mapping)</h3>
-        
+
         <div style="background:#fff; padding:20px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:20px;">
             <p style="font-size:14px; font-weight:700; margin-bottom:15px; color: var(--sm-dark-color);">يتم استيراد البيانات وفقاً لخريطة الأعمدة التالية:</p>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
@@ -156,7 +151,7 @@ if ($import_results) {
             </div>
         </form>
     </div>
-    
+
     <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; background: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
         <span style="font-size: 13px; font-weight: 700; color: #4a5568;">الإجراءات الجماعية:</span>
         <button onclick="bulkDeleteSelected()" class="sm-btn" style="background: #e53e3e; font-size: 11px; padding: 5px 15px; width: auto;">حذف المحدد</button>
@@ -167,53 +162,42 @@ if ($import_results) {
             <thead>
                 <tr>
                     <th style="width: 40px;"><input type="checkbox" id="select-all-members" onclick="toggleAllMembers(this)"></th>
-                    <th>كود العضو</th>
-                    <th>الصورة</th>
-                    <th>اسم العضو</th>
-                    <th>الصف</th>
-                    <th>الشعبة</th>
-                    <th>النقاط</th>
+                    <th>الرقم القومي</th>
+                    <th>الاسم</th>
+                    <th>الدرجة الوظيفية</th>
+                    <th>التخصص</th>
+                    <th>رقم العضوية</th>
+                    <th>الحالة</th>
                     <th>الإجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($members)): ?>
                     <tr>
-                        <td colspan="6" style="padding: 60px; text-align: center; color: var(--sm-text-gray);">
+                        <td colspan="8" style="padding: 60px; text-align: center; color: var(--sm-text-gray);">
                             <span class="dashicons dashicons-search" style="font-size: 40px; width:40px; height:40px; margin-bottom:10px;"></span>
                             <p>لا يوجد أعضاء يطابقون معايير البحث الحالية.</p>
                         </td>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($members as $member): ?>
+                <?php else:
+                    $grades = SM_Settings::get_professional_grades();
+                    $specs = SM_Settings::get_specializations();
+                    $statuses = SM_Settings::get_membership_statuses();
+                    foreach ($members as $member): ?>
                         <tr id="stu-row-<?php echo $member->id; ?>">
                             <td><input type="checkbox" class="member-checkbox" value="<?php echo $member->id; ?>"></td>
-                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html($member->member_code); ?></td>
-                            <td>
-                                <?php if ($member->photo_url): ?>
-                                    <img src="<?php echo esc_url($member->photo_url); ?>" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--sm-border-color);">
-                                <?php else: ?>
-                                    <div style="width: 45px; height: 45px; border-radius: 50%; background: var(--sm-bg-light); display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--sm-text-gray);">👤</div>
-                                <?php endif; ?>
-                            </td>
+                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html($member->national_id); ?></td>
                             <td style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($member->name); ?></td>
-                            <td><?php echo esc_html($member->class_name); ?></td>
-                            <td><span class="sm-badge sm-badge-low"><?php echo esc_html($member->section); ?></span></td>
-                            <td style="text-align:center;">
-                                <div style="font-weight:900; color:<?php echo $member->behavior_points > 15 ? '#e53e3e' : '#111F35'; ?>;">
-                                    <?php echo (int)$member->behavior_points; ?>
-                                    <?php if ($member->case_file_active): ?>
-                                        <div style="font-size:9px; color:#e53e3e; font-weight:800;">[ملف مفتوح]</div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
+                            <td><?php echo esc_html($grades[$member->professional_grade] ?? $member->professional_grade); ?></td>
+                            <td><?php echo esc_html($specs[$member->specialization] ?? $member->specialization); ?></td>
+                            <td><?php echo esc_html($member->membership_number); ?></td>
+                            <td><span class="sm-badge sm-badge-low"><?php echo esc_html($statuses[$member->membership_status] ?? $member->membership_status); ?></span></td>
                             <td>
                                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
                                     <button onclick='viewSmMember(<?php echo json_encode(array(
                                         "id" => $member->id,
                                         "name" => $member->name,
-                                        "member_id" => $member->member_code,
-                                        "class" => SM_Settings::format_grade_name($member->class_name, $member->section),
+                                        "national_id" => $member->national_id,
                                         "photo" => $member->photo_url
                                     )); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; height: 32px; min-width: 80px;">
                                         <span class="dashicons dashicons-visibility"></span> سجل
@@ -222,23 +206,11 @@ if ($import_results) {
                                     <?php if ($is_admin):
                                         $temp_pass = get_user_meta($member->parent_user_id, 'sm_temp_pass', true);
                                     ?>
-                                        <button onclick='showMemberCreds("<?php echo esc_js($member->member_code); ?>", "<?php echo esc_js($temp_pass ?: '********'); ?>", "<?php echo esc_js($member->name); ?>", "<?php echo $member->id; ?>")' class="sm-btn sm-btn-outline" style="padding: 5px; min-width: 32px;" title="بيانات الدخول"><span class="dashicons dashicons-lock"></span></button>
+                                        <button onclick='showMemberCreds("<?php echo esc_js($member->national_id); ?>", "<?php echo esc_js($temp_pass ?: '********'); ?>", "<?php echo esc_js($member->name); ?>", "<?php echo $member->id; ?>")' class="sm-btn sm-btn-outline" style="padding: 5px; min-width: 32px;" title="بيانات الدخول"><span class="dashicons dashicons-lock"></span></button>
 
-                                        <button onclick='editSmMember(<?php echo json_encode(array(
-                                            "id" => $member->id,
-                                            "name" => $member->name,
-                                            "member_id" => $member->member_code,
-                                            "class_name" => $member->class_name,
-                                            "section" => $member->section,
-                                            "parent_id" => $member->parent_user_id,
-                                            "parent_email" => $member->parent_email,
-                                            "guardian_phone" => $member->guardian_phone,
-                                            "nationality" => $member->nationality,
-                                            "registration_date" => $member->registration_date,
-                                            "photo" => $member->photo_url
-                                        )); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px; min-width: 32px;" title="تعديل"><span class="dashicons dashicons-edit"></span></button>
+                                        <button onclick='editSmMember(<?php echo json_encode($member); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px; min-width: 32px;" title="تعديل"><span class="dashicons dashicons-edit"></span></button>
 
-                                        <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card&member_id=' . $member->id); ?>" target="_blank" class="sm-btn sm-btn-outline" style="padding: 5px; min-width: 32px;" title="بطاقة الهوية"><span class="dashicons dashicons-id"></span></a>
+                                        <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card&member_id=' . $member->id); ?>" target="_blank" class="sm-btn sm-btn-outline" style="padding: 5px; min-width: 32px;" title="بطاقة العضوية"><span class="dashicons dashicons-id"></span></a>
 
                                         <button onclick="confirmDeleteMember(<?php echo $member->id; ?>, '<?php echo esc_js($member->name); ?>')" class="sm-btn sm-btn-outline" style="padding: 5px; min-width: 32px; color: #e53e3e;" title="حذف العضو"><span class="dashicons dashicons-trash"></span></button>
                                     <?php endif; ?>
@@ -295,141 +267,244 @@ if ($import_results) {
 
     <?php if ($is_admin): ?>
     <div id="add-single-member-modal" class="sm-modal-overlay">
-        <div class="sm-modal-content" style="max-width: 750px;">
+        <div class="sm-modal-content" style="max-width: 900px;">
             <div class="sm-modal-header">
                 <h3>تسجيل عضو جديد في النظام</h3>
                 <button class="sm-modal-close" onclick="document.getElementById('add-single-member-modal').style.display='none'">&times;</button>
             </div>
             <form id="add-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background:#f8fafc; padding:25px; border-radius:12px; border:1px solid #edf2f7;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #edf2f7;">
                     <div class="sm-form-group">
-                        <label class="sm-label">الاسم الثلاثي للعضو:</label>
-                        <input name="name" type="text" class="sm-input" placeholder="أدخل الاسم كاملاً..." required>
+                        <label class="sm-label">الرقم القومي (14 رقم):</label>
+                        <input name="national_id" type="text" class="sm-input" required maxlength="14" pattern="[0-9]{14}">
                     </div>
                     <div class="sm-form-group">
-                        <label class="sm-label">الصف الدراسي:</label>
-                        <select name="class" class="sm-select" required>
-                            <option value="">-- اختر الصف --</option>
-                            <?php 
-                            $academic = SM_Settings::get_academic_structure();
-                            foreach ($academic['active_grades'] as $grade_num) {
-                                echo "<option value='الصف $grade_num'>الصف $grade_num</option>";
-                            }
-                            ?>
+                        <label class="sm-label">الاسم الكامل:</label>
+                        <input name="name" type="text" class="sm-input" required>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">الجنس:</label>
+                        <select name="gender" class="sm-select">
+                            <option value="male">ذكر</option>
+                            <option value="female">أنثى</option>
                         </select>
                     </div>
                     <div class="sm-form-group">
-                        <label class="sm-label">الشعبة:</label>
-                        <input name="section" type="text" class="sm-input" placeholder="مثال: أ، ب، 1، 2..." required list="existing-sections">
-                        <datalist id="existing-sections">
-                            <?php
-                            $all_sections = $wpdb->get_col("SELECT DISTINCT section FROM {$wpdb->prefix}sm_members WHERE section != '' ORDER BY section ASC");
-                            foreach ($all_sections as $s) echo '<option value="'.$s.'">';
-                            ?>
-                        </datalist>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">بريد ولي الأمر (اختياري):</label>
-                        <input name="email" type="email" class="sm-input" placeholder="example@mail.com">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">رقم هاتف ولي الأمر:</label>
-                        <input name="guardian_phone" type="text" class="sm-input" placeholder="05xxxxxxxx">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">جنسية العضو:</label>
-                        <input name="nationality" type="text" class="sm-input" placeholder="مثال: إماراتي">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">تاريخ التسجيل:</label>
-                        <input name="registration_date" type="date" class="sm-input" value="<?php echo date('Y-m-d'); ?>">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">ربط بحساب العضو (اختياري):</label>
-                        <select name="parent_user_id" class="sm-select">
-                            <option value="">-- بلا ربط --</option>
-                            <?php foreach (get_users(array('role' => 'sm_member')) as $p): ?>
-                                <option value="<?php echo $p->ID; ?>"><?php echo esc_html($p->display_name); ?></option>
-                            <?php endforeach; ?>
+                        <label class="sm-label">الدرجة الوظيفية:</label>
+                        <select name="professional_grade" class="sm-select">
+                            <?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
                         </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">التخصص المهني:</label>
+                        <select name="specialization" class="sm-select">
+                            <?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">الدرجة العلمية:</label>
+                        <select name="academic_degree" class="sm-select">
+                            <?php foreach (SM_Settings::get_academic_degrees() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم العضوية:</label>
+                        <input name="membership_number" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ بدء العضوية:</label>
+                        <input name="membership_start_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ انتهاء العضوية:</label>
+                        <input name="membership_expiration_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">حالة العضوية:</label>
+                        <select name="membership_status" class="sm-select">
+                            <?php foreach (SM_Settings::get_membership_statuses() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم ترخيص المزاولة:</label>
+                        <input name="license_number" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ صدور الترخيص:</label>
+                        <input name="license_issue_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ انتهاء الترخيص:</label>
+                        <input name="license_expiration_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم المنشأة:</label>
+                        <input name="facility_number" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">اسم المنشأة:</label>
+                        <input name="facility_name" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ ترخيص المنشأة:</label>
+                        <input name="facility_license_issue_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ انتهاء المنشأة:</label>
+                        <input name="facility_license_expiration_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">النقابة الفرعية:</label>
+                        <input name="sub_syndicate" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">البريد الإلكتروني:</label>
+                        <input name="email" type="email" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم الهاتف:</label>
+                        <input name="phone" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">هاتف بديل:</label>
+                        <input name="alt_phone" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group" style="grid-column: span 3;">
+                        <label class="sm-label">عنوان المنشأة:</label>
+                        <input name="facility_address" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group" style="grid-column: span 3;">
+                        <label class="sm-label">ملاحظات:</label>
+                        <textarea name="notes" class="sm-textarea" rows="2"></textarea>
                     </div>
                 </div>
-                <div style="text-align:left; margin-top:25px;">
-                    <button type="submit" class="sm-btn" style="width:220px; height:50px; font-weight:800; font-size:1.05em;">تأكيد إضافة العضو</button>
+                <div style="text-align:left; margin-top:20px;">
+                    <button type="submit" class="sm-btn" style="width:200px;">إضافة العضو</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div id="edit-member-modal" class="sm-modal-overlay">
-        <div class="sm-modal-content" style="max-width: 800px;">
+        <div class="sm-modal-content" style="max-width: 900px;">
             <div class="sm-modal-header">
-                <h3>تعديل الملف المعلوماتي للعضو</h3>
+                <h3>تعديل بيانات العضو</h3>
                 <button class="sm-modal-close" onclick="document.getElementById('edit-member-modal').style.display='none'">&times;</button>
             </div>
             <form id="edit-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
                 <input type="hidden" name="member_id" id="edit_stu_id">
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px; background:#f8fafc; padding:25px; border-radius:12px; border:1px solid #edf2f7;">
-                    <div style="grid-column: span 2; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 5px; color: var(--sm-primary-color); font-weight: 700;">البيانات الأساسية</div>
-                    
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #edf2f7;">
                     <div class="sm-form-group">
-                        <label class="sm-label">الاسم الكامل للعضو:</label>
-                        <input type="text" name="name" id="edit_stu_name" class="sm-input" required>
+                        <label class="sm-label">الرقم القومي:</label>
+                        <input name="national_id" id="edit_national_id" type="text" class="sm-input" required maxlength="14" pattern="[0-9]{14}">
                     </div>
                     <div class="sm-form-group">
-                        <label class="sm-label">الصف الدراسي:</label>
-                        <select name="class_name" id="edit_stu_class" class="sm-select" required>
-                            <?php
-                            foreach ($academic['active_grades'] as $grade_num) {
-                                echo "<option value='الصف $grade_num'>الصف $grade_num</option>";
-                            }
-                            ?>
+                        <label class="sm-label">الاسم الكامل:</label>
+                        <input name="name" id="edit_name" type="text" class="sm-input" required>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">الجنس:</label>
+                        <select name="gender" id="edit_gender" class="sm-select">
+                            <option value="male">ذكر</option>
+                            <option value="female">أنثى</option>
                         </select>
                     </div>
                     <div class="sm-form-group">
-                        <label class="sm-label">الشعبة:</label>
-                        <input type="text" name="section" id="edit_stu_section" class="sm-input" required list="existing-sections">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">الرقم الأكاديمي (الكود):</label>
-                        <input type="text" name="member_code" id="edit_stu_code" class="sm-input" readonly>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">بريد ولي الأمر:</label>
-                        <input type="email" name="parent_email" id="edit_stu_email" class="sm-input">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">رقم هاتف ولي الأمر:</label>
-                        <input name="guardian_phone" id="edit_stu_phone" type="text" class="sm-input">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">جنسية العضو:</label>
-                        <input name="nationality" id="edit_stu_nationality" type="text" class="sm-input">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">تاريخ التسجيل:</label>
-                        <input name="registration_date" id="edit_stu_reg_date" type="date" class="sm-input">
-                    </div>
-
-                    <div style="grid-column: span 2; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-top: 15px; margin-bottom: 5px; color: var(--sm-primary-color); font-weight: 700;">الربط والمتابعة</div>
-
-                    <div class="sm-form-group">
-                        <label class="sm-label">ربط بحساب العضو المسجل:</label>
-                        <select name="parent_user_id" id="edit_stu_parent_user" class="sm-select">
-                            <option value="">-- اختر من مستخدمي النظام --</option>
-                            <?php foreach (get_users(array('role' => 'sm_member')) as $p): ?>
-                                <option value="<?php echo $p->ID; ?>"><?php echo esc_html($p->display_name); ?></option>
-                            <?php endforeach; ?>
+                        <label class="sm-label">الدرجة الوظيفية:</label>
+                        <select name="professional_grade" id="edit_professional_grade" class="sm-select">
+                            <?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
                         </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">التخصص المهني:</label>
+                        <select name="specialization" id="edit_specialization" class="sm-select">
+                            <?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">الدرجة العلمية:</label>
+                        <select name="academic_degree" id="edit_academic_degree" class="sm-select">
+                            <?php foreach (SM_Settings::get_academic_degrees() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم العضوية:</label>
+                        <input name="membership_number" id="edit_membership_number" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ بدء العضوية:</label>
+                        <input name="membership_start_date" id="edit_membership_start_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ انتهاء العضوية:</label>
+                        <input name="membership_expiration_date" id="edit_membership_expiration_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">حالة العضوية:</label>
+                        <select name="membership_status" id="edit_membership_status" class="sm-select">
+                            <?php foreach (SM_Settings::get_membership_statuses() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+                        </select>
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم ترخيص المزاولة:</label>
+                        <input name="license_number" id="edit_license_number" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ صدور الترخيص:</label>
+                        <input name="license_issue_date" id="edit_license_issue_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ انتهاء الترخيص:</label>
+                        <input name="license_expiration_date" id="edit_license_expiration_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم المنشأة:</label>
+                        <input name="facility_number" id="edit_facility_number" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">اسم المنشأة:</label>
+                        <input name="facility_name" id="edit_facility_name" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ ترخيص المنشأة:</label>
+                        <input name="facility_license_issue_date" id="edit_facility_license_issue_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">تاريخ انتهاء المنشأة:</label>
+                        <input name="facility_license_expiration_date" id="edit_facility_license_expiration_date" type="date" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">النقابة الفرعية:</label>
+                        <input name="sub_syndicate" id="edit_sub_syndicate" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">البريد الإلكتروني:</label>
+                        <input name="email" id="edit_email" type="email" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">رقم الهاتف:</label>
+                        <input name="phone" id="edit_phone" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">هاتف بديل:</label>
+                        <input name="alt_phone" id="edit_alt_phone" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group" style="grid-column: span 3;">
+                        <label class="sm-label">عنوان المنشأة:</label>
+                        <input name="facility_address" id="edit_facility_address" type="text" class="sm-input">
+                    </div>
+                    <div class="sm-form-group" style="grid-column: span 3;">
+                        <label class="sm-label">ملاحظات:</label>
+                        <textarea name="notes" id="edit_notes" class="sm-textarea" rows="2"></textarea>
                     </div>
                 </div>
 
-                <div style="display:flex; gap:15px; margin-top:30px; justify-content: flex-end;">
-                    <button type="submit" class="sm-btn" style="width:200px; height:50px; font-weight:800;">تحديث البيانات الآن</button>
-                    <button type="button" onclick="document.getElementById('edit-member-modal').style.display='none'" class="sm-btn" style="background:#cbd5e0; color:#2d3748; width:120px;">إلغاء</button>
+                <div style="display:flex; gap:15px; margin-top:20px; justify-content: flex-end;">
+                    <button type="submit" class="sm-btn" style="width:200px;">تحديث البيانات</button>
+                    <button type="button" onclick="document.getElementById('edit-member-modal').style.display='none'" class="sm-btn" style="background:#cbd5e0; color:#2d3748; width:100px;">إلغاء</button>
                 </div>
             </form>
         </div>
@@ -508,6 +583,36 @@ if ($import_results) {
 
     <script>
     (function() {
+        // Edit Handlers
+        window.editSmMember = function(s) {
+            document.getElementById('edit_stu_id').value = s.id;
+            document.getElementById('edit_national_id').value = s.national_id || '';
+            document.getElementById('edit_name').value = s.name || '';
+            document.getElementById('edit_gender').value = s.gender || 'male';
+            document.getElementById('edit_professional_grade').value = s.professional_grade || '';
+            document.getElementById('edit_specialization').value = s.specialization || '';
+            document.getElementById('edit_academic_degree').value = s.academic_degree || '';
+            document.getElementById('edit_membership_number').value = s.membership_number || '';
+            document.getElementById('edit_membership_start_date').value = s.membership_start_date || '';
+            document.getElementById('edit_membership_expiration_date').value = s.membership_expiration_date || '';
+            document.getElementById('edit_membership_status').value = s.membership_status || '';
+            document.getElementById('edit_license_number').value = s.license_number || '';
+            document.getElementById('edit_license_issue_date').value = s.license_issue_date || '';
+            document.getElementById('edit_license_expiration_date').value = s.license_expiration_date || '';
+            document.getElementById('edit_facility_number').value = s.facility_number || '';
+            document.getElementById('edit_facility_name').value = s.facility_name || '';
+            document.getElementById('edit_facility_license_issue_date').value = s.facility_license_issue_date || '';
+            document.getElementById('edit_facility_license_expiration_date').value = s.facility_license_expiration_date || '';
+            document.getElementById('edit_facility_address').value = s.facility_address || '';
+            document.getElementById('edit_sub_syndicate').value = s.sub_syndicate || '';
+            document.getElementById('edit_email').value = s.email || '';
+            document.getElementById('edit_phone').value = s.phone || '';
+            document.getElementById('edit_alt_phone').value = s.alt_phone || '';
+            document.getElementById('edit_notes').value = s.notes || '';
+
+            document.getElementById('edit-member-modal').style.display = 'flex';
+        };
+
         // Show Credentials
         window.showMemberCreds = function(user, pass, name, id) {
             document.getElementById('cred-username').innerText = user;
@@ -523,7 +628,7 @@ if ($import_results) {
             const content = document.getElementById('stu_details_content');
             const printBtn = document.getElementById('print-full-record-btn');
             if (!modal || !content) return;
-            
+
             content.innerHTML = '<div style="text-align:center; padding:50px;"><p style="font-weight:700; color:#718096;">جاري جلب الملف الانضباطي وتنسيقه...</p></div>';
             modal.style.display = 'flex';
 
@@ -553,7 +658,7 @@ if ($import_results) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 formData.append('action', 'sm_add_member_ajax');
-                
+
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(res => {
@@ -577,7 +682,7 @@ if ($import_results) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 formData.append('action', 'sm_update_member_ajax');
-                
+
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(res => {

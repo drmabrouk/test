@@ -82,7 +82,7 @@
                         <?php else: ?>
                             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
                                 <?php foreach ($children as $c): ?>
-                                    <span class="sm-badge sm-badge-low" style="background: #fff; font-size: 11px;"><?php echo esc_html($c->name); ?> (<?php echo SM_Settings::format_grade_name($c->class_name, $c->section, 'short'); ?>)</span>
+                                    <span class="sm-badge sm-badge-low" style="background: #fff; font-size: 11px;"><?php echo esc_html($c->name); ?> (<?php echo esc_html($c->national_id); ?>)</span>
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>

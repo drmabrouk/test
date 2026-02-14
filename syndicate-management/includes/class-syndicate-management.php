@@ -67,8 +67,6 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_rollback_log_ajax', $plugin_public, 'ajax_rollback_log');
         $this->loader->add_action('wp_ajax_sm_delete_log_ajax', $plugin_public, 'ajax_delete_log');
         $this->loader->add_action('wp_ajax_sm_delete_all_logs_ajax', $plugin_public, 'ajax_delete_all_logs');
-        $this->loader->add_action('wp_ajax_sm_add_assignment_ajax', $plugin_public, 'ajax_add_assignment');
-        $this->loader->add_action('wp_ajax_sm_approve_plan_ajax', $plugin_public, 'ajax_approve_plan');
         $this->loader->add_action('wp_ajax_sm_bulk_delete_users_ajax', $plugin_public, 'ajax_bulk_delete_users');
         $this->loader->add_action('wp_ajax_sm_export_violations_csv', $plugin_public, 'ajax_export_violations_csv');
         $this->loader->add_action('wp_ajax_sm_bulk_delete_members_ajax', $plugin_public, 'ajax_bulk_delete_members');

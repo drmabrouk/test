@@ -8,51 +8,24 @@ class SM_DB {
         $query = "SELECT * FROM $table_name WHERE 1=1";
         $params = array();
 
-        if (isset($args['officer_id'])) {
-            $user_id = intval($args['officer_id']);
-            $user = get_userdata($user_id);
-            if ($user) {
-                $is_officer = in_array('sm_officer', (array) $user->roles);
-                $is_syndicate_member = in_array('sm_syndicate_member', (array) $user->roles);
-
-                if ($is_officer) {
-                } elseif ($is_syndicate_member) {
-                    $assigned_sections = get_user_meta($user_id, 'sm_assigned_sections', true) ?: array();
-                    $supervised_classes = get_user_meta($user_id, 'sm_supervised_classes', true) ?: array();
-                    $all_sections = array_unique(array_merge($assigned_sections, $supervised_classes));
-
-                    if (empty($all_sections)) {
-                        return array();
-                    }
-
-                    $section_conditions = array();
-                    foreach ($all_sections as $sec) {
-                        $parts = explode('|', $sec);
-                        if (count($parts) == 2) {
-                            $section_conditions[] = "(class_name = %s AND section = %s)";
-                            $params[] = $parts[0];
-                            $params[] = $parts[1];
-                        }
-                    }
-                    if (!empty($section_conditions)) {
-                        $query .= " AND (" . implode(' OR ', $section_conditions) . ")";
-                    }
-                }
-            }
+        if (isset($args['professional_grade']) && !empty($args['professional_grade'])) {
+            $query .= " AND professional_grade = %s";
+            $params[] = $args['professional_grade'];
         }
 
-        if (isset($args['class_name']) && !empty($args['class_name'])) {
-            $query .= " AND class_name = %s";
-            $params[] = $args['class_name'];
+        if (isset($args['specialization']) && !empty($args['specialization'])) {
+            $query .= " AND specialization = %s";
+            $params[] = $args['specialization'];
         }
 
-        if (isset($args['section']) && !empty($args['section'])) {
-            $query .= " AND section = %s";
-            $params[] = $args['section'];
+        if (isset($args['membership_status']) && !empty($args['membership_status'])) {
+            $query .= " AND membership_status = %s";
+            $params[] = $args['membership_status'];
         }
 
         if (isset($args['search']) && !empty($args['search'])) {
-            $query .= " AND (name LIKE %s OR member_code LIKE %s)";
+            $query .= " AND (name LIKE %s OR national_id LIKE %s OR membership_number LIKE %s)";
+            $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
             $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
             $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
         }
@@ -70,9 +43,9 @@ class SM_DB {
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE id = %d", $id));
     }
 
-    public static function get_member_by_code($code) {
+    public static function get_member_by_national_id($national_id) {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE member_code = %s", $code));
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE national_id = %s", $national_id));
     }
 
     public static function get_member_by_parent($parent_user_id) {
@@ -85,58 +58,82 @@ class SM_DB {
         return $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE parent_user_id = %d", $parent_user_id));
     }
 
-    public static function add_member($name, $class, $email = '', $code = '', $parent_user_id = null, $officer_id = null, $section = '', $extra = array()) {
+    public static function add_member($data) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
 
-        if (empty($code)) {
-            $last_id = $wpdb->get_var("SELECT id FROM $table_name ORDER BY id DESC LIMIT 1");
-            $next_num = ($last_id ? intval($last_id) : 0) + 1;
-            $code = 'MB' . str_pad($next_num, 5, '0', STR_PAD_LEFT);
+        $national_id = sanitize_text_field($data['national_id'] ?? '');
+        if (!preg_match('/^[0-9]{14}$/', $national_id)) {
+            return new WP_Error('invalid_national_id', 'الرقم القومي يجب أن يتكون من 14 رقم بالضبط وبدون حروف.');
         }
+
+        // Check if national_id already exists
+        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE national_id = %s", $national_id));
+        if ($exists) {
+            return new WP_Error('duplicate_national_id', 'الرقم القومي مسجل مسبقاً.');
+        }
+
+        $name = sanitize_text_field($data['name'] ?? '');
+        $email = sanitize_email($data['email'] ?? '');
 
         // Auto-create WordPress User for the Member
-        if (empty($parent_user_id)) {
-            $temp_pass = '';
-            for($i=0; $i<10; $i++) $temp_pass .= rand(0,9);
+        $parent_user_id = null;
+        $temp_pass = '';
+        for($i=0; $i<10; $i++) $temp_pass .= rand(0,9);
 
-            if (!function_exists('wp_insert_user')) {
-                require_once(ABSPATH . 'wp-includes/user.php');
-            }
-
-            $wp_user_id = wp_insert_user(array(
-                'user_login' => $code,
-                'user_email' => $email ?: $code . '@syndicate.local',
-                'display_name' => $name,
-                'user_pass' => $temp_pass,
-                'role' => 'sm_member'
-            ));
-
-            if (!is_wp_error($wp_user_id)) {
-                $parent_user_id = $wp_user_id;
-                update_user_meta($wp_user_id, 'sm_temp_pass', $temp_pass);
-            }
+        if (!function_exists('wp_insert_user')) {
+            require_once(ABSPATH . 'wp-includes/user.php');
         }
 
-        $data = array(
+        $wp_user_id = wp_insert_user(array(
+            'user_login' => $national_id,
+            'user_email' => $email ?: $national_id . '@syndicate.local',
+            'display_name' => $name,
+            'user_pass' => $temp_pass,
+            'role' => 'sm_member'
+        ));
+
+        if (!is_wp_error($wp_user_id)) {
+            $parent_user_id = $wp_user_id;
+            update_user_meta($wp_user_id, 'sm_temp_pass', $temp_pass);
+        } else {
+            return $wp_user_id; // Return WP_Error
+        }
+
+        $insert_data = array(
+            'national_id' => $national_id,
             'name' => $name,
+            'gender' => sanitize_text_field($data['gender'] ?? 'male'),
+            'professional_grade' => sanitize_text_field($data['professional_grade'] ?? ''),
+            'specialization' => sanitize_text_field($data['specialization'] ?? ''),
+            'academic_degree' => sanitize_text_field($data['academic_degree'] ?? ''),
+            'membership_number' => sanitize_text_field($data['membership_number'] ?? ''),
+            'membership_start_date' => sanitize_text_field($data['membership_start_date'] ?? null),
+            'membership_expiration_date' => sanitize_text_field($data['membership_expiration_date'] ?? null),
+            'membership_status' => sanitize_text_field($data['membership_status'] ?? ''),
+            'license_number' => sanitize_text_field($data['license_number'] ?? ''),
+            'license_issue_date' => sanitize_text_field($data['license_issue_date'] ?? null),
+            'license_expiration_date' => sanitize_text_field($data['license_expiration_date'] ?? null),
+            'facility_number' => sanitize_text_field($data['facility_number'] ?? ''),
+            'facility_name' => sanitize_text_field($data['facility_name'] ?? ''),
+            'facility_license_issue_date' => sanitize_text_field($data['facility_license_issue_date'] ?? null),
+            'facility_license_expiration_date' => sanitize_text_field($data['facility_license_expiration_date'] ?? null),
+            'facility_address' => sanitize_textarea_field($data['facility_address'] ?? ''),
+            'sub_syndicate' => sanitize_text_field($data['sub_syndicate'] ?? ''),
             'email' => $email,
-            'member_code' => $code,
-            'class_name' => $class,
-            'section' => $section,
+            'phone' => sanitize_text_field($data['phone'] ?? ''),
+            'alt_phone' => sanitize_text_field($data['alt_phone'] ?? ''),
+            'notes' => sanitize_textarea_field($data['notes'] ?? ''),
             'parent_user_id' => $parent_user_id,
-            'officer_id' => $officer_id,
-            'guardian_phone' => $extra['guardian_phone'] ?? '',
-            'nationality' => $extra['nationality'] ?? '',
-            'registration_date' => $extra['registration_date'] ?? current_time('Y-m-d'),
-            'sort_order' => $extra['sort_order'] ?? 0
+            'registration_date' => current_time('Y-m-d'),
+            'sort_order' => self::get_next_sort_order()
         );
 
-        $wpdb->insert($table_name, $data);
+        $wpdb->insert($table_name, $insert_data);
         $id = $wpdb->insert_id;
 
         if ($id) {
-            SM_Logger::log('إضافة عضو جديد', "تمت إضافة العضو: $name بنجاح (الكود: $code)");
+            SM_Logger::log('إضافة عضو جديد', "تمت إضافة العضو: $name بنجاح (الرقم القومي: $national_id)");
         }
 
         return $id;
@@ -147,16 +144,28 @@ class SM_DB {
         $table_name = $wpdb->prefix . 'sm_members';
 
         $update_data = array();
-        if (isset($data['name'])) $update_data['name'] = sanitize_text_field($data['name']);
-        if (isset($data['email'])) $update_data['email'] = sanitize_email($data['email']);
-        if (isset($data['parent_email'])) $update_data['email'] = sanitize_email($data['parent_email']);
-        if (isset($data['member_code'])) $update_data['member_code'] = sanitize_text_field($data['member_code']);
-        if (isset($data['class_name'])) $update_data['class_name'] = sanitize_text_field($data['class_name']);
-        if (isset($data['section'])) $update_data['section'] = sanitize_text_field($data['section']);
+        $fields = [
+            'national_id', 'name', 'gender', 'professional_grade', 'specialization',
+            'academic_degree', 'membership_number', 'membership_start_date',
+            'membership_expiration_date', 'membership_status', 'license_number',
+            'license_issue_date', 'license_expiration_date', 'facility_number',
+            'facility_name', 'facility_license_issue_date', 'facility_license_expiration_date',
+            'facility_address', 'sub_syndicate', 'email', 'phone', 'alt_phone', 'notes'
+        ];
+
+        foreach ($fields as $f) {
+            if (isset($data[$f])) {
+                if (in_array($f, ['facility_address', 'notes'])) {
+                    $update_data[$f] = sanitize_textarea_field($data[$f]);
+                } elseif ($f === 'email') {
+                    $update_data[$f] = sanitize_email($data[$f]);
+                } else {
+                    $update_data[$f] = sanitize_text_field($data[$f]);
+                }
+            }
+        }
+
         if (isset($data['parent_user_id'])) $update_data['parent_user_id'] = intval($data['parent_user_id']);
-        if (isset($data['officer_id'])) $update_data['officer_id'] = intval($data['officer_id']);
-        if (isset($data['guardian_phone'])) $update_data['guardian_phone'] = sanitize_text_field($data['guardian_phone']);
-        if (isset($data['nationality'])) $update_data['nationality'] = sanitize_text_field($data['nationality']);
         if (isset($data['registration_date'])) $update_data['registration_date'] = sanitize_text_field($data['registration_date']);
         if (isset($data['sort_order'])) $update_data['sort_order'] = intval($data['sort_order']);
 
@@ -186,11 +195,11 @@ class SM_DB {
         return $wpdb->delete($wpdb->prefix . 'sm_members', array('id' => $id));
     }
 
-    public static function member_exists($name, $class, $section) {
+    public static function member_exists($national_id) {
         global $wpdb;
         return $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}sm_members WHERE name = %s AND class_name = %s AND section = %s",
-            $name, $class, $section
+            "SELECT id FROM {$wpdb->prefix}sm_members WHERE national_id = %s",
+            $national_id
         ));
     }
 
@@ -204,7 +213,7 @@ class SM_DB {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_records';
         $member_table = $wpdb->prefix . 'sm_members';
-        $query = "SELECT r.*, s.name as member_name, s.class_name, s.section, s.member_code
+        $query = "SELECT r.*, s.name as member_name, s.national_id, s.membership_number
                   FROM $table_name r
                   JOIN $member_table s ON r.member_id = s.id
                   WHERE 1=1";
@@ -213,38 +222,6 @@ class SM_DB {
         if (isset($filters['member_id'])) {
             $query .= " AND r.member_id = %d";
             $params[] = $filters['member_id'];
-        }
-
-        if (isset($filters['officer_id'])) {
-            $user_id = intval($filters['officer_id']);
-            $user = get_userdata($user_id);
-            if ($user && !in_array('administrator', (array)$user->roles) && !current_user_can('manage_options')) {
-                if (in_array('sm_officer', (array)$user->roles)) {
-                } else {
-                    $assigned_sections = get_user_meta($user_id, 'sm_assigned_sections', true) ?: array();
-                    $supervised_classes = get_user_meta($user_id, 'sm_supervised_classes', true) ?: array();
-                    $all_sections = array_unique(array_merge($assigned_sections, $supervised_classes));
-
-                    if (empty($all_sections)) {
-                        $query .= " AND r.officer_id = %d";
-                        $params[] = $user_id;
-                    } else {
-                        $sec_cond = array();
-                        $sec_params = array();
-                        foreach ($all_sections as $sec) {
-                            $parts = explode('|', $sec);
-                            if (count($parts) == 2) {
-                                $sec_cond[] = "(s.class_name = %s AND s.section = %s)";
-                                $sec_params[] = $parts[0];
-                                $sec_params[] = $parts[1];
-                            }
-                        }
-                        $query .= " AND (r.officer_id = %d OR (" . implode(' OR ', $sec_cond) . "))";
-                        $params[] = $user_id;
-                        $params = array_merge($params, $sec_params);
-                    }
-                }
-            }
         }
 
         if (isset($filters['status'])) {
@@ -257,18 +234,9 @@ class SM_DB {
             $params[] = $filters['type'];
         }
 
-        if (isset($filters['class_name'])) {
-            $query .= " AND s.class_name = %s";
-            $params[] = $filters['class_name'];
-        }
-
-        if (isset($filters['section'])) {
-            $query .= " AND s.section = %s";
-            $params[] = $filters['section'];
-        }
-
         if (isset($filters['search'])) {
-            $query .= " AND (s.name LIKE %s OR s.member_code LIKE %s)";
+            $query .= " AND (s.name LIKE %s OR s.national_id LIKE %s OR s.membership_number LIKE %s)";
+            $params[] = '%' . $wpdb->esc_like($filters['search']) . '%';
             $params[] = '%' . $wpdb->esc_like($filters['search']) . '%';
             $params[] = '%' . $wpdb->esc_like($filters['search']) . '%';
         }
@@ -386,36 +354,8 @@ class SM_DB {
         $params = array();
 
         if (isset($filters['officer_id'])) {
-            $user_id = intval($filters['officer_id']);
-            $user = get_userdata($user_id);
-            if ($user && !in_array('administrator', (array)$user->roles) && !current_user_can('manage_options')) {
-                if (in_array('sm_officer', (array)$user->roles)) {
-                } else {
-                    $assigned_sections = get_user_meta($user_id, 'sm_assigned_sections', true) ?: array();
-                    $supervised_classes = get_user_meta($user_id, 'sm_supervised_classes', true) ?: array();
-                    $all_sections = array_unique(array_merge($assigned_sections, $supervised_classes));
-
-                    if (empty($all_sections)) {
-                        $where .= " AND (officer_id = %d)";
-                        $params[] = $user_id;
-                    } else {
-                        $member_table = $wpdb->prefix . 'sm_members';
-                        $sec_cond = array();
-                        $sec_params = array();
-                        foreach ($all_sections as $sec) {
-                            $parts = explode('|', $sec);
-                            if (count($parts) == 2) {
-                                $sec_cond[] = "(member_id IN (SELECT id FROM $member_table WHERE class_name = %s AND section = %s))";
-                                $sec_params[] = $parts[0];
-                                $sec_params[] = $parts[1];
-                            }
-                        }
-                        $where .= " AND (officer_id = %d OR (" . implode(' OR ', $sec_cond) . "))";
-                        $params[] = $user_id;
-                        $params = array_merge($params, $sec_params);
-                    }
-                }
-            }
+            $where .= " AND (officer_id = %d)";
+            $params[] = $filters['officer_id'];
         }
 
         $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members");
@@ -519,45 +459,6 @@ class SM_DB {
         return $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_records WHERE status = 'pending'");
     }
 
-    public static function add_assignment($data) {
-        global $wpdb;
-        return $wpdb->insert("{$wpdb->prefix}sm_assignments", array(
-            'sender_id' => $data['sender_id'],
-            'receiver_id' => $data['receiver_id'],
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'file_url' => $data['file_url'],
-            'type' => $data['type'],
-            'created_at' => current_time('mysql')
-        ));
-    }
-
-    public static function get_assignments($user_id) {
-        global $wpdb;
-        $query = "SELECT a.*, u.display_name as sender_name
-                  FROM {$wpdb->prefix}sm_assignments a
-                  JOIN {$wpdb->prefix}users u ON a.sender_id = u.ID
-                  WHERE a.receiver_id = %d AND a.type = 'assignment'
-                  ORDER BY a.created_at DESC";
-        $res = $wpdb->get_results($wpdb->prepare($query, $user_id));
-        foreach ($res as $r) {
-            $r->specialization = get_user_meta($r->sender_id, 'sm_specialization', true);
-        }
-        return $res;
-    }
-
-    public static function get_staff_by_section($grade_num, $section) {
-        return get_users(array(
-            'role' => 'sm_syndicate_member',
-            'meta_query' => array(
-                array(
-                    'key' => 'sm_assigned_sections',
-                    'value' => 'الصف ' . $grade_num . '|' . $section,
-                    'compare' => 'LIKE'
-                )
-            )
-        ));
-    }
 
     public static function add_survey($title, $questions, $recipients, $user_id) {
         global $wpdb;
