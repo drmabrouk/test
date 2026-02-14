@@ -1,27 +1,6 @@
 <?php
 
 class SM_Settings {
-    public static function get_violation_types() {
-        $default = array(
-            'behavior' => 'سلوك',
-            'lateness' => 'تأخر',
-            'absence' => 'غياب',
-            'other' => 'أخرى'
-        );
-        return get_option('sm_violation_types', $default);
-    }
-
-    public static function get_severities() {
-        return array(
-            'low' => 'منخفضة',
-            'medium' => 'متوسطة',
-            'high' => 'خطيرة'
-        );
-    }
-
-    public static function save_violation_types($types) {
-        update_option('sm_violation_types', $types);
-    }
 
     public static function get_appearance() {
         $default = array(
@@ -43,10 +22,10 @@ class SM_Settings {
 
     public static function get_notifications() {
         $default = array(
-            'email_subject' => 'تنبيه بخصوص سلوك العضو: {member_name}',
-            'email_template' => "تم تسجيل ملاحظة بخصوص العضو: {member_name}\nنوع المخالفة: {type}\nالحدة: {severity}\nالتفاصيل: {details}\nالإجراء المتخذ: {action_taken}",
-            'whatsapp_template' => "تنبيه من النقابة: تم تسجيل ملاحظة سلوكية بحق العضو {member_name}. نوع الملاحظة: {type}. تفاصيل: {details}. الإجراء: {action_taken}",
-            'internal_template' => "إشعار نظام: تم تسجيل مخالفة {type} للعضو {member_name}. الرجاء مراجعة سجل العضو."
+            'email_subject' => 'إشعار من النقابة بخصوص العضو: {member_name}',
+            'email_template' => "تحية طيبة، نود إخطاركم بخصوص العضو: {member_name}\nالتفاصيل: {details}",
+            'whatsapp_template' => "تنبيه من النقابة بخصوص العضو {member_name}. تفاصيل: {details}.",
+            'internal_template' => "إشعار نظام بخصوص العضو {member_name}."
         );
         return get_option('sm_notification_settings', $default);
     }
@@ -112,18 +91,6 @@ class SM_Settings {
         );
     }
 
-    public static function get_suggested_actions() {
-        $default = array(
-            'low' => "تنبيه شفوي\nتسجيل ملاحظة\nنصيحة مهنية",
-            'medium' => "إنذار خطي\nاستدعاء ولي أمر\nحسم درجات سلوك",
-            'high' => "فصل مؤقت\nمجلس انضباط\nتعهد خطي شديد"
-        );
-        return get_option('sm_suggested_actions', $default);
-    }
-
-    public static function save_suggested_actions($actions) {
-        update_option('sm_suggested_actions', $actions);
-    }
 
     public static function get_professional_grades() {
         $default = array(

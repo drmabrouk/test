@@ -43,7 +43,7 @@ if (empty($members_to_print) || !$members_to_print[0]) wp_die('Member(s) not fou
     <div class="cards-wrapper">
         <?php foreach ($members_to_print as $member):
             if (!$member) continue;
-            $pass = get_user_meta($member->parent_user_id, 'sm_temp_pass', true);
+            $pass = get_user_meta($member->wp_user_id, 'sm_temp_pass', true);
             if (empty($pass)) $pass = '********';
         ?>
         <div class="card">

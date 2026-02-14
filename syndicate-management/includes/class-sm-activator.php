@@ -44,37 +44,16 @@ class SM_Activator {
             alt_phone tinytext,
             notes text,
             photo_url text,
-            parent_user_id bigint(20),
+            wp_user_id bigint(20),
             officer_id bigint(20),
             registration_date date,
             sort_order int DEFAULT 0,
             PRIMARY KEY  (id),
             UNIQUE KEY national_id (national_id),
-            KEY parent_user_id (parent_user_id),
+            KEY wp_user_id (wp_user_id),
             KEY officer_id (officer_id)
         ) $charset_collate;\n";
 
-        // Records Table
-        $table_name = $wpdb->prefix . 'sm_records';
-        $sql .= "CREATE TABLE $table_name (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            member_id mediumint(9) NOT NULL,
-            officer_id bigint(20),
-            type tinytext NOT NULL,
-            violation_code tinytext,
-            severity tinytext,
-            degree tinytext,
-            classification tinytext,
-            points int DEFAULT 0,
-            recurrence_count int DEFAULT 1,
-            details text,
-            action_taken text,
-            status tinytext DEFAULT 'pending',
-            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            PRIMARY KEY  (id),
-            KEY member_id (member_id),
-            KEY officer_id (officer_id)
-        ) $charset_collate;\n";
 
         // Messages Table
         $table_name = $wpdb->prefix . 'sm_messages';
@@ -137,7 +116,7 @@ class SM_Activator {
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             member_id mediumint(9) NOT NULL,
             amount decimal(10,2) NOT NULL,
-            payment_type enum('membership', 'license', 'facility', 'penalty', 'other') NOT NULL,
+            payment_type enum('membership', 'license', 'facility', 'other') NOT NULL,
             payment_date date NOT NULL,
             target_year int,
             notes text,
@@ -191,7 +170,7 @@ class SM_Activator {
         }
 
         // Rename old column names to new ones in all relevant tables
-        $tables_to_fix = array('sm_records', 'sm_messages', 'sm_members');
+        $tables_to_fix = array('sm_messages', 'sm_members');
         foreach ($tables_to_fix as $table) {
             $full_table = $wpdb->prefix . $table;
             if ($wpdb->get_var("SHOW TABLES LIKE '$full_table'")) {
@@ -216,44 +195,44 @@ class SM_Activator {
     }
 
     private static function setup_roles() {
-        // System Admin
-        add_role('sm_system_admin', 'مدير النظام (النقابة)', array(
+        // Clear all existing custom roles first to ensure no traces remain
+        $roles_to_clean = array(
+            'sm_system_admin', 'sm_officer', 'sm_syndicate_member', 'sm_member', 'sm_parent',
+            'sm_syndicate_admin', 'syndicate_admin', 'sm_school_admin', 'school_admin',
+            'discipline_officer', 'sm_principal', 'sm_supervisor', 'sm_teacher',
+            'sm_coordinator', 'sm_clinic'
+        );
+        foreach ($roles_to_clean as $role_slug) {
+            remove_role($role_slug);
+        }
+
+        // 1. System Administrator
+        add_role('sm_system_admin', 'System Administrator', array(
             'read' => true,
-            'إدارة_النظام' => true,
-            'إدارة_المستخدمين' => true,
-            'إدارة_الأعضاء' => true,
-            'إدارة_المخالفات' => true,
-            'طباعة_التقارير' => true,
-            'تسجيل_مخالفة' => true,
-            'إدارة_أولياء_الأمور' => true
+            'manage_options' => true,
+            'sm_manage_system' => true,
+            'sm_manage_users' => true,
+            'sm_manage_members' => true,
+            'sm_manage_finance' => true,
+            'sm_manage_licenses' => true,
+            'sm_print_reports' => true
         ));
 
-        // Syndicate Officer (Formerly Officer/Syndicate Admin)
-        add_role('sm_officer', 'مسؤول النقابة', array(
+        // 2. Syndicate Administrator
+        add_role('sm_syndicate_admin', 'Syndicate Administrator', array(
             'read' => true,
-            'إدارة_الأعضاء' => true,
-            'إدارة_المخالفات' => true,
-            'طباعة_التقارير' => true,
-            'تسجيل_مخالفة' => true,
-            'إدارة_أولياء_الأمور' => true
+            'sm_manage_users' => true,
+            'sm_manage_members' => true,
+            'sm_manage_finance' => true,
+            'sm_manage_licenses' => true,
+            'sm_print_reports' => true
         ));
 
-        // Syndicate Member (Formerly Syndicate Member/Officer)
-        add_role('sm_syndicate_member', 'عضو النقابة', array(
+        // 3. Syndicate Member
+        add_role('sm_syndicate_member', 'Syndicate Member', array(
             'read' => true,
-            'تسجيل_مخالفة' => true,
-            'إدارة_المخالفات' => true,
-            'إدارة_الأعضاء' => true
-        ));
-
-        // Member (Formerly Member)
-        add_role('sm_member', 'عضو', array(
-            'read' => true
-        ));
-
-        // Parent
-        add_role('sm_parent', 'ولي أمر', array(
-            'read' => true
+            'sm_manage_members' => true,
+            'sm_print_reports' => true
         ));
 
         self::migrate_user_roles();
@@ -261,29 +240,25 @@ class SM_Activator {
 
     private static function migrate_user_roles() {
         $role_migration = array(
-            'syndicate_admin'          => 'sm_officer',
-            'sm_syndicate_admin'       => 'sm_officer',
-            'discipline_officer'    => 'sm_officer',
-            'sm_officer'          => 'sm_officer',
-            'sm_syndicate_member'         => 'sm_syndicate_member',
-            'sm_syndicate_member'            => 'sm_syndicate_member',
-            'sm_syndicate_member'        => 'sm_syndicate_member',
-            'sm_officer'             => 'sm_officer',
-            'sm_member'            => 'sm_member'
+            'sm_system_admin'       => 'sm_system_admin',
+            'sm_officer'            => 'sm_syndicate_admin',
+            'sm_syndicate_admin'    => 'sm_syndicate_admin',
+            'sm_syndicate_member'   => 'sm_syndicate_member',
+            'sm_member'             => 'sm_syndicate_member',
+            'sm_parent'             => 'sm_syndicate_member',
+            'sm_principal'          => 'sm_syndicate_admin',
+            'school_admin'          => 'sm_syndicate_admin',
+            'sm_school_admin'       => 'sm_syndicate_admin'
         );
 
         foreach ($role_migration as $old => $new) {
             $users = get_users(array('role' => $old));
-            foreach ($users as $user) {
-                $user->remove_role($old);
-                $user->add_role($new);
+            if (!empty($users)) {
+                foreach ($users as $user) {
+                    $user->add_role($new);
+                    $user->remove_role($old);
+                }
             }
-        }
-
-        // Remove old roles after migration
-        $roles_to_remove = array('sm_officer', 'syndicate_admin', 'discipline_officer', 'sm_officer', 'sm_syndicate_member', 'sm_syndicate_member', 'sm_syndicate_member', 'sm_member');
-        foreach ($roles_to_remove as $r) {
-            remove_role($r);
         }
     }
 }

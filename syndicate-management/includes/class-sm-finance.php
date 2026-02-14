@@ -143,15 +143,48 @@ class SM_Finance {
             'created_at' => current_time('mysql')
         ]);
 
-        if ($insert && $data['payment_type'] === 'membership' && !empty($data['target_year'])) {
-            // Update member's last paid year if this payment is for a later year
+        if ($insert) {
+            $payment_id = $wpdb->insert_id;
             $member = SM_DB::get_member_by_id($data['member_id']);
-            if ($member && intval($data['target_year']) > intval($member->last_paid_membership_year)) {
-                SM_DB::update_member($member->id, ['last_paid_membership_year' => intval($data['target_year'])]);
+
+            if ($data['payment_type'] === 'membership' && !empty($data['target_year'])) {
+                // Update member's last paid year if this payment is for a later year
+                if ($member && intval($data['target_year']) > intval($member->last_paid_membership_year)) {
+                    SM_DB::update_member($member->id, ['last_paid_membership_year' => intval($data['target_year'])]);
+                }
             }
+
+            // Log the financial transaction
+            SM_Logger::log('Financial Transaction', "Payment of {$data['amount']} EGP for {$data['payment_type']} by member: {$member->name}", get_current_user_id());
+
+            // Trigger Invoice Delivery (Email & Account)
+            self::deliver_invoice($payment_id);
         }
 
         return $insert;
+    }
+
+    public static function deliver_invoice($payment_id) {
+        global $wpdb;
+        $payment = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_payments WHERE id = %d", $payment_id));
+        if (!$payment) return;
+
+        $member = SM_DB::get_member_by_id($payment->member_id);
+        if (!$member || empty($member->email)) return;
+
+        $syndicate = SM_Settings::get_syndicate_info();
+        $invoice_url = admin_url('admin-ajax.php?action=sm_print_invoice&payment_id=' . $payment_id);
+
+        $subject = "فاتورة سداد إلكترونية - " . $syndicate['syndicate_name'];
+        $message = "عزيزي العضو " . $member->name . ",\n\n";
+        $message .= "تم استلام مبلغ " . $payment->amount . " ج.م بنجاح.\n";
+        $message .= "نوع العملية: " . $payment->payment_type . "\n";
+        $message .= "يمكنك استعراض وتحميل الفاتورة الرسمية من الرابط التالي:\n";
+        $message .= $invoice_url . "\n\n";
+        $message .= "شكراً لتعاونكم.\n";
+        $message .= $syndicate['syndicate_name'];
+
+        wp_mail($member->email, $subject, $message);
     }
 
     public static function get_financial_stats() {

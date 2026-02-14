@@ -17,16 +17,17 @@ $appearance = SM_Settings::get_appearance();
     <title>ترخيص مزاولة المهنة - <?php echo esc_html($member->name); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Rubik', sans-serif; margin: 0; padding: 0; background: #fff; }
-        .license-page { width: 210mm; height: 297mm; padding: 20mm; margin: 0 auto; box-sizing: border-box; border: 15px double <?php echo $appearance['primary_color']; ?>; position: relative; }
-        .header { text-align: center; margin-bottom: 50px; }
-        .logo { max-height: 100px; margin-bottom: 15px; }
-        .syndicate-name { font-size: 28px; font-weight: 900; color: <?php echo $appearance['dark_color']; ?>; margin-bottom: 5px; }
-        .title { font-size: 36px; font-weight: 900; color: <?php echo $appearance['primary_color']; ?>; margin-top: 30px; text-decoration: underline; }
-        .content { margin-top: 60px; line-height: 2; font-size: 20px; text-align: justify; }
-        .field { font-weight: 700; color: #333; }
-        .footer { margin-top: 100px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .signature-box { text-align: center; width: 250px; }
+        @page { size: A4 portrait; margin: 0; }
+        body { font-family: 'Rubik', sans-serif; margin: 0; padding: 0; background: #f4f4f4; color: #333; }
+        .license-page { width: 210mm; height: 297mm; padding: 15mm; margin: 20px auto; box-sizing: border-box; border: 12px double <?php echo $appearance['primary_color']; ?>; position: relative; background: #fff; }
+        .header { text-align: center; margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .logo { max-height: 110px; margin-bottom: 15px; }
+        .syndicate-name { font-size: 26px; font-weight: 900; color: <?php echo $appearance['dark_color']; ?>; }
+        .title { font-size: 38px; font-weight: 900; color: <?php echo $appearance['primary_color']; ?>; margin-top: 25px; }
+        .content { margin-top: 50px; line-height: 2.3; font-size: 22px; text-align: center; }
+        .field { font-weight: 900; color: #000; border-bottom: 1px solid #ccc; padding: 0 10px; }
+        .footer { margin-top: 80px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .signature-box { text-align: center; width: 280px; }
         .qr-code { width: 120px; height: 120px; border: 1px solid #eee; padding: 5px; }
         @media print {
             .no-print { display: none; }

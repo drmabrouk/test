@@ -17,9 +17,10 @@ $appearance = SM_Settings::get_appearance();
     <title>ترخيص منشأة رياضية - <?php echo esc_html($member->facility_name); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Rubik', sans-serif; margin: 0; padding: 0; background: #fff; }
-        .license-page { width: 297mm; height: 210mm; padding: 20mm; margin: 0 auto; box-sizing: border-box; border: 20px solid <?php echo $appearance['dark_color']; ?>; position: relative; }
-        .inner-border { border: 5px solid <?php echo $appearance['primary_color']; ?>; height: 100%; padding: 15mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+        @page { size: A4 portrait; margin: 0; }
+        body { font-family: 'Rubik', sans-serif; margin: 0; padding: 0; background: #f0f0f0; }
+        .license-page { width: 210mm; height: 297mm; padding: 15mm; margin: 20px auto; box-sizing: border-box; border: 15px solid <?php echo $appearance['dark_color']; ?>; position: relative; background: #fff; }
+        .inner-border { border: 5px double <?php echo $appearance['primary_color']; ?>; height: 100%; padding: 15mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .title-box { text-align: center; flex: 1; }
         .title { font-size: 48px; font-weight: 900; color: <?php echo $appearance['primary_color']; ?>; margin: 10px 0; }
@@ -37,38 +38,40 @@ $appearance = SM_Settings::get_appearance();
     <div class="license-page">
         <div class="inner-border">
             <div class="header">
-                <div style="text-align: right; width: 200px;">
-                    <p style="font-weight: 700; margin: 0;"><?php echo esc_html($syndicate['syndicate_name']); ?></p>
-                    <p style="font-size: 14px; margin: 5px 0;">قسم شؤون المنشآت</p>
-                </div>
-                <div class="title-box">
+                <div style="text-align: center; width: 100%;">
                     <?php if ($syndicate['syndicate_logo']): ?>
-                        <img src="<?php echo esc_url($syndicate['syndicate_logo']); ?>" style="max-height: 80px;">
+                        <img src="<?php echo esc_url($syndicate['syndicate_logo']); ?>" style="max-height: 100px; margin-bottom: 20px;">
                     <?php endif; ?>
-                    <div class="title">شهادة ترخيص منشأة</div>
-                    <div style="font-size: 20px; font-weight: 700;">فئة ( <?php echo esc_html($member->facility_category); ?> )</div>
-                </div>
-                <div style="text-align: left; width: 200px;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=<?php echo urlencode(admin_url('admin-ajax.php?action=sm_print_facility&member_id='.$member_id)); ?>">
+                    <div style="font-weight: 700; font-size: 22px; color: <?php echo $appearance['dark_color']; ?>;"><?php echo esc_html($syndicate['syndicate_name']); ?></div>
+                    <p style="font-size: 16px; margin: 5px 0; color: #666;">قسم شؤون تراخيص المنشآت</p>
+
+                    <div class="title" style="margin-top: 40px;">شهادة ترخيص منشأة</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #444; margin-top: 10px;">فئة ( <?php echo esc_html($member->facility_category); ?> )</div>
                 </div>
             </div>
 
-            <div class="content">
-                تشهد النقابة بأن المنشأة المسماة: <span class="field"><?php echo esc_html($member->facility_name); ?></span><br>
-                والتي يملكها السيد/ <span class="field"><?php echo esc_html($member->name); ?></span><br>
+            <div class="content" style="margin-top: 50px; line-height: 2.2;">
+                بناءً على اللوائح التنظيمية المنصوص عليها، تشهد النقابة بأن المنشأة:<br>
+                <span class="field" style="font-size: 28px;"><?php echo esc_html($member->facility_name); ?></span><br>
+                المملوكة للسيد/ <span class="field"><?php echo esc_html($member->name); ?></span><br>
                 والواقعة في: <span class="field"><?php echo esc_html($member->facility_address ?: '---'); ?></span><br>
-                قد رخصت بموجب القانون لمزاولة النشاط الرياضي والبدني تحت رقم: <span class="field"><?php echo esc_html($member->facility_number); ?></span><br>
-                وينتهي هذا الترخيص في: <span class="field"><?php echo esc_html($member->facility_license_expiration_date); ?></span>
+                قد تم منحها الترخيص القانوني لمزاولة النشاط الرياضي.<br><br>
+
+                رقم الترخيص الرسمي: <span class="field" style="color: <?php echo $appearance['primary_color']; ?>;"><?php echo esc_html($member->facility_number); ?></span><br>
+                تاريخ الإصدار: <span class="field"><?php echo esc_html($member->facility_license_issue_date); ?></span><br>
+                تاريخ الانتهاء: <span class="field"><?php echo esc_html($member->facility_license_expiration_date); ?></span>
             </div>
 
-            <div class="footer">
+            <div class="footer" style="margin-bottom: 30px;">
                 <div style="text-align: center;">
-                    <p>ختم النقابة</p>
-                    <div style="width: 150px; height: 150px; border: 2px dashed #ccc; border-radius: 50%; margin: 10px auto;"></div>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<?php echo urlencode(admin_url('admin-ajax.php?action=sm_print_facility&member_id='.$member_id)); ?>" style="border: 1px solid #eee; padding: 5px;">
+                    <p style="font-size: 11px; margin-top: 8px;">رمز التحقق الرقمي</p>
                 </div>
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <p style="font-weight: 700;">مسؤول النقابة</p>
-                    <p style="font-size: 20px; margin-top: 30px;"><?php echo esc_html($syndicate['syndicate_officer_name']); ?></p>
+
+                <div style="text-align: center; width: 300px;">
+                    <p style="font-weight: 700; margin-bottom: 40px;">يعتمد،، مسؤول النقابة العام</p>
+                    <p style="font-size: 22px; font-weight: 900;"><?php echo esc_html($syndicate['syndicate_officer_name']); ?></p>
+                    <div style="height: 60px;"></div>
                 </div>
             </div>
         </div>

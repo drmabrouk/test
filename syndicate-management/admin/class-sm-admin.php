@@ -29,14 +29,6 @@ class SM_Admin {
             array($this, 'display_dashboard')
         );
 
-        add_submenu_page(
-            'sm-dashboard',
-            'تسجيل مخالفة',
-            'تسجيل مخالفة',
-            'تسجيل_مخالفة',
-            'sm-record-violation',
-            array($this, 'display_record_violation')
-        );
 
         add_submenu_page(
             'sm-dashboard',
@@ -93,10 +85,6 @@ class SM_Admin {
         $this->display_settings();
     }
 
-    public function display_record_violation() {
-        $_GET['sm_tab'] = 'record';
-        $this->display_settings();
-    }
 
     public function display_settings() {
         if (isset($_POST['sm_save_settings_unified'])) {
@@ -127,26 +115,6 @@ class SM_Admin {
             echo '<div class="updated"><p>تم حفظ إعدادات التصميم بنجاح.</p></div>';
         }
 
-        if (isset($_POST['sm_save_violation_settings'])) {
-            check_admin_referer('sm_admin_action', 'sm_admin_nonce');
-            // Logic to save violation types and suggested actions
-            $types_raw = explode("\n", str_replace("\r", "", $_POST['violation_types']));
-            $types = array();
-            foreach ($types_raw as $line) {
-                if (strpos($line, '|') !== false) {
-                    list($k, $v) = explode('|', $line);
-                    $types[trim($k)] = trim($v);
-                }
-            }
-            if (!empty($types)) SM_Settings::save_violation_types($types);
-
-            SM_Settings::save_suggested_actions(array(
-                'low' => sanitize_textarea_field($_POST['suggested_low']),
-                'medium' => sanitize_textarea_field($_POST['suggested_medium']),
-                'high' => sanitize_textarea_field($_POST['suggested_high'])
-            ));
-            echo '<div class="updated"><p>تم حفظ إعدادات المخالفات بنجاح.</p></div>';
-        }
 
         if (isset($_POST['sm_save_professional_options'])) {
             check_admin_referer('sm_admin_action', 'sm_admin_nonce');
@@ -174,7 +142,6 @@ class SM_Admin {
 
         $member_filters = array();
         $stats = SM_DB::get_statistics();
-        $records = SM_DB::get_records();
         $members = SM_DB::get_members();
         include SM_PLUGIN_DIR . 'templates/public-admin-panel.php';
     }
@@ -184,29 +151,6 @@ class SM_Admin {
         $this->display_settings();
     }
 
-    public function display_records() {
-        if (isset($_POST['sm_update_record'])) {
-            check_admin_referer('sm_record_action', 'sm_nonce');
-            if (current_user_can('إدارة_المخالفات')) {
-                SM_DB::update_record(intval($_POST['record_id']), $_POST);
-                echo '<div class="updated"><p>تم تحديث السجل بنجاح.</p></div>';
-            }
-        }
-
-        $filters = array();
-        if (isset($_GET['member_filter'])) $filters['member_id'] = intval($_GET['member_filter']);
-        if (isset($_GET['start_date'])) $filters['start_date'] = sanitize_text_field($_GET['start_date']);
-        if (isset($_GET['end_date'])) $filters['end_date'] = sanitize_text_field($_GET['end_date']);
-        if (isset($_GET['type_filter'])) $filters['type'] = sanitize_text_field($_GET['type_filter']);
-
-        // Syndicate Member filter
-        if (!current_user_can('إدارة_المستخدمين') && current_user_can('تسجيل_مخالفة')) {
-            $filters['officer_id'] = get_current_user_id();
-        }
-
-        $records = SM_DB::get_records($filters);
-        include SM_PLUGIN_DIR . 'templates/public-dashboard-stats.php';
-    }
 
     public function display_members() {
         $_GET['sm_tab'] = 'members';

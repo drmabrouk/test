@@ -57,63 +57,6 @@
             </div>
         </div>
 
-        <!-- Section: Disciplinary & Behavior -->
-        <div>
-            <h4 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #38A169; display: flex; align-items: center; gap: 10px; color: var(--sm-dark-color);">
-                <span class="dashicons dashicons-warning"></span> تقارير السلوك والانضباط
-            </h4>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                <!-- Disciplinary Reports -->
-                <div style="background: #fff; padding: 25px; border-radius: 15px; border: 1px solid var(--sm-border-color); display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--sm-shadow);">
-                    <div>
-                        <div style="width: 50px; height: 50px; background: #F0FFF4; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: #38A169;">
-                            <span class="dashicons dashicons-media-document" style="font-size: 28px; width: 28px; height: 28px;"></span>
-                        </div>
-                        <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">التقارير الانضباطية</h4>
-                        <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">تقرير رسمي مفصل وشامل لسلوك العضو، جاهز للطباعة والختم.</p>
-                        <div class="sm-form-group">
-                            <select id="report_member_id" class="sm-select" style="font-size: 12px; padding: 8px;">
-                                <?php foreach($members as $s) echo '<option value="'.$s->id.'">'.$s->name.'</option>'; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <button onclick="printReport()" class="sm-btn" style="background: #38A169; font-size: 12px;">عرض التقرير</button>
-                </div>
-
-                <!-- General Disciplinary Log -->
-                <div style="background: #fff; padding: 25px; border-radius: 15px; border: 1px solid var(--sm-border-color); display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--sm-shadow);">
-                    <div>
-                        <div style="width: 50px; height: 50px; background: #FFF9DB; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: #D69E2E;">
-                            <span class="dashicons dashicons-list-view" style="font-size: 28px; width: 28px; height: 28px;"></span>
-                        </div>
-                        <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">سجل المخالفات العام</h4>
-                        <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">طباعة كشف كامل بكافة المخالفات المسجلة بالنقابة خلال فترة زمنية.</p>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
-                            <input type="date" id="log_start_date" class="sm-input" style="font-size: 10px; padding: 5px;">
-                            <input type="date" id="log_end_date" class="sm-input" style="font-size: 10px; padding: 5px;">
-                        </div>
-                    </div>
-                    <button onclick="printGeneralLog()" class="sm-btn" style="background: #111F35; font-size: 12px;">تحميل السجل</button>
-                </div>
-
-                <!-- Reports by Grade/Section -->
-                <div style="background: #fff; padding: 25px; border-radius: 15px; border: 1px solid var(--sm-border-color); display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--sm-shadow);">
-                    <div>
-                        <div style="width: 50px; height: 50px; background: #FAF5FF; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: #805AD5;">
-                            <span class="dashicons dashicons-category" style="font-size: 28px; width: 28px; height: 28px;"></span>
-                        </div>
-                        <h4 style="margin: 0 0 10px 0; border: none; font-weight: 800; font-size: 15px;">التقارير حسب الدرجة المهنية</h4>
-                        <p style="font-size: 11px; color: #718096; line-height: 1.6; margin-bottom: 20px;">استخراج إحصائيات وتقارير مجمعة لمستوى انضباط صف أو شعبة محددة.</p>
-                        <div class="sm-form-group">
-                            <select id="grade_report_class" class="sm-select" style="font-size: 12px; padding: 8px;">
-                                <?php foreach($classes as $c) echo '<option value="'.$c.'">'.$c.'</option>'; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <button onclick="alert('قريباً: تقارير الدرجة المهنيةوف')" class="sm-btn" style="background: #805AD5; font-size: 12px;">توليد التقرير</button>
-                </div>
-            </div>
-        </div>
 
         <!-- Section: Administrative & Lists -->
         <div>
@@ -179,16 +122,13 @@
                 <span class="dashicons dashicons-media-spreadsheet"></span> نماذج إكسل جاهزة للاستخدام
             </h4>
             <p style="font-size: 0.9em; color: #64748b; margin-bottom: 20px;">قم بتحميل النماذج التالية، املأ البيانات، ثم ارفعها في الأقسام المخصصة لتسريع عملية إدخال البيانات.</p>
-            
+
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,الدرجة المهنية,البريد,الكود\nاسم العضو,الدرجة المهنية الأول,parent@example.com,MEM001"); ?>" download="members_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,الدرجة المهنية,البريد,الكود\nاسم العضو,specialist,member@syndicate.local,MEM001"); ?>" download="members_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
                     <span class="dashicons dashicons-download"></span> نموذج الأعضاء
                 </a>
-                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,كلمة السر\nاسم ولي الأمر,parent_user,parent@example.com,pass123"); ?>" download="parents_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <span class="dashicons dashicons-download"></span> نموذج أولياء الأمور
-                </a>
-                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,المعرف الوظيفي,المسمى,الجوال,كلمة السر\nاسم عضو النقابة,staff_user,staff@example.com,T100,عضو النقابة فصل,0500000000,pass123"); ?>" download="staffs_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <span class="dashicons dashicons-download"></span> نموذج أعضاء النقابة
+                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,المعرف الوظيفي,الدور,الجوال,كلمة السر\nاسم المستخدم,staff_user,staff@syndicate.local,T100,sm_syndicate_member,0500000000,pass123"); ?>" download="staffs_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <span class="dashicons dashicons-download"></span> نموذج مستخدمي النظام
                 </a>
             </div>
         </div>
@@ -206,16 +146,6 @@ function printSpecificCard() {
     window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>&member_id=' + memberId, '_blank');
 }
 
-function printReport() {
-    const memberId = document.getElementById('report_member_id').value;
-    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=disciplinary_report'); ?>&member_id=' + memberId, '_blank');
-}
-
-function printGeneralLog() {
-    const start = document.getElementById('log_start_date').value;
-    const end = document.getElementById('log_end_date').value;
-    window.open('<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=general_log'); ?>&start_date=' + start + '&end_date=' + end, '_blank');
-}
 
 function printCredentials() {
     const gradeFilter = document.getElementById('creds_grade_filter').value;
