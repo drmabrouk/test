@@ -137,6 +137,38 @@ class SM_Settings {
         );
     }
 
+    public static function get_governorates() {
+        return array(
+            'cairo' => 'القاهرة',
+            'giza' => 'الجيزة',
+            'alexandria' => 'الإسكندرية',
+            'monufia' => 'المنوفية',
+            'dakahlia' => 'الدقهلية',
+            'sharqia' => 'الشرقية',
+            'beheira' => 'البحيرة',
+            'qalyubia' => 'القليوبية',
+            'gharbia' => 'الغربية',
+            'fayoum' => 'الفيوم',
+            'minya' => 'المنيا',
+            'asyut' => 'أسيوط',
+            'sohag' => 'سوهاج',
+            'qena' => 'قنا',
+            'luxor' => 'الأقصر',
+            'aswan' => 'أسوان',
+            'damietta' => 'دمياط',
+            'port_said' => 'بورسعيد',
+            'ismailia' => 'الإسماعيلية',
+            'suez' => 'السويس',
+            'kafr_el_sheikh' => 'كفر الشيخ',
+            'matrouh' => 'مطروح',
+            'red_sea' => 'البحر الأحمر',
+            'new_valley' => 'الوادي الجديد',
+            'north_sinai' => 'شمال سيناء',
+            'south_sinai' => 'جنوب سيناء',
+            'beni_suef' => 'بني سويف'
+        );
+    }
+
     public static function get_finance_settings() {
         $default = array(
             'membership_new' => 480,

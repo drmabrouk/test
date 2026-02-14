@@ -2,11 +2,47 @@
 
 class SM_DB {
 
+    public static function get_staff($args = array()) {
+        $user = wp_get_current_user();
+        $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $default_args = array(
+            'role__in' => array('sm_system_admin', 'sm_syndicate_admin', 'sm_syndicate_member')
+        );
+
+        if ($is_syndicate_admin) {
+            $default_args['role'] = 'sm_syndicate_member'; // Can only see members
+            if ($my_gov) {
+                $default_args['meta_query'] = array(
+                    array(
+                        'key' => 'sm_governorate',
+                        'value' => $my_gov,
+                        'compare' => '='
+                    )
+                );
+            }
+        }
+
+        $args = wp_parse_args($args, $default_args);
+        return get_users($args);
+    }
+
     public static function get_members($args = array()) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
         $query = "SELECT * FROM $table_name WHERE 1=1";
         $params = array();
+
+        // Role-based filtering (Governorate)
+        $user = wp_get_current_user();
+        if (in_array('sm_syndicate_admin', (array)$user->roles)) {
+            $gov = get_user_meta($user->ID, 'sm_governorate', true);
+            if ($gov) {
+                $query .= " AND governorate = %s";
+                $params[] = $gov;
+            }
+        }
 
         if (isset($args['professional_grade']) && !empty($args['professional_grade'])) {
             $query .= " AND professional_grade = %s";
@@ -97,6 +133,7 @@ class SM_DB {
             'professional_grade' => sanitize_text_field($data['professional_grade'] ?? ''),
             'specialization' => sanitize_text_field($data['specialization'] ?? ''),
             'academic_degree' => sanitize_text_field($data['academic_degree'] ?? ''),
+            'governorate' => sanitize_text_field($data['governorate'] ?? ''),
             'membership_number' => sanitize_text_field($data['membership_number'] ?? ''),
             'membership_start_date' => sanitize_text_field($data['membership_start_date'] ?? null),
             'membership_expiration_date' => sanitize_text_field($data['membership_expiration_date'] ?? null),
@@ -110,6 +147,9 @@ class SM_DB {
             'facility_license_expiration_date' => sanitize_text_field($data['facility_license_expiration_date'] ?? null),
             'facility_address' => sanitize_textarea_field($data['facility_address'] ?? ''),
             'sub_syndicate' => sanitize_text_field($data['sub_syndicate'] ?? ''),
+            'facility_category' => sanitize_text_field($data['facility_category'] ?? 'C'),
+            'last_paid_membership_year' => intval($data['last_paid_membership_year'] ?? 0),
+            'last_paid_license_year' => intval($data['last_paid_license_year'] ?? 0),
             'email' => $email ?: $national_id . '@irseg.org',
             'phone' => sanitize_text_field($data['phone'] ?? ''),
             'alt_phone' => sanitize_text_field($data['alt_phone'] ?? ''),
@@ -136,11 +176,12 @@ class SM_DB {
         $update_data = array();
         $fields = [
             'national_id', 'name', 'gender', 'professional_grade', 'specialization',
-            'academic_degree', 'membership_number', 'membership_start_date',
+            'academic_degree', 'governorate', 'membership_number', 'membership_start_date',
             'membership_expiration_date', 'membership_status', 'license_number',
             'license_issue_date', 'license_expiration_date', 'facility_number',
             'facility_name', 'facility_license_issue_date', 'facility_license_expiration_date',
-            'facility_address', 'sub_syndicate', 'email', 'phone', 'alt_phone', 'notes'
+            'facility_address', 'sub_syndicate', 'facility_category', 'last_paid_membership_year',
+            'last_paid_license_year', 'email', 'phone', 'alt_phone', 'notes'
         ];
 
         foreach ($fields as $f) {

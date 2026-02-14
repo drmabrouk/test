@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
-$is_admin = current_user_can('sm_manage_members');
+$can_manage_members = current_user_can('sm_manage_members');
 $import_results = get_transient('sm_import_results_' . get_current_user_id());
 if ($import_results) {
     delete_transient('sm_import_results_' . get_current_user_id());
@@ -69,7 +69,7 @@ if ($import_results) {
         </form>
     </div>
 
-    <?php if ($is_admin): ?>
+    <?php if ($can_manage_members): ?>
     <div style="display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; align-items: center;">
         <button onclick="document.getElementById('add-single-member-modal').style.display='flex'" class="sm-btn">+ إضافة عضو جديد</button>
         <button onclick="document.getElementById('csv-import-form').style.display='block'" class="sm-btn sm-btn-secondary">استيراد أعضاء (Excel)</button>
@@ -119,11 +119,7 @@ if ($import_results) {
                             <td><span class="sm-badge sm-badge-low"><?php echo esc_html($statuses[$member->membership_status] ?? $member->membership_status); ?></span></td>
                             <td>
                                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                    <button onclick='viewSmMember(<?php echo json_encode($member); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; height: 32px;">سجل</button>
-                                    <?php if ($is_admin): ?>
-                                        <button onclick='editSmMember(<?php echo json_encode($member); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px;"><span class="dashicons dashicons-edit"></span></button>
-                                        <button onclick="confirmDeleteMember(<?php echo $member->id; ?>, '<?php echo esc_js($member->name); ?>')" class="sm-btn sm-btn-outline" style="padding: 5px; color: #e53e3e;"><span class="dashicons dashicons-trash"></span></button>
-                                    <?php endif; ?>
+                                    <a href="<?php echo add_query_arg('sm_tab', 'member-profile'); ?>&member_id=<?php echo $member->id; ?>" class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; height: 32px; text-decoration:none; display:flex; align-items:center;">عرض الملف</a>
                                 </div>
                             </td>
                         </tr>
@@ -133,7 +129,7 @@ if ($import_results) {
         </table>
     </div>
 
-    <?php if ($is_admin): ?>
+    <?php if ($can_manage_members): ?>
     <div id="add-single-member-modal" class="sm-modal-overlay">
         <div class="sm-modal-content" style="max-width: 900px;">
             <div class="sm-modal-header"><h3>تسجيل عضو جديد</h3><button class="sm-modal-close" onclick="document.getElementById('add-single-member-modal').style.display='none'">&times;</button></div>
@@ -144,6 +140,7 @@ if ($import_results) {
                     <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="name" type="text" class="sm-input" required></div>
                     <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" class="sm-select"><?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
                     <div class="sm-form-group"><label class="sm-label">التخصص:</label><select name="specialization" class="sm-select"><?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">المحافظة:</label><select name="governorate" class="sm-select"><option value="">-- اختر المحافظة --</option><?php foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
                     <div class="sm-form-group"><label class="sm-label">رقم العضوية:</label><input name="membership_number" type="text" class="sm-input"></div>
                     <div class="sm-form-group"><label class="sm-label">تاريخ بدء العضوية:</label><input name="membership_start_date" id="add_mem_start" type="date" class="sm-input" onchange="smCalculateDateExpiry('add_mem_start', 'add_mem_expiry')"></div>
                     <div class="sm-form-group"><label class="sm-label">تاريخ انتهاء العضوية:</label><input name="membership_expiration_date" id="add_mem_expiry" type="date" class="sm-input"></div>
@@ -188,21 +185,6 @@ if ($import_results) {
             document.getElementById('edit_mem_start').value = s.membership_start_date;
             document.getElementById('edit_mem_expiry').value = s.membership_expiration_date;
             document.getElementById('edit-member-modal').style.display = 'flex';
-        };
-
-        window.viewSmMember = function(s) {
-            alert('بيانات العضو: ' + s.name + '\nالرقم القومي: ' + s.national_id);
-        };
-
-        window.confirmDeleteMember = function(id, name) {
-            if (!confirm('هل أنت متأكد من حذف العضو: ' + name + '؟')) return;
-            const formData = new FormData();
-            formData.append('action', 'sm_delete_member_ajax');
-            formData.append('member_id', id);
-            formData.append('nonce', '<?php echo wp_create_nonce("sm_delete_member"); ?>');
-
-            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-            .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
         };
 
         window.toggleAllMembers = function(master) {

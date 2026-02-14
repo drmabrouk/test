@@ -54,6 +54,7 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_get_counts_ajax', $plugin_public, 'ajax_get_counts');
         $this->loader->add_action('wp_ajax_sm_add_staff_ajax', $plugin_public, 'ajax_add_staff');
         $this->loader->add_action('wp_ajax_sm_update_staff_ajax', $plugin_public, 'ajax_update_staff');
+        $this->loader->add_action('wp_ajax_sm_delete_staff_ajax', $plugin_public, 'ajax_delete_staff');
         $this->loader->add_action('wp_ajax_sm_bulk_delete_users_ajax', $plugin_public, 'ajax_bulk_delete_users');
         $this->loader->add_action('wp_ajax_sm_add_survey', $plugin_public, 'ajax_add_survey');
         $this->loader->add_action('wp_ajax_sm_cancel_survey', $plugin_public, 'ajax_cancel_survey');

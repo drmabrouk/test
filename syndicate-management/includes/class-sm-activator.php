@@ -12,7 +12,7 @@ class SM_Activator {
 
         $sql = "";
 
-        // Members Table (Formerly Members)
+        // Members Table
         $table_name = $wpdb->prefix . 'sm_members';
         $sql .= "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -23,6 +23,7 @@ class SM_Activator {
             professional_grade tinytext,
             specialization tinytext,
             academic_degree enum('bachelor', 'master', 'doctorate'),
+            governorate tinytext,
             membership_number tinytext,
             membership_start_date date,
             membership_expiration_date date,
@@ -213,8 +214,8 @@ class SM_Activator {
             remove_role($role_slug);
         }
 
-        // 1. System Administrator
-        add_role('sm_system_admin', 'System Administrator', array(
+        // 1. System Manager (مدير النظام)
+        add_role('sm_system_admin', 'مدير النظام', array(
             'read' => true,
             'manage_options' => true,
             'sm_manage_system' => true,
@@ -222,11 +223,12 @@ class SM_Activator {
             'sm_manage_members' => true,
             'sm_manage_finance' => true,
             'sm_manage_licenses' => true,
-            'sm_print_reports' => true
+            'sm_print_reports' => true,
+            'sm_full_access' => true
         ));
 
-        // 2. Syndicate Administrator
-        add_role('sm_syndicate_admin', 'Syndicate Administrator', array(
+        // 2. Syndicate Administrator (مسؤول نقابة)
+        add_role('sm_syndicate_admin', 'مسؤول نقابة', array(
             'read' => true,
             'sm_manage_users' => true,
             'sm_manage_members' => true,
@@ -235,15 +237,15 @@ class SM_Activator {
             'sm_print_reports' => true
         ));
 
-        // 3. Syndicate Member
-        add_role('sm_syndicate_member', 'Syndicate Member', array(
+        // 3. Syndicate Member (عضو نقابة)
+        add_role('sm_syndicate_member', 'عضو نقابة', array(
             'read' => true,
             'sm_manage_members' => true,
             'sm_print_reports' => true
         ));
 
-        // 4. Member (End-user)
-        add_role('sm_member', 'Member', array(
+        // 4. Member (End-user) (عضو)
+        add_role('sm_member', 'عضو', array(
             'read' => true
         ));
 
