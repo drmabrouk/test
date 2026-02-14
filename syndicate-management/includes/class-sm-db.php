@@ -77,7 +77,7 @@ class SM_DB {
 
         $wp_user_id = wp_insert_user(array(
             'user_login' => $national_id,
-            'user_email' => $email ?: $national_id . '@syndicate.local',
+            'user_email' => $email ?: $national_id . '@irseg.org',
             'display_name' => $name,
             'user_pass' => $temp_pass,
             'role' => 'sm_member'
@@ -110,7 +110,7 @@ class SM_DB {
             'facility_license_expiration_date' => sanitize_text_field($data['facility_license_expiration_date'] ?? null),
             'facility_address' => sanitize_textarea_field($data['facility_address'] ?? ''),
             'sub_syndicate' => sanitize_text_field($data['sub_syndicate'] ?? ''),
-            'email' => $email,
+            'email' => $email ?: $national_id . '@irseg.org',
             'phone' => sanitize_text_field($data['phone'] ?? ''),
             'alt_phone' => sanitize_text_field($data['alt_phone'] ?? ''),
             'notes' => sanitize_textarea_field($data['notes'] ?? ''),
@@ -270,6 +270,23 @@ class SM_DB {
         } else {
             $stats['total_officers'] = 0;
         }
+
+        // Financial Trends (Last 30 Days)
+        $stats['financial_trends'] = $wpdb->get_results("
+            SELECT DATE(payment_date) as date, SUM(amount) as total
+            FROM {$wpdb->prefix}sm_payments
+            WHERE payment_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            GROUP BY DATE(payment_date)
+            ORDER BY date ASC
+        ");
+
+        // Specialization Distribution
+        $stats['specializations'] = $wpdb->get_results("
+            SELECT specialization, COUNT(*) as count
+            FROM {$wpdb->prefix}sm_members
+            WHERE specialization != ''
+            GROUP BY specialization
+        ");
 
         return $stats;
     }

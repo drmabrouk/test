@@ -99,14 +99,32 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
 }
 </script>
 
-<div class="sm-card-grid" style="margin-bottom: 40px;">
+<div class="sm-card-grid" style="margin-bottom: 30px;">
     <div class="sm-stat-card">
-        <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 10px; font-weight: 700;">إجمالي الأعضاء</div>
+        <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 10px; font-weight: 700;">إجمالي الأعضاء المسجلين</div>
         <div style="font-size: 2.5em; font-weight: 900; color: var(--sm-primary-color);"><?php echo esc_html($stats['total_members'] ?? 0); ?></div>
     </div>
     <div class="sm-stat-card">
-        <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 10px; font-weight: 700;">إجمالي أعضاء النقابة</div>
+        <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 10px; font-weight: 700;">إجمالي الطاقم الإداري</div>
         <div style="font-size: 2.5em; font-weight: 900; color: var(--sm-secondary-color);"><?php echo esc_html($stats['total_officers'] ?? 0); ?></div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px;">
+    <!-- Financial Collection Trends -->
+    <div style="background: #fff; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: 12px; box-shadow: var(--sm-shadow);">
+        <h3 style="margin-top:0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">تحصيل الإيرادات (آخر 30 يوم)</h3>
+        <div style="height: 300px; position: relative;">
+            <canvas id="financialTrendsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Specialization Distribution -->
+    <div style="background: #fff; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: 12px; box-shadow: var(--sm-shadow);">
+        <h3 style="margin-top:0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">توزيع التخصصات المهنية</h3>
+        <div style="height: 300px; position: relative;">
+            <canvas id="specializationDistChart"></canvas>
+        </div>
     </div>
 </div>
 
@@ -134,6 +152,52 @@ function smDownloadChart(chartId, fileName) {
         }
 
         const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
+
+        // Data for Financial Trends
+        const financialData = <?php echo json_encode($stats['financial_trends']); ?>;
+        const trendLabels = financialData.map(d => d.date);
+        const trendValues = financialData.map(d => d.total);
+
+        new Chart(document.getElementById('financialTrendsChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'إجمالي التحصيل اليومي',
+                    data: trendValues,
+                    borderColor: '#38a169',
+                    backgroundColor: 'rgba(56, 161, 105, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Data for Specializations
+        const specData = <?php
+            $specs_labels = SM_Settings::get_specializations();
+            $mapped_specs = [];
+            foreach($stats['specializations'] as $s) {
+                $mapped_specs[] = [
+                    'label' => $specs_labels[$s->specialization] ?? $s->specialization,
+                    'count' => $s->count
+                ];
+            }
+            echo json_encode($mapped_specs);
+        ?>;
+
+        new Chart(document.getElementById('specializationDistChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: specData.map(d => d.label),
+                datasets: [{
+                    data: specData.map(d => d.count),
+                    backgroundColor: ['#3182ce', '#e53e3e', '#d69e2e', '#38a169', '#805ad5', '#d53f8c']
+                }]
+            },
+            options: chartOptions
+        });
 
         const createOrUpdateChart = (id, config) => {
             if (window.smCharts[id]) {
