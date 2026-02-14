@@ -69,32 +69,58 @@ class SM_Public {
             exit;
         }
         $syndicate = SM_Settings::get_syndicate_info();
-        $output = '<div class="sm-login-wrapper" style="max-width: 450px; margin: 60px auto; padding: 40px; background: #fff; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;" dir="rtl">';
+        $output = '<div class="sm-login-container" style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px;">';
+        $output .= '<div class="sm-login-box" style="width: 100%; max-width: 400px; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #f0f0f0;" dir="rtl">';
 
-        $output .= '<div style="text-align: center; margin-bottom: 35px;">';
+        $output .= '<div style="background: #111F35; padding: 40px 20px; text-align: center;">';
         if (!empty($syndicate['syndicate_logo'])) {
-            $output .= '<img src="'.esc_url($syndicate['syndicate_logo']).'" style="max-height: 80px; margin-bottom: 15px;">';
+            $output .= '<img src="'.esc_url($syndicate['syndicate_logo']).'" style="max-height: 90px; margin-bottom: 20px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">';
         }
-        $output .= '<h2 style="margin: 0; font-weight: 900; color: #111F35; font-size: 1.6em;">'.esc_html($syndicate['syndicate_name']).'</h2>';
-        $output .= '<p style="margin-top: 5px; color: #718096; font-size: 0.9em;">نظام إدارة النقابة الذكي</p>';
+        $output .= '<h2 style="margin: 0; font-weight: 800; color: #ffffff; font-size: 1.4em; letter-spacing: -0.5px;">'.esc_html($syndicate['syndicate_name']).'</h2>';
         $output .= '</div>';
 
+        $output .= '<div style="padding: 40px 30px;">';
         if (isset($_GET['login']) && $_GET['login'] == 'failed') {
-            $output .= '<div style="background: #fff5f5; color: #c53030; padding: 12px; border-radius: 8px; border: 1px solid #feb2b2; margin-bottom: 20px; font-size: 0.9em; text-align: center;">خطأ في اسم المستخدم أو كلمة المرور.</div>';
+            $output .= '<div style="background: #fff5f5; color: #c53030; padding: 12px; border-radius: 8px; border: 1px solid #feb2b2; margin-bottom: 25px; font-size: 0.85em; text-align: center; font-weight: 600;">⚠️ خطأ في اسم المستخدم أو كلمة المرور</div>';
         }
+
+        $output .= '<style>
+            #sm_login_form p { margin-bottom: 20px; }
+            #sm_login_form label { display: none; }
+            #sm_login_form input[type="text"], #sm_login_form input[type="password"] {
+                width: 100%; padding: 14px 20px; border: 1px solid #e2e8f0; border-radius: 10px;
+                background: #f8fafc; font-size: 15px; transition: 0.3s; font-family: "Rubik", sans-serif;
+            }
+            #sm_login_form input:focus { border-color: var(--sm-primary-color); outline: none; background: #fff; box-shadow: 0 0 0 3px rgba(246, 48, 73, 0.1); }
+            #sm_login_form .login-remember { display: flex; align-items: center; gap: 8px; font-size: 0.85em; color: #64748b; }
+            #sm_login_form input[type="submit"] {
+                width: 100%; padding: 14px; background: #111F35; color: #fff; border: none;
+                border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.3s;
+                margin-top: 10px;
+            }
+            #sm_login_form input[type="submit"]:hover { background: var(--sm-primary-color); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(246, 48, 73, 0.2); }
+        </style>';
 
         $args = array(
             'echo' => false,
             'redirect' => home_url('/sm-admin'),
             'form_id' => 'sm_login_form',
-            'label_username' => 'اسم المستخدم أو الرقم القومي',
+            'label_username' => 'اسم المستخدم',
             'label_password' => 'كلمة المرور',
-            'label_remember' => 'تذكرني',
-            'label_log_in' => 'دخول النظام',
+            'label_remember' => 'تذكرني على هذا الجهاز',
+            'label_log_in' => 'تسجيل الدخول للنظام',
             'remember' => true
         );
-        $output .= wp_login_form($args);
-        $output .= '</div>';
+        $form = wp_login_form($args);
+
+        // Inject placeholders
+        $form = str_replace('name="log"', 'name="log" placeholder="اسم المستخدم أو الرقم القومي"', $form);
+        $form = str_replace('name="pwd"', 'name="pwd" placeholder="كلمة المرور الخاصة بك"', $form);
+
+        $output .= $form;
+        $output .= '</div>'; // End padding
+        $output .= '</div>'; // End box
+        $output .= '</div>'; // End container
         return $output;
     }
 
@@ -170,12 +196,12 @@ class SM_Public {
     }
 
     public function ajax_add_staff() {
-        if (!current_user_can('sm_manage_users')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('sm_manage_users') && !current_user_can('manage_options')) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
 
         $pass = $_POST['user_pass'] ?: wp_generate_password(12, false);
         $username = sanitize_user($_POST['user_login']);
-        $email = sanitize_email($_POST['user_email']) ?: $username . '@syndicate.local';
+        $email = sanitize_email($_POST['user_email']) ?: $username . '@irseg.org';
         $role = sanitize_text_field($_POST['role']);
 
         $user_id = wp_insert_user(array(
@@ -196,7 +222,7 @@ class SM_Public {
     }
 
     public function ajax_update_staff() {
-        if (!current_user_can('sm_manage_users')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('sm_manage_users') && !current_user_can('manage_options')) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
 
         $user_id = intval($_POST['edit_officer_id']);

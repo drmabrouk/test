@@ -116,22 +116,6 @@
             </div>
         </div>
 
-        <!-- Excel Templates Section -->
-        <div style="grid-column: 1 / -1; background: #f8fafc; padding: 30px; border-radius: 12px; border: 2px dashed #cbd5e1; margin-top: 20px;">
-            <h4 style="margin-top:0; color:var(--sm-secondary-color); display:flex; align-items:center; gap:10px;">
-                <span class="dashicons dashicons-media-spreadsheet"></span> نماذج إكسل جاهزة للاستخدام
-            </h4>
-            <p style="font-size: 0.9em; color: #64748b; margin-bottom: 20px;">قم بتحميل النماذج التالية، املأ البيانات، ثم ارفعها في الأقسام المخصصة لتسريع عملية إدخال البيانات.</p>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,الدرجة المهنية,البريد,الكود\nاسم العضو,specialist,member@syndicate.local,MEM001"); ?>" download="members_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <span class="dashicons dashicons-download"></span> نموذج الأعضاء
-                </a>
-                <a href="data:text/csv;charset=utf-8,<?php echo rawurlencode("الاسم,المستخدم,البريد,المعرف الوظيفي,الدور,الجوال,كلمة السر\nاسم المستخدم,staff_user,staff@syndicate.local,T100,sm_syndicate_member,0500000000,pass123"); ?>" download="staffs_template.csv" class="sm-btn" style="background:#fff; color:#2d3748; border:1px solid #cbd5e1; font-size:13px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
-                    <span class="dashicons dashicons-download"></span> نموذج مستخدمي النظام
-                </a>
-            </div>
-        </div>
     </div>
 </div>
 
