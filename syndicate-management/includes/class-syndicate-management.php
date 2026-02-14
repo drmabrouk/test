@@ -44,6 +44,9 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_search_members', $plugin_public, 'ajax_search_members');
         $this->loader->add_action('wp_ajax_sm_refresh_dashboard', $plugin_public, 'ajax_refresh_dashboard');
         $this->loader->add_action('wp_ajax_sm_update_member_photo', $plugin_public, 'ajax_update_member_photo');
+        $this->loader->add_action('wp_ajax_sm_send_message_ajax', $plugin_public, 'ajax_send_message');
+        $this->loader->add_action('wp_ajax_sm_get_conversation_ajax', $plugin_public, 'ajax_get_conversation');
+        $this->loader->add_action('wp_ajax_sm_mark_read', $plugin_public, 'ajax_mark_read');
         $this->loader->add_action('wp_ajax_sm_print', $plugin_public, 'handle_print');
         $this->loader->add_action('wp_ajax_sm_add_member_ajax', $plugin_public, 'ajax_add_member');
         $this->loader->add_action('wp_ajax_sm_update_member_ajax', $plugin_public, 'ajax_update_member');
@@ -51,6 +54,7 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_get_counts_ajax', $plugin_public, 'ajax_get_counts');
         $this->loader->add_action('wp_ajax_sm_add_staff_ajax', $plugin_public, 'ajax_add_staff');
         $this->loader->add_action('wp_ajax_sm_update_staff_ajax', $plugin_public, 'ajax_update_staff');
+        $this->loader->add_action('wp_ajax_sm_bulk_delete_users_ajax', $plugin_public, 'ajax_bulk_delete_users');
         $this->loader->add_action('wp_ajax_sm_add_survey', $plugin_public, 'ajax_add_survey');
         $this->loader->add_action('wp_ajax_sm_cancel_survey', $plugin_public, 'ajax_cancel_survey');
         $this->loader->add_action('wp_ajax_sm_submit_survey_response', $plugin_public, 'ajax_submit_survey_response');

@@ -134,7 +134,6 @@ function smDownloadChart(chartId, fileName) {
         }
 
         const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
-        const severityLabels = <?php echo json_encode(SM_Settings::get_severities()); ?>;
 
         const createOrUpdateChart = (id, config) => {
             if (window.smCharts[id]) {
