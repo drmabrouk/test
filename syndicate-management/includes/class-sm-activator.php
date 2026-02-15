@@ -297,7 +297,11 @@ class SM_Activator {
         global $wpdb;
         $members = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id IS NULL OR wp_user_id = 0");
         foreach ($members as $m) {
-            $temp_pass = wp_generate_password(12, false);
+            $digits = '';
+            for ($i = 0; $i < 10; $i++) {
+                $digits .= mt_rand(0, 9);
+            }
+            $temp_pass = 'IRS' . $digits;
             $user_id = wp_insert_user([
                 'user_login' => $m->national_id,
                 'user_email' => $m->email ?: $m->national_id . '@irseg.org',

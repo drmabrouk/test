@@ -296,7 +296,15 @@ class SM_Public {
         if (!current_user_can('sm_manage_users') && !current_user_can('manage_options')) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) wp_send_json_error('Security check failed');
 
-        $pass = $_POST['user_pass'] ?: wp_generate_password(12, false);
+        if (!empty($_POST['user_pass'])) {
+            $pass = $_POST['user_pass'];
+        } else {
+            $digits = '';
+            for ($i = 0; $i < 10; $i++) {
+                $digits .= mt_rand(0, 9);
+            }
+            $pass = 'IRS' . $digits;
+        }
         $username = sanitize_user($_POST['user_login']);
         $email = sanitize_email($_POST['user_email']) ?: $username . '@irseg.org';
         $role = sanitize_text_field($_POST['role']);
@@ -576,7 +584,15 @@ class SM_Public {
             $officer_id = sanitize_text_field($data[3]);
             $role_label = sanitize_text_field($data[4] ?? 'عضو نقابة');
             $phone = sanitize_text_field($data[5] ?? '');
-            $pass = $data[6] ?? wp_generate_password(12, false);
+            if (!empty($data[6])) {
+                $pass = $data[6];
+            } else {
+                $digits = '';
+                for ($i = 0; $i < 10; $i++) {
+                    $digits .= mt_rand(0, 9);
+                }
+                $pass = 'IRS' . $digits;
+            }
 
             $role = 'sm_syndicate_member';
             if (strpos($role_label, 'مدير') !== false) $role = 'sm_system_admin';

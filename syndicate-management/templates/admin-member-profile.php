@@ -72,14 +72,16 @@ $acc_status = SM_Finance::get_member_status($member->id);
             <div class="sm-dropdown" style="position:relative; display:inline-block;">
                 <button class="sm-btn" style="background: #111F35; width: auto;" onclick="smToggleFinanceDropdown()"><span class="dashicons dashicons-money-alt"></span> المعاملات المالية <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px;"></span></button>
                 <div id="sm-finance-dropdown" style="display:none; position:absolute; left:0; top:100%; background:white; border:1px solid #eee; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.1); z-index:100; min-width:200px; padding:10px 0;">
-                    <?php if (!$is_member): ?>
+                    <?php if (current_user_can('sm_manage_finance')): ?>
                         <a href="javascript:smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-plus"></span> تأكيد سداد دفعة</a>
                     <?php endif; ?>
                     <a href="<?php echo add_query_arg('sm_tab', 'financial-logs'); ?>&member_search=<?php echo urlencode($member->national_id); ?>" class="sm-dropdown-item"><span class="dashicons dashicons-media-spreadsheet"></span> سجل الفواتير والعمليات</a>
                 </div>
             </div>
 
-            <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card&member_id='.$member->id); ?>" target="_blank" class="sm-btn" style="background: #27ae60; width: auto; text-decoration:none; display:flex; align-items:center; gap:8px;"><span class="dashicons dashicons-id-alt"></span> طباعة الكارنيه</a>
+            <?php if (!$is_syndicate_staff || current_user_can('sm_print_reports')): ?>
+                <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card&member_id='.$member->id); ?>" target="_blank" class="sm-btn" style="background: #27ae60; width: auto; text-decoration:none; display:flex; align-items:center; gap:8px;"><span class="dashicons dashicons-id-alt"></span> طباعة الكارنيه</a>
+            <?php endif; ?>
             <?php if ($is_sys_manager): ?>
                 <button onclick="deleteMember(<?php echo $member->id; ?>, '<?php echo esc_js($member->name); ?>')" class="sm-btn" style="background: #e53e3e; width: auto;"><span class="dashicons dashicons-trash"></span> حذف العضو</button>
             <?php endif; ?>
@@ -163,7 +165,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
                     <div style="display: flex; justify-content: space-between;"><span>إجمالي المسدد:</span> <strong style="color:#38a169;"><?php echo number_format($finance['total_paid'], 2); ?></strong></div>
                 </div>
                 <button onclick="smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-btn" style="margin-top: 20px; background: var(--sm-dark-color);">
-                    <?php echo $is_member ? 'عرض كشف الحساب' : 'إدارة المدفوعات والفواتير'; ?>
+                    <?php echo $is_syndicate_staff ? 'عرض كشف الحساب' : 'إدارة المدفوعات والفواتير'; ?>
                 </button>
             </div>
 
