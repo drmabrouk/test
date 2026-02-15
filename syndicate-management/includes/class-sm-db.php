@@ -36,7 +36,8 @@ class SM_DB {
 
         // Role-based filtering (Governorate)
         $user = wp_get_current_user();
-        if (in_array('sm_syndicate_admin', (array)$user->roles)) {
+        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles) || in_array('sm_syndicate_member', (array)$user->roles);
+        if ($is_officer && !current_user_can('manage_options') && !current_user_can('sm_full_access')) {
             $gov = get_user_meta($user->ID, 'sm_governorate', true);
             if ($gov) {
                 $query .= " AND governorate = %s";

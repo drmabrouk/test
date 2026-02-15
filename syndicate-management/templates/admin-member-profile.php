@@ -27,13 +27,24 @@ $specs = SM_Settings::get_specializations();
 $govs = SM_Settings::get_governorates();
 $statuses = SM_Settings::get_membership_statuses();
 $finance = SM_Finance::calculate_member_dues($member->id);
+$acc_status = SM_Finance::get_member_status($member->id);
 ?>
 
 <div class="sm-member-profile-view" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
         <div style="display: flex; align-items: center; gap: 20px;">
-            <div style="width: 80px; height: 80px; background: #f0f4f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 3px solid var(--sm-primary-color);">
-                👤
+            <div style="position: relative;">
+                <div id="member-photo-container" style="width: 80px; height: 80px; background: #f0f4f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 3px solid var(--sm-primary-color); overflow: hidden;">
+                    <?php if ($member->photo_url): ?>
+                        <img src="<?php echo esc_url($member->photo_url); ?>" style="width:100%; height:100%; object-fit:cover;">
+                    <?php else: ?>
+                        👤
+                    <?php endif; ?>
+                </div>
+                <button onclick="smTriggerPhotoUpload()" style="position: absolute; bottom: 0; right: 0; background: var(--sm-primary-color); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    <span class="dashicons dashicons-camera" style="font-size: 14px; width: 14px; height: 14px;"></span>
+                </button>
+                <input type="file" id="member-photo-input" style="display:none;" accept="image/*" onchange="smUploadMemberPhoto(<?php echo $member->id; ?>)">
             </div>
             <div>
                 <h2 style="margin:0; color: var(--sm-dark-color);"><?php echo esc_html($member->name); ?></h2>
@@ -43,10 +54,19 @@ $finance = SM_Finance::calculate_member_dues($member->id);
                 </div>
             </div>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
             <?php if (!$is_member): ?>
                 <button onclick="editSmMember(JSON.parse(this.dataset.member))" data-member='<?php echo esc_attr(wp_json_encode($member)); ?>' class="sm-btn" style="background: #3182ce; width: auto;"><span class="dashicons dashicons-edit"></span> تعديل البيانات</button>
             <?php endif; ?>
+
+            <div class="sm-dropdown" style="position:relative; display:inline-block;">
+                <button class="sm-btn" style="background: #111F35; width: auto;" onclick="smToggleFinanceDropdown()"><span class="dashicons dashicons-money-alt"></span> المعاملات المالية <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px;"></span></button>
+                <div id="sm-finance-dropdown" style="display:none; position:absolute; left:0; top:100%; background:white; border:1px solid #eee; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.1); z-index:100; min-width:200px; padding:10px 0;">
+                    <a href="javascript:smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-plus"></span> تأكيد سداد دفعة</a>
+                    <a href="<?php echo add_query_arg('sm_tab', 'financial-logs'); ?>&member_search=<?php echo urlencode($member->national_id); ?>" class="sm-dropdown-item"><span class="dashicons dashicons-media-spreadsheet"></span> سجل الفواتير والعمليات</a>
+                </div>
+            </div>
+
             <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card&member_id='.$member->id); ?>" target="_blank" class="sm-btn" style="background: #27ae60; width: auto; text-decoration:none; display:flex; align-items:center; gap:8px;"><span class="dashicons dashicons-id-alt"></span> طباعة الكارنيه</a>
             <?php if ($is_sys_manager): ?>
                 <button onclick="deleteMember(<?php echo $member->id; ?>, '<?php echo esc_js($member->name); ?>')" class="sm-btn" style="background: #e53e3e; width: auto;"><span class="dashicons dashicons-trash"></span> حذف العضو</button>
@@ -114,8 +134,11 @@ $finance = SM_Finance::calculate_member_dues($member->id);
             <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
                 <h4 style="margin-top:0;">حالة الحساب</h4>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: <?php echo $member->membership_status === 'active' ? '#38a169' : '#cbd5e0'; ?>;"></div>
-                    <span style="font-weight: 700;"><?php echo $statuses[$member->membership_status] ?? $member->membership_status; ?></span>
+                    <?php
+                    $status_color = (strpos($acc_status, 'نشط') !== false) ? '#38a169' : ((strpos($acc_status, 'سماح') !== false) ? '#d69e2e' : '#e53e3e');
+                    ?>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: <?php echo $status_color; ?>;"></div>
+                    <span style="font-weight: 700;"><?php echo $acc_status; ?></span>
                 </div>
                 <div style="font-size: 0.8em; color: #718096; margin-top: 10px;">
                     تاريخ التسجيل: <?php echo $member->registration_date; ?>
@@ -123,9 +146,64 @@ $finance = SM_Finance::calculate_member_dues($member->id);
             </div>
         </div>
     </div>
+
+    <!-- Edit Member Modal (Moved here to be functional) -->
+    <div id="edit-member-modal" class="sm-modal-overlay">
+        <div class="sm-modal-content" style="max-width: 900px;">
+            <div class="sm-modal-header"><h3>تعديل بيانات العضو</h3><button class="sm-modal-close" onclick="document.getElementById('edit-member-modal').style.display='none'">&times;</button></div>
+            <form id="edit-member-form">
+                <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
+                <input type="hidden" name="member_id" id="edit_member_id_hidden">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding:20px;">
+                    <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="name" id="edit_name" type="text" class="sm-input" required></div>
+                    <div class="sm-form-group"><label class="sm-label">الرقم القومي:</label><input name="national_id" id="edit_national_id" type="text" class="sm-input" required maxlength="14"></div>
+                    <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" id="edit_grade" class="sm-select"><?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">التخصص:</label><select name="specialization" id="edit_spec" class="sm-select"><?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">المحافظة:</label><select name="governorate" id="edit_gov" class="sm-select"><?php foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">رقم الهاتف:</label><input name="phone" id="edit_phone" type="text" class="sm-input"></div>
+                    <div class="sm-form-group"><label class="sm-label">البريد الإلكتروني:</label><input name="email" id="edit_email" type="email" class="sm-input"></div>
+                    <div class="sm-form-group"><label class="sm-label">تاريخ بدء العضوية:</label><input name="membership_start_date" id="edit_mem_start" type="date" class="sm-input"></div>
+                    <div class="sm-form-group"><label class="sm-label">تاريخ انتهاء العضوية:</label><input name="membership_expiration_date" id="edit_mem_expiry" type="date" class="sm-input" value="2024-12-31"></div>
+                    <div class="sm-form-group" style="grid-column: span 3;"><label class="sm-label">ملاحظات:</label><textarea name="notes" id="edit_notes" class="sm-input" rows="2"></textarea></div>
+                </div>
+                <button type="submit" class="sm-btn">تحديث البيانات الآن</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
+function smToggleFinanceDropdown() {
+    const el = document.getElementById('sm-finance-dropdown');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function smTriggerPhotoUpload() {
+    document.getElementById('member-photo-input').click();
+}
+
+function smUploadMemberPhoto(memberId) {
+    const file = document.getElementById('member-photo-input').files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('action', 'sm_update_member_photo');
+    formData.append('member_id', memberId);
+    formData.append('member_photo', file);
+    formData.append('sm_photo_nonce', '<?php echo wp_create_nonce("sm_photo_action"); ?>');
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            document.getElementById('member-photo-container').innerHTML = `<img src="${res.data.photo_url}" style="width:100%; height:100%; object-fit:cover;">`;
+            smShowNotification('تم تحديث الصورة الشخصية');
+        } else {
+            alert('فشل الرفع: ' + res.data);
+        }
+    });
+}
+
 function deleteMember(id, name) {
     if (!confirm('هل أنت متأكد من حذف العضو: ' + name + ' نهائياً من النظام؟ لا يمكن التراجع عن هذا الإجراء.')) return;
     const formData = new FormData();
@@ -143,4 +221,42 @@ function deleteMember(id, name) {
         }
     });
 }
+
+window.editSmMember = function(s) {
+    document.getElementById('edit_member_id_hidden').value = s.id;
+    document.getElementById('edit_name').value = s.name;
+    document.getElementById('edit_national_id').value = s.national_id;
+    document.getElementById('edit_grade').value = s.professional_grade;
+    document.getElementById('edit_spec').value = s.specialization;
+    document.getElementById('edit_gov').value = s.governorate;
+    document.getElementById('edit_phone').value = s.phone;
+    document.getElementById('edit_email').value = s.email;
+    document.getElementById('edit_mem_start').value = s.membership_start_date;
+    document.getElementById('edit_mem_expiry').value = s.membership_expiration_date;
+    document.getElementById('edit_notes').value = s.notes || '';
+    document.getElementById('edit-member-modal').style.display = 'flex';
+};
+
+document.getElementById('edit-member-form').onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('action', 'sm_update_member_ajax');
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json()).then(res => {
+        if(res.success) {
+            smShowNotification('تم تحديث البيانات بنجاح');
+            setTimeout(() => location.reload(), 500);
+        } else {
+            alert(res.data);
+        }
+    });
+};
+
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('sm-finance-dropdown');
+    const btn = document.querySelector('[onclick="smToggleFinanceDropdown()"]');
+    if (dropdown && !dropdown.contains(e.target) && btn && !btn.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
 </script>

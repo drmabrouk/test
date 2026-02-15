@@ -19,17 +19,27 @@ class SM_Finance {
 
         for ($year = $start_year; $year <= $current_year; $year++) {
             if ($year > $last_paid_year) {
-                $base_fee = ($year === $start_year) ? $settings['membership_new'] : $settings['membership_renewal'];
+                // Initial registration fee is 480, renewal is 280
+                $base_fee = ($year === $start_year) ? 480 : 280;
                 $penalty = 0;
 
-                // Penalty starts April 1st
+                // Penalty starts April 1st of the year
                 $penalty_date = $year . '-04-01';
                 if ($current_date >= $penalty_date) {
-                    $penalty += $settings['membership_penalty'];
+                    // Initial penalty for the year
+                    $penalty += 50;
 
-                    // Additional penalty for each new year of continued delay
+                    // Additional 50 for each subsequent year of delay
                     if ($current_year > $year) {
-                        $penalty += ($current_year - $year) * $settings['membership_penalty'];
+                        // If current date is >= April 1st of the current year, add penalties for previous years
+                        $years_over = $current_year - $year;
+                        // The user says "another 50 EGP late fee is added on April 1 each subsequent year"
+                        // So for 2023 due, if it's April 1 2024, it gets another 50.
+                        if ($current_date >= $current_year . '-04-01') {
+                             $penalty += $years_over * 50;
+                        } else {
+                             $penalty += ($years_over - 1) * 50;
+                        }
                     }
                 }
 
@@ -132,6 +142,11 @@ class SM_Finance {
     public static function record_payment($data) {
         global $wpdb;
         $table = $wpdb->prefix . 'sm_payments';
+        $current_user_id = get_current_user_id();
+
+        $digital_code = 'DINV-' . strtoupper(wp_generate_password(8, false)) . '-' . time();
+        $paper_code = sanitize_text_field($data['paper_invoice_code'] ?? '');
+        $details_ar = sanitize_text_field($data['details_ar'] ?? '');
 
         $insert = $wpdb->insert($table, [
             'member_id' => intval($data['member_id']),
@@ -139,7 +154,11 @@ class SM_Finance {
             'payment_type' => sanitize_text_field($data['payment_type']),
             'payment_date' => sanitize_text_field($data['payment_date']),
             'target_year' => isset($data['target_year']) ? intval($data['target_year']) : null,
+            'digital_invoice_code' => $digital_code,
+            'paper_invoice_code' => $paper_code,
+            'details_ar' => $details_ar,
             'notes' => sanitize_textarea_field($data['notes'] ?? ''),
+            'created_by' => $current_user_id,
             'created_at' => current_time('mysql')
         ]);
 
@@ -154,8 +173,15 @@ class SM_Finance {
                 }
             }
 
-            // Log the financial transaction
-            SM_Logger::log('Financial Transaction', "Payment of {$data['amount']} EGP for {$data['payment_type']} by member: {$member->name}", get_current_user_id());
+            if ($data['payment_type'] === 'license' && !empty($data['target_year'])) {
+                if ($member && intval($data['target_year']) > intval($member->last_paid_license_year)) {
+                    SM_DB::update_member($member->id, ['last_paid_license_year' => intval($data['target_year'])]);
+                }
+            }
+
+            // Log the financial transaction in Arabic as requested
+            $log_details = "تحصيل مبلغ " . $data['amount'] . " ج.م مقابل " . $details_ar . " للعضو: " . $member->name;
+            SM_Logger::log('عملية مالية', $log_details);
 
             // Trigger Invoice Delivery (Email & Account)
             self::deliver_invoice($payment_id);
@@ -187,9 +213,33 @@ class SM_Finance {
         wp_mail($member->email, $subject, $message);
     }
 
+    public static function get_member_status($member_id) {
+        $member = SM_DB::get_member_by_id($member_id);
+        if (!$member) return 'unknown';
+
+        $current_year = (int)date('Y');
+        $current_date = date('Y-m-d');
+        $last_paid = (int)$member->last_paid_membership_year;
+
+        if ($last_paid >= $current_year) {
+            return 'نشط (مسدد لعام ' . $current_year . ')';
+        }
+
+        if ($current_date <= $current_year . '-03-31') {
+            return 'في فترة السماح (يجب التجديد لعام ' . $current_year . ')';
+        }
+
+        return 'منتهي (متأخر عن سداد عام ' . $current_year . ')';
+    }
+
     public static function get_financial_stats() {
         global $wpdb;
-        $members = SM_DB::get_members();
+        $user = wp_get_current_user();
+        $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $args = array();
+        $members = SM_DB::get_members($args);
 
         $total_owed = 0;
         $total_paid = 0;

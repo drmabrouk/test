@@ -6,7 +6,7 @@
     <?php include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php'; ?>
 
     <div style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">
-        <?php if (current_user_can('إدارة_الأعضاء')): ?>
+        <?php if (current_user_can('sm_manage_members')): ?>
         <div style="flex: 1; min-width: 300px; background: #fff; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); box-shadow: var(--sm-shadow);">
             <h3 style="color: var(--sm-primary-color);">إدارة النظام</h3>
             <p>يمكنك إضافة أعضاء جدد، إدارة أعضاء النقابة، واستعراض كافة السجلات.</p>

@@ -249,7 +249,7 @@ class SM_Public {
     }
 
     public function ajax_get_member() {
-        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        if (!current_user_can('sm_manage_members')) wp_send_json_error('Unauthorized');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($national_id);
         if ($member) {
@@ -261,7 +261,7 @@ class SM_Public {
     }
 
     public function ajax_search_members() {
-        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        if (!current_user_can('sm_manage_members')) wp_send_json_error('Unauthorized');
         $query = sanitize_text_field($_POST['query']);
         $members = SM_DB::get_members(array('search' => $query));
         wp_send_json_success($members);
@@ -447,6 +447,17 @@ class SM_Public {
         if (!$this->can_access_member($member_id)) wp_send_json_error('Access denied');
         if (SM_Finance::record_payment($_POST)) wp_send_json_success();
         else wp_send_json_error('Failed to record payment');
+    }
+
+    public function ajax_delete_transaction() {
+        if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+
+        global $wpdb;
+        $id = intval($_POST['transaction_id']);
+        $wpdb->delete("{$wpdb->prefix}sm_payments", ['id' => $id]);
+        SM_Logger::log('حذف عملية مالية', "تم حذف العملية رقم #$id بواسطة مدير النظام");
+        wp_send_json_success();
     }
 
     public function ajax_add_survey() {

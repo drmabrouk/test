@@ -162,14 +162,24 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <h1 style="margin:0; border: none; padding: 0; color: var(--sm-dark-color); font-weight: 800; font-size: 1.3em; text-decoration: none; line-height: 1;">
                     <?php echo esc_html($syndicate['syndicate_name']); ?>
                 </h1>
-                <div style="display: inline-block; padding: 3px 12px; background: #f0f4f8; color: #111F35; border-radius: 50px; font-size: 11px; font-weight: 700; margin-top: 6px; border: 1px solid #cbd5e0;">
+                <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 5px 15px; background: #f0f4f8; color: #111F35; border-radius: 12px; font-size: 11px; font-weight: 700; margin-top: 6px; border: 1px solid #cbd5e0; line-height: 1.4;">
+                    <div>
+                        <?php
+                        if ($is_admin || $is_sys_admin) echo 'مدير النظام';
+                        elseif ($is_syndicate_admin) echo 'مسؤول نقابة';
+                        elseif ($is_syndicate_member) echo 'عضو نقابة';
+                        elseif ($is_member) echo 'عضو';
+                        else echo 'مستخدم النظام';
+                        ?>
+                    </div>
                     <?php
-                    if ($is_admin) echo 'System Administrator';
-                    elseif ($is_sys_admin) echo 'System Administrator';
-                    elseif ($is_syndicate_admin) echo 'Syndicate Administrator';
-                    elseif ($is_syndicate_member) echo 'Syndicate Member';
-                    else echo 'System User';
-                    ?>
+                    $my_gov_key = get_user_meta($user->ID, 'sm_governorate', true);
+                    $govs = SM_Settings::get_governorates();
+                    $my_gov_label = $govs[$my_gov_key] ?? '';
+                    if ($my_gov_label): ?>
+                        <div style="width: 100%; height: 1px; background: #cbd5e0; margin: 3px 0;"></div>
+                        <div style="color: var(--sm-primary-color); font-size: 10px;"><?php echo esc_html($my_gov_label); ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

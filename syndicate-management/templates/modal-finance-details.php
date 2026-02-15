@@ -59,12 +59,20 @@
                         <label class="sm-label" style="font-size:11px;">السنة (للعضوية):</label>
                         <input type="number" name="target_year" class="sm-input" value="<?php echo date('Y'); ?>">
                     </div>
+                    <div>
+                        <label class="sm-label" style="font-size:11px;">كود الفاتورة الورقية:</label>
+                        <input type="text" name="paper_invoice_code" class="sm-input" placeholder="أدخل الكود يدوياً">
+                    </div>
+                    <div>
+                        <label class="sm-label" style="font-size:11px;">تفاصيل العملية (بالعربية):</label>
+                        <input type="text" name="details_ar" class="sm-input" placeholder="مثال: اشتراك عام 2024">
+                    </div>
                 </div>
                 <div class="sm-form-group">
-                    <label class="sm-label" style="font-size:11px;">ملاحظات:</label>
+                    <label class="sm-label" style="font-size:11px;">ملاحظات إضافية:</label>
                     <textarea name="notes" class="sm-input" rows="2"></textarea>
                 </div>
-                <button type="button" onclick="smSubmitPayment(this)" class="sm-btn" style="background:#27ae60; height: 38px;">تأكيد استلام المبلغ</button>
+                <button type="button" onclick="smSubmitPayment(this)" class="sm-btn" style="background:#27ae60; height: 45px; font-weight: 700;">تأكيد استلام المبلغ وإصدار فاتورة</button>
             </form>
         </div>
         <?php endif; ?>
