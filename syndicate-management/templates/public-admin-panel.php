@@ -123,6 +123,7 @@
 </script>
 
 <?php
+global $wpdb;
 $user = wp_get_current_user();
 $roles = (array)$user->roles;
 $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');

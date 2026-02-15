@@ -1,4 +1,4 @@
-<?php if (!defined('ABSPATH')) exit; ?>
+<?php if (!defined('ABSPATH')) exit; global $wpdb; ?>
 <div class="sm-surveys-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة استطلاعات الرأي</h3>
@@ -19,7 +19,6 @@
             </thead>
             <tbody>
                 <?php
-                global $wpdb;
                 $surveys = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_surveys ORDER BY created_at DESC");
                 $user = wp_get_current_user();
                 $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
