@@ -4,7 +4,7 @@ class SM_Finance {
 
     public static function calculate_member_dues($member_id) {
         $member = SM_DB::get_member_by_id($member_id);
-        if (!$member) return array('total' => 0, 'breakdown' => []);
+        if (!$member) return array('total_owed' => 0, 'total_paid' => 0, 'balance' => 0, 'breakdown' => []);
 
         $settings = SM_Settings::get_finance_settings();
         $current_year = (int)date('Y');
@@ -19,28 +19,23 @@ class SM_Finance {
 
         for ($year = $start_year; $year <= $current_year; $year++) {
             if ($year > $last_paid_year) {
-                $base_fee = ($year === $start_year) ? $settings['membership_new'] : $settings['membership_renewal'];
+                $base_fee = ($year === $start_year) ? (float)$settings['membership_new'] : (float)$settings['membership_renewal'];
                 $penalty = 0;
 
-                // Penalty starts April 1st of the year
-                $penalty_date = $year . '-04-01';
-                if ($current_date >= $penalty_date) {
-                    $penalty += $settings['membership_penalty'];
-
-                    if ($current_year > $year) {
-                        $years_over = $current_year - $year;
-                        if ($current_date >= $current_year . '-04-01') {
-                             $penalty += $years_over * $settings['membership_penalty'];
-                        } else {
-                             $penalty += ($years_over - 1) * $settings['membership_penalty'];
-                        }
+                // Penalty starts April 1st of the year FOLLOWING the membership year
+                // e.g. 2023 membership penalty starts April 1, 2024
+                $p_year = $year + 1;
+                while ($p_year <= $current_year) {
+                    if ($current_date >= $p_year . '-04-01') {
+                        $penalty += (float)$settings['membership_penalty'];
                     }
+                    $p_year++;
                 }
 
                 $year_total = $base_fee + $penalty;
                 $total_owed += $year_total;
                 $breakdown[] = [
-                    'item' => "اشتراك عضوية لعام $year",
+                    'item' => ($year === $start_year) ? "رسوم انضمام وعضوية لعام $year" : "تجديد عضوية لعام $year",
                     'amount' => $base_fee,
                     'penalty' => $penalty,
                     'total' => $year_total
@@ -49,25 +44,24 @@ class SM_Finance {
         }
 
         // 2. Professional Practice License Dues
-        if (!empty($member->license_expiration_date)) {
+        // Only if they already have a license record
+        if (!empty($member->license_number) && !empty($member->license_expiration_date)) {
             $expiry = $member->license_expiration_date;
             if ($current_date > $expiry) {
-                // Check if it's new or renewal (usually renewal if it expired)
-                $base_fee = $settings['license_renewal'];
-
-                // Penalty starts 1 month after expiry
-                $penalty_start = date('Y-m-d', strtotime($expiry . ' +1 month'));
+                $base_fee = (float)$settings['license_renewal'];
                 $penalty = 0;
 
-                if ($current_date >= $penalty_start) {
-                    $penalty += $settings['license_penalty'];
+                // Penalty starts AFTER ONE YEAR from expiration
+                $penalty_start_date = date('Y-m-d', strtotime($expiry . ' +1 year'));
 
-                    // Extra penalty for each full year that has passed since expiration
+                if ($current_date >= $penalty_start_date) {
                     $d1 = new DateTime($expiry);
                     $d2 = new DateTime($current_date);
                     $diff = $d1->diff($d2);
-                    if ($diff->y > 0) {
-                        $penalty += $diff->y * $settings['license_penalty'];
+                    $years_delayed = $diff->y;
+
+                    if ($years_delayed >= 1) {
+                        $penalty = $years_delayed * (float)$settings['license_penalty'];
                     }
                 }
 
@@ -82,36 +76,17 @@ class SM_Finance {
             }
         }
 
-        // 3. Facility License Dues
-        if (!empty($member->facility_category)) {
-            $cat = $member->facility_category;
-            $fee = 0;
-            switch($cat) {
-                case 'A': $fee = $settings['facility_a']; break;
-                case 'B': $fee = $settings['facility_b']; break;
-                case 'C': $fee = $settings['facility_c']; break;
-            }
-
-            // Check if facility license is expired
-            if (!empty($member->facility_license_expiration_date) && $current_date > $member->facility_license_expiration_date) {
-                $total_owed += $fee;
-                $breakdown[] = [
-                    'item' => "رسوم ترخيص منشأة (فئة $cat)",
-                    'amount' => $fee,
-                    'penalty' => 0,
-                    'total' => $fee
-                ];
-            }
-        }
+        // 3. Facility License Dues - Automatic renewal calculation REMOVED as requested.
+        // It should only be applied if explicitly requested or handled via another mechanism.
 
         // Subtract existing payments from total
         $total_paid = self::get_total_paid($member_id);
         $final_balance = $total_owed - $total_paid;
 
         return [
-            'total_owed' => $total_owed,
-            'total_paid' => $total_paid,
-            'balance' => $final_balance,
+            'total_owed' => (float)$total_owed,
+            'total_paid' => (float)$total_paid,
+            'balance' => (float)$final_balance,
             'breakdown' => $breakdown
         ];
     }

@@ -119,7 +119,11 @@ class SM_DB {
 
         // Auto-create WordPress User for the Member
         $wp_user_id = null;
-        $temp_pass = wp_generate_password(12, false);
+        $digits = '';
+        for ($i = 0; $i < 10; $i++) {
+            $digits .= mt_rand(0, 9);
+        }
+        $temp_pass = 'IRS' . $digits;
 
         if (!function_exists('wp_insert_user')) {
             require_once(ABSPATH . 'wp-includes/user.php');
