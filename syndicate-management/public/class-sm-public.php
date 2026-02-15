@@ -121,6 +121,14 @@ class SM_Public {
         add_shortcode('sm_login', array($this, 'shortcode_login'));
         add_shortcode('sm_admin', array($this, 'shortcode_admin_dashboard'));
         add_filter('authenticate', array($this, 'custom_authenticate'), 20, 3);
+        add_filter('auth_cookie_expiration', array($this, 'custom_auth_cookie_expiration'), 10, 3);
+    }
+
+    public function custom_auth_cookie_expiration($expiration, $user_id, $remember) {
+        if ($remember) {
+            return 30 * DAY_IN_SECONDS; // 30 days
+        }
+        return $expiration;
     }
 
     public function custom_authenticate($user, $username, $password) {
@@ -208,6 +216,105 @@ class SM_Public {
         $form = str_replace('name="pwd"', 'name="pwd" placeholder="كلمة المرور الخاصة بك"', $form);
 
         $output .= $form;
+
+        $output .= '<div style="margin-top: 25px; text-align: center; font-size: 0.9em; display: flex; flex-direction: column; gap: 12px;">';
+        $output .= '<a href="javascript:smToggleRecovery()" style="color: var(--sm-primary-color); text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>';
+        $output .= '<a href="javascript:smToggleActivation()" style="color: #64748b; text-decoration: none;">تفعيل حساب عضو قديم</a>';
+        $output .= '</div>';
+
+        // Recovery Modal
+        $output .= '<div id="sm-recovery-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center; padding:20px;">';
+        $output .= '<div style="background:white; width:100%; max-width:400px; padding:30px; border-radius:16px; position:relative;">';
+        $output .= '<button onclick="smToggleRecovery()" style="position:absolute; top:15px; left:15px; border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>';
+        $output .= '<h3 style="margin-top:0; margin-bottom:20px; text-align:center;">استعادة كلمة المرور</h3>';
+        $output .= '<div id="recovery-step-1">';
+        $output .= '<p style="font-size:13px; color:#64748b; margin-bottom:15px;">أدخل الرقم القومي لإرسال رمز التحقق إلى بريدك الإلكتروني.</p>';
+        $output .= '<input type="text" id="rec_national_id" class="sm-input" placeholder="الرقم القومي (14 رقم)" style="margin-bottom:15px; width:100%;">';
+        $output .= '<button onclick="smRequestOTP()" class="sm-btn" style="width:100%;">إرسال رمز التحقق</button>';
+        $output .= '</div>';
+        $output .= '<div id="recovery-step-2" style="display:none;">';
+        $output .= '<p style="font-size:13px; color:#64748b; margin-bottom:15px;">تم إرسال الرمز. أدخل الرمز وكلمة المرور الجديدة.</p>';
+        $output .= '<input type="text" id="rec_otp" class="sm-input" placeholder="رمز التحقق (6 أرقام)" style="margin-bottom:10px; width:100%;">';
+        $output .= '<input type="password" id="rec_new_pass" class="sm-input" placeholder="كلمة المرور الجديدة (10+ أحرف وأرقام)" style="margin-bottom:15px; width:100%;">';
+        $output .= '<button onclick="smResetPassword()" class="sm-btn" style="width:100%;">تغيير كلمة المرور</button>';
+        $output .= '</div>';
+        $output .= '</div></div>';
+
+        // Activation Modal
+        $output .= '<div id="sm-activation-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center; padding:20px;">';
+        $output .= '<div style="background:white; width:100%; max-width:450px; padding:30px; border-radius:16px; position:relative;">';
+        $output .= '<button onclick="smToggleActivation()" style="position:absolute; top:15px; left:15px; border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>';
+        $output .= '<h3 style="margin-top:0; margin-bottom:20px; text-align:center;">تفعيل حساب العضوية</h3>';
+        $output .= '<div id="activation-step-1">';
+        $output .= '<input type="text" id="act_national_id" class="sm-input" placeholder="الرقم القومي" style="margin-bottom:10px; width:100%;">';
+        $output .= '<input type="text" id="act_phone" class="sm-input" placeholder="رقم الهاتف المسجل" style="margin-bottom:10px; width:100%;">';
+        $output .= '<input type="text" id="act_mem_no" class="sm-input" placeholder="رقم العضوية" style="margin-bottom:15px; width:100%;">';
+        $output .= '<button onclick="smActivateStep1()" class="sm-btn" style="width:100%;">التحقق من البيانات</button>';
+        $output .= '</div>';
+        $output .= '<div id="activation-step-2" style="display:none;">';
+        $output .= '<input type="email" id="act_email" class="sm-input" placeholder="البريد الإلكتروني الجديد" style="margin-bottom:10px; width:100%;">';
+        $output .= '<input type="password" id="act_pass" class="sm-input" placeholder="كلمة المرور الجديدة (10+ أحرف وأرقام)" style="margin-bottom:15px; width:100%;">';
+        $output .= '<button onclick="smActivateFinal()" class="sm-btn" style="width:100%;">تفعيل الحساب الآن</button>';
+        $output .= '</div>';
+        $output .= '</div></div>';
+
+        $output .= '<script>
+        function smToggleRecovery() {
+            const m = document.getElementById("sm-recovery-modal");
+            m.style.display = m.style.display === "none" ? "flex" : "none";
+        }
+        function smToggleActivation() {
+            const m = document.getElementById("sm-activation-modal");
+            m.style.display = m.style.display === "none" ? "flex" : "none";
+        }
+        function smRequestOTP() {
+            const nid = document.getElementById("rec_national_id").value;
+            const fd = new FormData(); fd.append("action", "sm_forgot_password_otp"); fd.append("national_id", nid);
+            fetch("'.admin_url('admin-ajax.php').'", {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+                if(res.success) {
+                    document.getElementById("recovery-step-1").style.display="none";
+                    document.getElementById("recovery-step-2").style.display="block";
+                } else alert(res.data);
+            });
+        }
+        function smResetPassword() {
+            const nid = document.getElementById("rec_national_id").value;
+            const otp = document.getElementById("rec_otp").value;
+            const pass = document.getElementById("rec_new_pass").value;
+            const fd = new FormData(); fd.append("action", "sm_reset_password_otp");
+            fd.append("national_id", nid); fd.append("otp", otp); fd.append("new_password", pass);
+            fetch("'.admin_url('admin-ajax.php').'", {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+                if(res.success) { alert(res.data); location.reload(); } else alert(res.data);
+            });
+        }
+        function smActivateStep1() {
+            const nid = document.getElementById("act_national_id").value;
+            const ph = document.getElementById("act_phone").value;
+            const mem = document.getElementById("act_mem_no").value;
+            const fd = new FormData(); fd.append("action", "sm_activate_account_step1");
+            fd.append("national_id", nid); fd.append("phone", ph); fd.append("membership_number", mem);
+            fetch("'.admin_url('admin-ajax.php').'", {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+                if(res.success) {
+                    document.getElementById("activation-step-1").style.display="none";
+                    document.getElementById("activation-step-2").style.display="block";
+                } else alert(res.data);
+            });
+        }
+        function smActivateFinal() {
+            const nid = document.getElementById("act_national_id").value;
+            const ph = document.getElementById("act_phone").value;
+            const mem = document.getElementById("act_mem_no").value;
+            const email = document.getElementById("act_email").value;
+            const pass = document.getElementById("act_pass").value;
+            const fd = new FormData(); fd.append("action", "sm_activate_account_final");
+            fd.append("national_id", nid); fd.append("phone", ph); fd.append("membership_number", mem);
+            fd.append("email", email); fd.append("password", pass);
+            fetch("'.admin_url('admin-ajax.php').'", {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+                if(res.success) { alert(res.data); location.reload(); } else alert(res.data);
+            });
+        }
+        </script>';
+
         $output .= '</div>'; // End padding
         $output .= '</div>'; // End box
         $output .= '</div>'; // End container
@@ -766,5 +873,108 @@ class SM_Public {
         } else {
             wp_send_json_error('فشل في معالجة الطلب');
         }
+    }
+
+    public function ajax_forgot_password_otp() {
+        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+        $member = SM_DB::get_member_by_national_id($national_id);
+        if (!$member || !$member->wp_user_id) {
+            wp_send_json_error('الرقم القومي غير مسجل في النظام');
+        }
+
+        $user = get_userdata($member->wp_user_id);
+        $otp = sprintf("%06d", mt_rand(1, 999999));
+
+        update_user_meta($user->ID, 'sm_recovery_otp', $otp);
+        update_user_meta($user->ID, 'sm_recovery_otp_time', time());
+        update_user_meta($user->ID, 'sm_recovery_otp_used', 0);
+
+        $syndicate = SM_Settings::get_syndicate_info();
+        $subject = "رمز استعادة كلمة المرور - " . $syndicate['syndicate_name'];
+        $message = "عزيزي العضو " . $member->name . ",\n\n";
+        $message .= "رمز التحقق الخاص بك هو: " . $otp . "\n";
+        $message .= "هذا الرمز صالح لمدة 10 دقائق فقط ولمرة واحدة.\n\n";
+        $message .= "إذا لم تطلب هذا الرمز، يرجى تجاهل هذه الرسالة.\n";
+
+        wp_mail($member->email, $subject, $message);
+
+        wp_send_json_success('تم إرسال رمز التحقق إلى بريدك الإلكتروني المسجل');
+    }
+
+    public function ajax_reset_password_otp() {
+        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+        $otp = sanitize_text_field($_POST['otp'] ?? '');
+        $new_pass = $_POST['new_password'] ?? '';
+
+        $member = SM_DB::get_member_by_national_id($national_id);
+        if (!$member || !$member->wp_user_id) wp_send_json_error('بيانات غير صحيحة');
+
+        $user_id = $member->wp_user_id;
+        $saved_otp = get_user_meta($user_id, 'sm_recovery_otp', true);
+        $otp_time = get_user_meta($user_id, 'sm_recovery_otp_time', true);
+        $otp_used = get_user_meta($user_id, 'sm_recovery_otp_used', true);
+
+        if ($otp_used || $saved_otp !== $otp || (time() - $otp_time) > 600) {
+            update_user_meta($user_id, 'sm_recovery_otp_used', 1); // Mark as attempt made
+            wp_send_json_error('رمز التحقق غير صحيح أو منتهي الصلاحية');
+        }
+
+        if (strlen($new_pass) < 10 || !preg_match('/^[a-zA-Z0-9]+$/', $new_pass)) {
+            wp_send_json_error('كلمة المرور يجب أن تكون 10 أحرف على الأقل وتتكون من حروف وأرقام فقط بدون رموز');
+        }
+
+        wp_set_password($new_pass, $user_id);
+        update_user_meta($user_id, 'sm_recovery_otp_used', 1);
+
+        wp_send_json_success('تمت إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول');
+    }
+
+    public function ajax_activate_account_step1() {
+        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+        $phone = sanitize_text_field($_POST['phone'] ?? '');
+        $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
+
+        $member = SM_DB::get_member_by_national_id($national_id);
+        if (!$member) wp_send_json_error('الرقم القومي غير موجود');
+
+        if ($member->phone !== $phone || $member->membership_number !== $membership_number) {
+            wp_send_json_error('البيانات المدخلة لا تطابق سجلات العضوية');
+        }
+
+        wp_send_json_success('تم التحقق بنجاح. يرجى إكمال بيانات الحساب');
+    }
+
+    public function ajax_activate_account_final() {
+        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+        $phone = sanitize_text_field($_POST['phone'] ?? '');
+        $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
+        $new_email = sanitize_email($_POST['email'] ?? '');
+        $new_pass = $_POST['password'] ?? '';
+
+        $member = SM_DB::get_member_by_national_id($national_id);
+        if (!$member || $member->phone !== $phone || $member->membership_number !== $membership_number) {
+            wp_send_json_error('فشل التحقق من الهوية');
+        }
+
+        if (strlen($new_pass) < 10 || !preg_match('/^[a-zA-Z0-9]+$/', $new_pass)) {
+            wp_send_json_error('كلمة المرور يجب أن تكون 10 أحرف على الأقل وتتكون من حروف وأرقام فقط');
+        }
+
+        if (!is_email($new_email)) wp_send_json_error('بريد إلكتروني غير صحيح');
+
+        // Update member record
+        SM_DB::update_member($member->id, ['email' => $new_email]);
+
+        // Update WP User
+        if ($member->wp_user_id) {
+            wp_update_user([
+                'ID' => $member->wp_user_id,
+                'user_email' => $new_email,
+                'user_pass' => $new_pass
+            ]);
+            delete_user_meta($member->wp_user_id, 'sm_temp_pass');
+        }
+
+        wp_send_json_success('تم تفعيل الحساب بنجاح. يمكنك الآن تسجيل الدخول');
     }
 }

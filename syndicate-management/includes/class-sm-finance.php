@@ -14,22 +14,44 @@ class SM_Finance {
         $breakdown = [];
 
         // 1. Membership Dues
+        // Registration date determines the first year
         $start_year = $member->membership_start_date ? (int)date('Y', strtotime($member->membership_start_date)) : $current_year;
         $last_paid_year = (int)$member->last_paid_membership_year;
 
+        // If it's a new member (never paid), they owe registration fee for the start year
+        // Membership is annual. If they registered in 2023, they owe for 2023.
         for ($year = $start_year; $year <= $current_year; $year++) {
             if ($year > $last_paid_year) {
-                $base_fee = ($year === $start_year) ? (float)$settings['membership_new'] : (float)$settings['membership_renewal'];
+                $base_fee = ($year === $start_year && $last_paid_year == 0) ? (float)$settings['membership_new'] : (float)$settings['membership_renewal'];
                 $penalty = 0;
 
                 // Penalty starts April 1st of the year FOLLOWING the membership year
-                // e.g. 2023 membership penalty starts April 1, 2024
-                $p_year = $year + 1;
-                while ($p_year <= $current_year) {
-                    if ($current_date >= $p_year . '-04-01') {
-                        $penalty += (float)$settings['membership_penalty'];
+                // BUT for the current year, if we are in Jan-Mar, it's a grace period (no penalty).
+                // Actually, the renewal is for the NEXT year usually? No, "after December 31... during January, February, March... no fine... fine added starting April 1".
+                // This implies the renewal for year X should be done by Dec 31 of X-1 or within grace period of X.
+
+                // Let's assume:
+                // Membership 2024 is due by Dec 31, 2023.
+                // Grace period: Jan, Feb, Mar 2024.
+                // Penalty starts: April 1, 2024.
+
+                // If current year is 2024, and we are calculating for 2024:
+                // If current_date >= 2024-04-01, add penalty.
+
+                $penalty_date = $year . '-04-01';
+                if ($current_date >= $penalty_date) {
+                    $penalty += (float)$settings['membership_penalty'];
+
+                    // Cumulative penalty for subsequent years of delay
+                    // If it's 2025 and they still haven't paid for 2024:
+                    // April 1, 2025 adds another penalty.
+                    $subsequent_year = $year + 1;
+                    while ($subsequent_year <= $current_year) {
+                        if ($current_date >= $subsequent_year . '-04-01') {
+                            $penalty += (float)$settings['membership_penalty'];
+                        }
+                        $subsequent_year++;
                     }
-                    $p_year++;
                 }
 
                 $year_total = $base_fee + $penalty;
@@ -47,8 +69,10 @@ class SM_Finance {
         // Only if they already have a license record
         if (!empty($member->license_number) && !empty($member->license_expiration_date)) {
             $expiry = $member->license_expiration_date;
-            if ($current_date > $expiry) {
-                $base_fee = (float)$settings['license_renewal'];
+            $has_paid_first = ((int)$member->last_paid_license_year > 0);
+
+            if ($current_date > $expiry || !$has_paid_first) {
+                $base_fee = $has_paid_first ? (float)$settings['license_renewal'] : (float)$settings['license_new'];
                 $penalty = 0;
 
                 // Penalty starts AFTER ONE YEAR from expiration
@@ -68,7 +92,7 @@ class SM_Finance {
                 $license_total = $base_fee + $penalty;
                 $total_owed += $license_total;
                 $breakdown[] = [
-                    'item' => "تجديد ترخيص مزاولة المهنة",
+                    'item' => "تجديد تصريح مزاولة المهنة",
                     'amount' => $base_fee,
                     'penalty' => $penalty,
                     'total' => $license_total

@@ -112,21 +112,25 @@ $acc_status = SM_Finance::get_member_status($member->id);
                 </div>
             </div>
 
-            <!-- Professional Licenses -->
+            <!-- Professional Permits -->
             <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
-                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">تراخيص مزاولة المهنة والمنشآت</h3>
+                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">تصاريح مزاولة المهنة والمنشآت</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4 style="color: var(--sm-primary-color); margin:0;">ترخيص مزاولة المهنة</h4>
+                            <h4 style="color: var(--sm-primary-color); margin:0;">تصريح مزاولة المهنة</h4>
                             <?php
                             $lic_valid = ($member->license_expiration_date && $member->license_expiration_date >= date('Y-m-d'));
                             echo $lic_valid ? '<span class="sm-badge sm-badge-low" style="background:#def7ec; color:#03543f;">صالح</span>' : '<span class="sm-badge sm-badge-high">منتهي</span>';
                             ?>
                         </div>
                         <div style="margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-                            <label class="sm-label">رقم الترخيص:</label> <span style="font-weight:700;"><?php echo esc_html($member->license_number ?: 'غير متوفر'); ?></span><br>
-                            <label class="sm-label">تاريخ الانتهاء:</label> <span style="color: <?php echo $lic_valid ? '#38a169' : '#e53e3e'; ?>; font-weight:700;"><?php echo esc_html($member->license_expiration_date ?: 'غير محدد'); ?></span>
+                            <?php if (empty($member->license_number)): ?>
+                                <div style="text-align: center; color: #718096; font-weight: 700; padding: 10px;">غير مقيد (لم يتم إصدار تصريح)</div>
+                            <?php else: ?>
+                                <label class="sm-label">رقم التصريح:</label> <span style="font-weight:700;"><?php echo esc_html($member->license_number); ?></span><br>
+                                <label class="sm-label">تاريخ الانتهاء:</label> <span style="color: <?php echo $lic_valid ? '#38a169' : '#e53e3e'; ?>; font-weight:700;"><?php echo esc_html($member->license_expiration_date); ?></span>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div>

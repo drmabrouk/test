@@ -2,6 +2,23 @@
 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 30px;">
     <div>
         <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">كشف الحساب المستحق</h4>
+        <?php
+        $in_grace = false;
+        $current_month = (int)date('n');
+        if ($current_month >= 1 && $current_month <= 3) {
+            foreach ($dues['breakdown'] as $item) {
+                if (strpos($item['item'], 'تجديد عضوية') !== false && $item['penalty'] == 0) {
+                    $in_grace = true;
+                    break;
+                }
+            }
+        }
+        if ($in_grace): ?>
+            <div style="background: #ebf8ff; color: #2b6cb0; padding: 15px; border-radius: 8px; border: 1px solid #bee3f8; margin-bottom: 15px; font-size: 13px;">
+                <span class="dashicons dashicons-info" style="font-size: 18px; width: 18px; height: 18px;"></span> أنت حالياً في <strong>فترة السماح</strong> لتجديد العضوية (يناير - مارس). يمكنك التجديد الآن بدون أي غرامات تأخير.
+            </div>
+        <?php endif; ?>
+
         <div style="background: #fff; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
             <table class="sm-table" style="font-size: 13px;">
                 <thead>
