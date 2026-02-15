@@ -375,7 +375,7 @@
 
         const addForm = document.getElementById('add-staff-form');
         if (addForm) {
-            addForm.addEventListener('submit', function(e) {
+            addForm.onsubmit = function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 formData.append('action', 'sm_add_staff_ajax');
@@ -394,7 +394,7 @@
 
         const editForm = document.getElementById('edit-staff-form');
         if (editForm) {
-            editForm.addEventListener('submit', function(e) {
+            editForm.onsubmit = function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
                 formData.append('action', 'sm_update_staff_ajax');

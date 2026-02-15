@@ -1,5 +1,6 @@
 <?php
 if (!defined('ABSPATH')) exit;
+global $wpdb;
 if (in_array('sm_member', (array)wp_get_current_user()->roles)) {
     echo '<p>يرجى التوجه إلى لوحة المعلومات الخاصة بك.</p>';
     return;
@@ -11,7 +12,6 @@ $active_surveys = SM_DB::get_surveys($user_role);
 
 foreach ($active_surveys as $survey):
     // Check if already responded
-    global $wpdb;
     $responded = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d AND user_id = %d", $survey->id, get_current_user_id()));
     if ($responded) continue;
 ?>

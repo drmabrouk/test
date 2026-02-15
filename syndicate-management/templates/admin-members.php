@@ -1,5 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
+global $wpdb;
 $can_manage_members = current_user_can('sm_manage_members');
 $import_results = get_transient('sm_import_results_' . get_current_user_id());
 if ($import_results) {
@@ -237,21 +238,27 @@ if ($import_results) {
         };
 
         // Form submissions...
-        document.getElementById('add-member-form').onsubmit = function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            formData.append('action', 'sm_add_member_ajax');
-            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-            .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
-        };
+        const addMemberForm = document.getElementById('add-member-form');
+        if (addMemberForm) {
+            addMemberForm.onsubmit = function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                formData.append('action', 'sm_add_member_ajax');
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
+            };
+        }
 
-        document.getElementById('edit-member-form').onsubmit = function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            formData.append('action', 'sm_update_member_ajax');
-            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-            .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
-        };
+        const editMemberForm = document.getElementById('edit-member-form');
+        if (editMemberForm) {
+            editMemberForm.onsubmit = function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                formData.append('action', 'sm_update_member_ajax');
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
+            };
+        }
     })();
     </script>
 </div>
