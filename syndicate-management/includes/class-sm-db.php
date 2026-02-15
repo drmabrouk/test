@@ -8,7 +8,9 @@ class SM_DB {
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
         $default_args = array(
-            'role__in' => array('sm_system_admin', 'sm_syndicate_admin', 'sm_syndicate_member')
+            'role__in' => array('sm_system_admin', 'sm_syndicate_admin', 'sm_syndicate_member'),
+            'number' => 20,
+            'offset' => 0
         );
 
         if ($is_syndicate_admin) {
@@ -33,6 +35,12 @@ class SM_DB {
         $table_name = $wpdb->prefix . 'sm_members';
         $query = "SELECT * FROM $table_name WHERE 1=1";
         $params = array();
+
+        $limit = isset($args['limit']) ? intval($args['limit']) : 20;
+        $offset = isset($args['offset']) ? intval($args['offset']) : 0;
+
+        // Ensure we don't have negative limits unless specifically -1
+        if ($limit < -1) $limit = 20;
 
         // Role-based filtering (Governorate)
         $user = wp_get_current_user();
@@ -68,6 +76,12 @@ class SM_DB {
         }
 
         $query .= " ORDER BY sort_order ASC, name ASC";
+
+        if ($limit != -1) {
+            $query .= " LIMIT %d OFFSET %d";
+            $params[] = $limit;
+            $params[] = $offset;
+        }
 
         if (!empty($params)) {
             return $wpdb->get_results($wpdb->prepare($query, $params));
@@ -105,8 +119,7 @@ class SM_DB {
 
         // Auto-create WordPress User for the Member
         $wp_user_id = null;
-        $temp_pass = '';
-        for($i=0; $i<10; $i++) $temp_pass .= rand(0,9);
+        $temp_pass = wp_generate_password(12, false);
 
         if (!function_exists('wp_insert_user')) {
             require_once(ABSPATH . 'wp-includes/user.php');
@@ -117,12 +130,15 @@ class SM_DB {
             'user_email' => $email ?: $national_id . '@irseg.org',
             'display_name' => $name,
             'user_pass' => $temp_pass,
-            'role' => 'sm_member'
+            'role' => 'sm_syndicate_member'
         ));
 
         if (!is_wp_error($wp_user_id)) {
             $wp_user_id = $wp_user_id;
             update_user_meta($wp_user_id, 'sm_temp_pass', $temp_pass);
+            if (!empty($data['governorate'])) {
+                update_user_meta($wp_user_id, 'sm_governorate', sanitize_text_field($data['governorate']));
+            }
         } else {
             return $wp_user_id; // Return WP_Error
         }
@@ -201,7 +217,23 @@ class SM_DB {
         if (isset($data['registration_date'])) $update_data['registration_date'] = sanitize_text_field($data['registration_date']);
         if (isset($data['sort_order'])) $update_data['sort_order'] = intval($data['sort_order']);
 
-        return $wpdb->update($table_name, $update_data, array('id' => $id));
+        $res = $wpdb->update($table_name, $update_data, array('id' => $id));
+
+        // Sync to WP User
+        $member = self::get_member_by_id($id);
+        if ($member && $member->wp_user_id) {
+            $user_data = ['ID' => $member->wp_user_id];
+            if (isset($data['name'])) $user_data['display_name'] = $data['name'];
+            if (isset($data['email'])) $user_data['user_email'] = $data['email'];
+            if (count($user_data) > 1) {
+                wp_update_user($user_data);
+            }
+            if (isset($data['governorate'])) {
+                update_user_meta($member->wp_user_id, 'sm_governorate', sanitize_text_field($data['governorate']));
+            }
+        }
+
+        return $res;
     }
 
     public static function update_member_photo($id, $photo_url) {
@@ -315,7 +347,7 @@ class SM_DB {
         }
 
         $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE $where_member");
-        $stats['total_officers'] = count(self::get_staff());
+        $stats['total_officers'] = count(self::get_staff(['number' => -1]));
 
         // Financial Trends (Last 30 Days)
         $join_member = "";

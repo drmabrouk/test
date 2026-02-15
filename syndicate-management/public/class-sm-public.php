@@ -505,7 +505,101 @@ class SM_Public {
     }
 
     public function handle_form_submission() {
-        // Placeholder for legacy form handling if needed
+        if (isset($_POST['sm_import_members_csv'])) {
+            $this->handle_member_csv_import();
+        }
+        if (isset($_POST['sm_import_staffs_csv'])) {
+            $this->handle_staff_csv_import();
+        }
+    }
+
+    private function handle_member_csv_import() {
+        if (!current_user_can('sm_manage_members')) return;
+        check_admin_referer('sm_admin_action', 'sm_admin_nonce');
+
+        if (empty($_FILES['member_csv_file']['tmp_name'])) return;
+
+        $handle = fopen($_FILES['member_csv_file']['tmp_name'], 'r');
+        if (!$handle) return;
+
+        $results = ['total' => 0, 'success' => 0, 'warning' => 0, 'error' => 0];
+
+        // Skip header
+        fgetcsv($handle);
+
+        while (($data = fgetcsv($handle)) !== FALSE) {
+            $results['total']++;
+            if (count($data) < 2) { $results['error']++; continue; }
+
+            $member_data = [
+                'national_id' => sanitize_text_field($data[0]),
+                'name' => sanitize_text_field($data[1]),
+                'professional_grade' => sanitize_text_field($data[2] ?? ''),
+                'specialization' => sanitize_text_field($data[3] ?? ''),
+                'governorate' => sanitize_text_field($data[4] ?? ''),
+                'phone' => sanitize_text_field($data[5] ?? ''),
+                'email' => sanitize_email($data[6] ?? '')
+            ];
+
+            $res = SM_DB::add_member($member_data);
+            if (is_wp_error($res)) {
+                $results['error']++;
+            } else {
+                $results['success']++;
+            }
+        }
+        fclose($handle);
+
+        set_transient('sm_import_results_' . get_current_user_id(), $results, 3600);
+        wp_redirect(add_query_arg('sm_tab', 'members', wp_get_referer()));
+        exit;
+    }
+
+    private function handle_staff_csv_import() {
+        if (!current_user_can('sm_manage_users')) return;
+        check_admin_referer('sm_admin_action', 'sm_admin_nonce');
+
+        if (empty($_FILES['csv_file']['tmp_name'])) return;
+
+        $handle = fopen($_FILES['csv_file']['tmp_name'], 'r');
+        if (!$handle) return;
+
+        // Skip header
+        fgetcsv($handle);
+
+        while (($data = fgetcsv($handle)) !== FALSE) {
+            if (count($data) < 4) continue;
+
+            $username = sanitize_user($data[0]);
+            $email = sanitize_email($data[1]);
+            $name = sanitize_text_field($data[2]);
+            $officer_id = sanitize_text_field($data[3]);
+            $role_label = sanitize_text_field($data[4] ?? 'عضو نقابة');
+            $phone = sanitize_text_field($data[5] ?? '');
+            $pass = $data[6] ?? wp_generate_password(12, false);
+
+            $role = 'sm_syndicate_member';
+            if (strpos($role_label, 'مدير') !== false) $role = 'sm_system_admin';
+            elseif (strpos($role_label, 'مسؤول') !== false) $role = 'sm_syndicate_admin';
+
+            $user_id = wp_insert_user([
+                'user_login' => $username,
+                'user_email' => $email ?: $username . '@irseg.org',
+                'display_name' => $name,
+                'user_pass' => $pass,
+                'role' => $role
+            ]);
+
+            if (!is_wp_error($user_id)) {
+                update_user_meta($user_id, 'sm_temp_pass', $pass);
+                update_user_meta($user_id, 'sm_syndicateMemberIdAttr', $officer_id);
+                update_user_meta($user_id, 'sm_phone', $phone);
+            }
+        }
+        fclose($handle);
+
+        wp_redirect(add_query_arg('sm_tab', 'staff', wp_get_referer()));
+        exit;
     }
 
     public function ajax_get_counts() {
@@ -586,18 +680,35 @@ class SM_Public {
     }
 
     public function ajax_print_invoice() {
-        if (!current_user_can('sm_manage_finance')) wp_die('Unauthorized');
-        $member_id = intval($_GET['member_id'] ?? 0);
-        if (!$this->can_access_member($member_id)) wp_die('Access denied');
+        if (!current_user_can('sm_manage_finance')) {
+            // Check if member is viewing their own invoice
+            $payment_id = intval($_GET['payment_id'] ?? 0);
+            global $wpdb;
+            $pmt = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_payments WHERE id = %d", $payment_id));
+            if (!$pmt || !$this->can_access_member($pmt->member_id)) wp_die('Unauthorized');
+        }
         include SM_PLUGIN_DIR . 'templates/print-invoice.php';
         exit;
     }
 
     public function handle_print() {
         if (!current_user_can('sm_print_reports')) wp_die('Unauthorized');
+
+        $type = sanitize_text_field($_GET['print_type'] ?? '');
         $member_id = intval($_GET['member_id'] ?? 0);
+
         if ($member_id && !$this->can_access_member($member_id)) wp_die('Access denied');
-        /* Basic print handling logic would go here if needed */
+
+        switch($type) {
+            case 'id_card':
+                include SM_PLUGIN_DIR . 'templates/print-id-cards.php';
+                break;
+            case 'credentials':
+                include SM_PLUGIN_DIR . 'templates/print-member-credentials.php';
+                break;
+            default:
+                wp_die('Invalid print type');
+        }
         exit;
     }
 

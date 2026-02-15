@@ -19,26 +19,20 @@ class SM_Finance {
 
         for ($year = $start_year; $year <= $current_year; $year++) {
             if ($year > $last_paid_year) {
-                // Initial registration fee is 480, renewal is 280
-                $base_fee = ($year === $start_year) ? 480 : 280;
+                $base_fee = ($year === $start_year) ? $settings['membership_new'] : $settings['membership_renewal'];
                 $penalty = 0;
 
                 // Penalty starts April 1st of the year
                 $penalty_date = $year . '-04-01';
                 if ($current_date >= $penalty_date) {
-                    // Initial penalty for the year
-                    $penalty += 50;
+                    $penalty += $settings['membership_penalty'];
 
-                    // Additional 50 for each subsequent year of delay
                     if ($current_year > $year) {
-                        // If current date is >= April 1st of the current year, add penalties for previous years
                         $years_over = $current_year - $year;
-                        // The user says "another 50 EGP late fee is added on April 1 each subsequent year"
-                        // So for 2023 due, if it's April 1 2024, it gets another 50.
                         if ($current_date >= $current_year . '-04-01') {
-                             $penalty += $years_over * 50;
+                             $penalty += $years_over * $settings['membership_penalty'];
                         } else {
-                             $penalty += ($years_over - 1) * 50;
+                             $penalty += ($years_over - 1) * $settings['membership_penalty'];
                         }
                     }
                 }
@@ -238,7 +232,7 @@ class SM_Finance {
         $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
-        $args = array();
+        $args = array('limit' => -1);
         $members = SM_DB::get_members($args);
 
         $total_owed = 0;
