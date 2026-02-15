@@ -133,6 +133,11 @@ $is_member = in_array('sm_member', $roles);
 $is_officer = $is_syndicate_admin || $is_syndicate_member;
 
 $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
+$is_restricted = $is_member || $is_syndicate_member;
+if ($is_restricted && !in_array($active_tab, ['my-profile', 'member-profile'])) {
+    $active_tab = 'my-profile';
+}
+
 $syndicate = SM_Settings::get_syndicate_info();
 $stats = array();
 
@@ -251,25 +256,39 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
     <div class="sm-admin-layout" style="display: flex; min-height: 800px;">
         <!-- SIDEBAR -->
+        <?php $is_restricted = $is_member || $is_syndicate_member; ?>
         <div class="sm-sidebar" style="width: 280px; flex-shrink: 0; background: var(--sm-bg-light); border-left: 1px solid var(--sm-border-color); padding: 20px 0;">
             <ul style="list-style: none; padding: 0; margin: 0;">
+
+                <?php if (!$is_restricted): ?>
                 <li class="sm-sidebar-item <?php echo $active_tab == 'summary' ? 'sm-active' : ''; ?>">
                     <a href="<?php echo add_query_arg('sm_tab', 'summary'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-dashboard"></span> لوحة المعلومات</a>
                 </li>
+                <?php endif; ?>
 
-                <?php if ($is_member): ?>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'my-profile' ? 'sm-active' : ''; ?>">
+                <?php if ($is_restricted): ?>
+                    <li class="sm-sidebar-item <?php echo in_array($active_tab, ['my-profile', 'member-profile']) ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'my-profile'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-admin-users"></span> ملفي الشخصي</a>
                     </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin || $is_syndicate_member): ?>
+                <?php if (!$is_restricted && ($is_admin || $is_sys_admin || $is_syndicate_admin)): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'members' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-groups"></span> إدارة الأعضاء</a>
                     </li>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'update-requests' ? 'sm-active' : ''; ?>" style="position: relative;">
+                        <a href="<?php echo add_query_arg('sm_tab', 'update-requests'); ?>" class="sm-sidebar-link">
+                            <span class="dashicons dashicons-edit"></span> طلبات التحديث
+                            <?php
+                            $pending_count = count(SM_DB::get_update_requests('pending'));
+                            if ($pending_count > 0): ?>
+                                <span class="sm-sidebar-badge"><?php echo $pending_count; ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
                 <?php endif; ?>
 
-                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin): ?>
+                <?php if (!$is_restricted && ($is_admin || $is_sys_admin || $is_syndicate_admin)): ?>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'finance' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'finance'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-money-alt"></span> الاستحقاقات المالية</a>
                     </li>
@@ -381,8 +400,14 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
 
                 case 'surveys':
-                    if ($is_admin || $is_sys_admin || $is_officer || $is_syndicate_member) {
+                    if (!$is_restricted && ($is_admin || $is_sys_admin || $is_syndicate_admin)) {
                         include SM_PLUGIN_DIR . 'templates/admin-surveys.php';
+                    }
+                    break;
+
+                case 'update-requests':
+                    if ($is_admin || $is_sys_admin || $is_syndicate_admin) {
+                        include SM_PLUGIN_DIR . 'templates/admin-update-requests.php';
                     }
                     break;
 

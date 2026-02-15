@@ -131,6 +131,21 @@ class SM_Activator {
             KEY created_by (created_by)
         ) $charset_collate;\n";
 
+        // Update Requests Table
+        $table_name = $wpdb->prefix . 'sm_update_requests';
+        $sql .= "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            member_id mediumint(9) NOT NULL,
+            requested_data text NOT NULL,
+            status enum('pending', 'approved', 'rejected') DEFAULT 'pending',
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            processed_at datetime,
+            processed_by bigint(20),
+            PRIMARY KEY  (id),
+            KEY member_id (member_id),
+            KEY status (status)
+        ) $charset_collate;\n";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
 
@@ -242,11 +257,9 @@ class SM_Activator {
             'sm_print_reports' => true
         ));
 
-        // 3. Syndicate Member (عضو نقابة)
+        // 3. Syndicate Member (عضو نقابة) - Restricted to personal profile
         add_role('sm_syndicate_member', 'عضو نقابة', array(
-            'read' => true,
-            'sm_manage_members' => true,
-            'sm_print_reports' => true
+            'read' => true
         ));
 
         // 4. Member (End-user) (عضو)
