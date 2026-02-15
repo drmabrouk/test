@@ -55,14 +55,18 @@ $acc_status = SM_Finance::get_member_status($member->id);
             </div>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <?php if (!$is_member): ?>
+            <?php if ($is_member || $is_syndicate_member): ?>
+                <button onclick="smOpenUpdateMemberRequestModal()" class="sm-btn" style="background: #3182ce; width: auto;"><span class="dashicons dashicons-edit"></span> طلب تحديث بياناتي</button>
+            <?php elseif (!$is_member): ?>
                 <button onclick="editSmMember(JSON.parse(this.dataset.member))" data-member='<?php echo esc_attr(wp_json_encode($member)); ?>' class="sm-btn" style="background: #3182ce; width: auto;"><span class="dashicons dashicons-edit"></span> تعديل البيانات</button>
             <?php endif; ?>
 
             <div class="sm-dropdown" style="position:relative; display:inline-block;">
                 <button class="sm-btn" style="background: #111F35; width: auto;" onclick="smToggleFinanceDropdown()"><span class="dashicons dashicons-money-alt"></span> المعاملات المالية <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px;"></span></button>
                 <div id="sm-finance-dropdown" style="display:none; position:absolute; left:0; top:100%; background:white; border:1px solid #eee; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.1); z-index:100; min-width:200px; padding:10px 0;">
-                    <a href="javascript:smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-plus"></span> تأكيد سداد دفعة</a>
+                    <?php if (!$is_member): ?>
+                        <a href="javascript:smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-plus"></span> تأكيد سداد دفعة</a>
+                    <?php endif; ?>
                     <a href="<?php echo add_query_arg('sm_tab', 'financial-logs'); ?>&member_search=<?php echo urlencode($member->national_id); ?>" class="sm-dropdown-item"><span class="dashicons dashicons-media-spreadsheet"></span> سجل الفواتير والعمليات</a>
                 </div>
             </div>
@@ -94,17 +98,33 @@ $acc_status = SM_Finance::get_member_status($member->id);
                 <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">تراخيص مزاولة المهنة والمنشآت</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
-                        <h4 style="color: var(--sm-primary-color); margin-top:0;">ترخيص مزاولة المهنة</h4>
-                        <div style="margin-top: 10px;">
-                            <label class="sm-label">رقم الترخيص:</label> <?php echo esc_html($member->license_number ?: 'غير متوفر'); ?><br>
-                            <label class="sm-label">تاريخ الانتهاء:</label> <?php echo esc_html($member->license_expiration_date ?: 'غير محدد'); ?>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4 style="color: var(--sm-primary-color); margin:0;">ترخيص مزاولة المهنة</h4>
+                            <?php
+                            $lic_valid = ($member->license_expiration_date && $member->license_expiration_date >= date('Y-m-d'));
+                            echo $lic_valid ? '<span class="sm-badge sm-badge-low" style="background:#def7ec; color:#03543f;">صالح</span>' : '<span class="sm-badge sm-badge-high">منتهي</span>';
+                            ?>
+                        </div>
+                        <div style="margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                            <label class="sm-label">رقم الترخيص:</label> <span style="font-weight:700;"><?php echo esc_html($member->license_number ?: 'غير متوفر'); ?></span><br>
+                            <label class="sm-label">تاريخ الانتهاء:</label> <span style="color: <?php echo $lic_valid ? '#38a169' : '#e53e3e'; ?>; font-weight:700;"><?php echo esc_html($member->license_expiration_date ?: 'غير محدد'); ?></span>
                         </div>
                     </div>
                     <div>
-                        <h4 style="color: #38a169; margin-top:0;">ترخيص المنشأة</h4>
-                        <div style="margin-top: 10px;">
-                            <label class="sm-label">اسم المنشأة:</label> <?php echo esc_html($member->facility_name ?: 'غير متوفر'); ?><br>
-                            <label class="sm-label">تاريخ الانتهاء:</label> <?php echo esc_html($member->facility_license_expiration_date ?: 'غير محدد'); ?>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4 style="color: #38a169; margin:0;">ترخيص المنشأة</h4>
+                            <?php
+                            if ($member->facility_name) {
+                                $fac_valid = ($member->facility_license_expiration_date && $member->facility_license_expiration_date >= date('Y-m-d'));
+                                echo $fac_valid ? '<span class="sm-badge sm-badge-low" style="background:#def7ec; color:#03543f;">صالح</span>' : '<span class="sm-badge sm-badge-high">منتهي</span>';
+                            } else {
+                                echo '<span class="sm-badge" style="background:#eee; color:#999;">غير مسجل</span>';
+                            }
+                            ?>
+                        </div>
+                        <div style="margin-top: 15px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+                            <label class="sm-label">اسم المنشأة:</label> <span style="font-weight:700;"><?php echo esc_html($member->facility_name ?: 'غير متوفر'); ?></span><br>
+                            <label class="sm-label">تاريخ الانتهاء:</label> <span style="color: <?php echo ($member->facility_name && $fac_valid) ? '#38a169' : '#e53e3e'; ?>; font-weight:700;"><?php echo esc_html($member->facility_license_expiration_date ?: '---'); ?></span>
                         </div>
                     </div>
                 </div>
@@ -170,6 +190,35 @@ $acc_status = SM_Finance::get_member_status($member->id);
             </form>
         </div>
     </div>
+
+    <!-- Member Update Request Modal -->
+    <div id="member-update-request-modal" class="sm-modal-overlay">
+        <div class="sm-modal-content" style="max-width: 800px;">
+            <div class="sm-modal-header">
+                <h3>طلب تحديث بيانات العضوية</h3>
+                <button class="sm-modal-close" onclick="document.getElementById('member-update-request-modal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding: 20px; background: #fffaf0; border-bottom: 1px solid #feebc8; font-size: 13px; color: #744210;">
+                <span class="dashicons dashicons-info" style="font-size: 16px;"></span> سيتم إرسال طلبك للمراجعة من قبل إدارة النقابة قبل اعتماده رسمياً في النظام.
+            </div>
+            <form id="member-update-request-form">
+                <input type="hidden" name="member_id" value="<?php echo $member->id; ?>">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 25px;">
+                    <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input type="text" name="name" class="sm-input" value="<?php echo esc_attr($member->name); ?>" required></div>
+                    <div class="sm-form-group"><label class="sm-label">الرقم القومي:</label><input type="text" name="national_id" class="sm-input" value="<?php echo esc_attr($member->national_id); ?>" required maxlength="14"></div>
+                    <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" class="sm-select"><?php foreach ($grades as $k => $v) echo "<option value='$k' ".selected($member->professional_grade, $k, false).">$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">التخصص:</label><select name="specialization" class="sm-select"><?php foreach ($specs as $k => $v) echo "<option value='$k' ".selected($member->specialization, $k, false).">$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">المحافظة:</label><select name="governorate" class="sm-select"><?php foreach ($govs as $k => $v) echo "<option value='$k' ".selected($member->governorate, $k, false).">$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">رقم الهاتف:</label><input type="text" name="phone" class="sm-input" value="<?php echo esc_attr($member->phone); ?>"></div>
+                    <div class="sm-form-group"><label class="sm-label">البريد الإلكتروني:</label><input type="email" name="email" class="sm-input" value="<?php echo esc_attr($member->email); ?>"></div>
+                    <div class="sm-form-group" style="grid-column: span 2;"><label class="sm-label">سبب التحديث / ملاحظات إضافية:</label><textarea name="notes" class="sm-input" rows="2"></textarea></div>
+                </div>
+                <div style="padding: 0 25px 25px;">
+                    <button type="submit" class="sm-btn" style="width: 100%; height: 45px; font-weight: 700;">إرسال طلب التحديث للمراجعة</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -203,6 +252,28 @@ function smUploadMemberPhoto(memberId) {
         }
     });
 }
+
+function smOpenUpdateMemberRequestModal() {
+    document.getElementById('member-update-request-modal').style.display = 'flex';
+}
+
+document.getElementById('member-update-request-form').onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('action', 'sm_submit_update_request_ajax');
+    formData.append('nonce', '<?php echo wp_create_nonce("sm_update_request"); ?>');
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            smShowNotification('تم إرسال طلب التحديث بنجاح. سنقوم بمراجعته قريباً.');
+            document.getElementById('member-update-request-modal').style.display = 'none';
+        } else {
+            alert('خطأ: ' + res.data);
+        }
+    });
+};
 
 function deleteMember(id, name) {
     if (!confirm('هل أنت متأكد من حذف العضو: ' + name + ' نهائياً من النظام؟ لا يمكن التراجع عن هذا الإجراء.')) return;

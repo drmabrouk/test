@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 $user = wp_get_current_user();
-if (!current_user_can('طباعة_التقارير') && !in_array('sm_member', (array)$user->roles)) wp_die('Unauthorized');
+if (!current_user_can('sm_print_reports') && !in_array('sm_member', (array)$user->roles)) wp_die('Unauthorized');
 
 $member_id = intval($_GET['member_id']);
 $member = SM_DB::get_member_by_id($member_id);

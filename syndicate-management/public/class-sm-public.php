@@ -600,4 +600,44 @@ class SM_Public {
         /* Basic print handling logic would go here if needed */
         exit;
     }
+
+    public function ajax_submit_update_request_ajax() {
+        if (!is_user_logged_in()) wp_send_json_error('يجب تسجيل الدخول');
+        check_ajax_referer('sm_update_request', 'nonce');
+
+        $member_id = intval($_POST['member_id']);
+        if (!$this->can_access_member($member_id)) wp_send_json_error('لا تملك صلاحية تعديل هذا العضو');
+
+        $data = array(
+            'name' => sanitize_text_field($_POST['name']),
+            'national_id' => sanitize_text_field($_POST['national_id']),
+            'professional_grade' => sanitize_text_field($_POST['professional_grade']),
+            'specialization' => sanitize_text_field($_POST['specialization']),
+            'governorate' => sanitize_text_field($_POST['governorate']),
+            'phone' => sanitize_text_field($_POST['phone']),
+            'email' => sanitize_email($_POST['email']),
+            'notes' => sanitize_textarea_field($_POST['notes'])
+        );
+
+        $res = SM_DB::add_update_request($member_id, $data);
+        if ($res) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('فشل في إرسال الطلب');
+        }
+    }
+
+    public function ajax_process_update_request_ajax() {
+        if (!current_user_can('sm_manage_members')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_update_request', 'nonce');
+
+        $request_id = intval($_POST['request_id']);
+        $status = sanitize_text_field($_POST['status']); // 'approved' or 'rejected'
+
+        if (SM_DB::process_update_request($request_id, $status)) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('فشل في معالجة الطلب');
+        }
+    }
 }

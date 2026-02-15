@@ -456,4 +456,56 @@ class SM_DB {
         global $wpdb;
         return $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d", $survey_id));
     }
+
+    public static function add_update_request($member_id, $data) {
+        global $wpdb;
+        return $wpdb->insert("{$wpdb->prefix}sm_update_requests", array(
+            'member_id' => $member_id,
+            'requested_data' => json_encode($data),
+            'status' => 'pending',
+            'created_at' => current_time('mysql')
+        ));
+    }
+
+    public static function get_update_requests($status = 'pending') {
+        global $wpdb;
+        $user = wp_get_current_user();
+        $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $where = $wpdb->prepare("r.status = %s", $status);
+        if ($is_syndicate_admin && $my_gov) {
+            $where .= $wpdb->prepare(" AND m.governorate = %s", $my_gov);
+        }
+
+        return $wpdb->get_results("
+            SELECT r.*, m.name as member_name, m.national_id
+            FROM {$wpdb->prefix}sm_update_requests r
+            JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
+            WHERE $where
+            ORDER BY r.created_at DESC
+        ");
+    }
+
+    public static function process_update_request($request_id, $status) {
+        global $wpdb;
+        $request = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_update_requests WHERE id = %d", $request_id));
+        if (!$request) return false;
+
+        if ($status === 'approved') {
+            $data = json_decode($request->requested_data, true);
+            self::update_member($request->member_id, $data);
+            SM_Logger::log('اعتماد طلب تحديث بيانات', "تم تحديث بيانات العضو ID: {$request->member_id}");
+        }
+
+        return $wpdb->update(
+            "{$wpdb->prefix}sm_update_requests",
+            array(
+                'status' => $status,
+                'processed_at' => current_time('mysql'),
+                'processed_by' => get_current_user_id()
+            ),
+            array('id' => $request_id)
+        );
+    }
 }

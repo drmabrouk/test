@@ -69,6 +69,8 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_update_facility_ajax', $plugin_public, 'ajax_update_facility');
         $this->loader->add_action('wp_ajax_sm_print_facility', $plugin_public, 'ajax_print_facility');
         $this->loader->add_action('wp_ajax_sm_print_invoice', $plugin_public, 'ajax_print_invoice');
+        $this->loader->add_action('wp_ajax_sm_submit_update_request_ajax', $plugin_public, 'ajax_submit_update_request_ajax');
+        $this->loader->add_action('wp_ajax_sm_process_update_request_ajax', $plugin_public, 'ajax_process_update_request_ajax');
     }
 
     public function run() {
