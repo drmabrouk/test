@@ -14,7 +14,7 @@ $appearance = SM_Settings::get_appearance();
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>ترخيص مزاولة المهنة - <?php echo esc_html($member->name); ?></title>
+    <title>تصريح مزاولة المهنة - <?php echo esc_html($member->name); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         @page { size: A4 portrait; margin: 0; }
@@ -47,7 +47,7 @@ $appearance = SM_Settings::get_appearance();
             <?php endif; ?>
             <div class="syndicate-name"><?php echo esc_html($syndicate['syndicate_name']); ?></div>
             <div style="font-size: 18px;"><?php echo esc_html($syndicate['address']); ?></div>
-            <div class="title">ترخيص مزاولة المهنة</div>
+            <div class="title">تصريح مزاولة المهنة</div>
         </div>
 
         <div class="content">

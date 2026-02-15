@@ -1,10 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 global $wpdb;
-if (in_array('sm_member', (array)wp_get_current_user()->roles)) {
-    echo '<p>يرجى التوجه إلى لوحة المعلومات الخاصة بك.</p>';
-    return;
-}
+$is_officer = current_user_can('sm_manage_members') || current_user_can('manage_options');
 
 // Check for active surveys for current user role
 $user_role = !empty(wp_get_current_user()->roles) ? wp_get_current_user()->roles[0] : '';
@@ -99,6 +96,7 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
 }
 </script>
 
+<?php if ($is_officer): ?>
 <div class="sm-card-grid" style="margin-bottom: 30px;">
     <div class="sm-stat-card">
         <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 10px; font-weight: 700;">إجمالي الأعضاء المسجلين</div>
@@ -127,6 +125,7 @@ function smSubmitSurveyResponse(surveyId, questionsCount) {
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 
 
@@ -143,6 +142,9 @@ function smDownloadChart(chartId, fileName) {
 }
 
 (function() {
+    <?php if (!$is_officer): ?>
+    return;
+    <?php endif; ?>
     window.smCharts = window.smCharts || {};
 
     const initSummaryCharts = function() {

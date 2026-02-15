@@ -297,7 +297,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         <a href="<?php echo add_query_arg('sm_tab', 'financial-logs'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-media-spreadsheet"></span> سجل العمليات المالية</a>
                     </li>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'practice-licenses' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> تراخيص مزاولة المهنة</a>
+                        <a href="<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> تصاريح مزاولة المهنة</a>
                     </li>
                     <li class="sm-sidebar-item <?php echo $active_tab == 'facility-licenses' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-building"></span> تراخيص المنشآت</a>
@@ -401,8 +401,11 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
 
                 case 'surveys':
-                    if (!$is_restricted && ($is_admin || $is_sys_admin || $is_syndicate_admin)) {
+                    if ($is_admin || $is_sys_admin || $is_syndicate_admin) {
                         include SM_PLUGIN_DIR . 'templates/admin-surveys.php';
+                    } elseif ($is_syndicate_member) {
+                        // Members see only active surveys to participate
+                        include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php';
                     }
                     break;
 

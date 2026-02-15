@@ -37,8 +37,8 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
 <div class="sm-practice-licenses" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <h3 style="margin:0;">إدارة تراخيص مزاولة المهنة</h3>
-        <button onclick="smOpenLicenseIssuanceModal()" class="sm-btn" style="width:auto;">+ إصدار / تجديد ترخيص</button>
+        <h3 style="margin:0;">إدارة تصاريح مزاولة المهنة</h3>
+        <button onclick="smOpenLicenseIssuanceModal()" class="sm-btn" style="width:auto;">+ إصدار / تجديد تصريح</button>
     </div>
 
     <div class="sm-card-grid" style="margin-bottom: 30px;">
@@ -122,7 +122,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
 <div id="sm-license-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 600px;">
         <div class="sm-modal-header">
-            <h3>إصدار / تجديد ترخيص مزاولة المهنة</h3>
+            <h3>إصدار / تجديد تصريح مزاولة المهنة</h3>
             <button class="sm-modal-close" onclick="document.getElementById('sm-license-modal').style.display='none'">&times;</button>
         </div>
         <form id="sm-license-form" style="padding: 20px;">
