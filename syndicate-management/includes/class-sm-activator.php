@@ -117,13 +117,18 @@ class SM_Activator {
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             member_id mediumint(9) NOT NULL,
             amount decimal(10,2) NOT NULL,
-            payment_type enum('membership', 'license', 'facility', 'other') NOT NULL,
+            payment_type enum('membership', 'license', 'facility', 'other', 'penalty') NOT NULL,
             payment_date date NOT NULL,
             target_year int,
+            digital_invoice_code varchar(50),
+            paper_invoice_code varchar(50),
+            details_ar text,
             notes text,
+            created_by bigint(20),
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY  (id),
-            KEY member_id (member_id)
+            KEY member_id (member_id),
+            KEY created_by (created_by)
         ) $charset_collate;\n";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
