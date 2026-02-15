@@ -11,7 +11,15 @@ if (!$member) {
 $user = wp_get_current_user();
 $is_sys_manager = in_array('sm_system_admin', (array)$user->roles);
 $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
-$is_member = in_array('sm_member', (array)$user->roles);
+$is_syndicate_staff = in_array('sm_syndicate_member', (array)$user->roles);
+
+// IDOR CHECK: Restricted users can only see their own profile
+if ($is_syndicate_staff && !current_user_can('sm_manage_members')) {
+    if ($member->wp_user_id != $user->ID) {
+        echo '<div class="error" style="padding:20px; background:#fff5f5; color:#c53030; border-radius:8px; border:1px solid #feb2b2;"><h4>⚠️ عذراً، لا تملك صلاحية الوصول لهذا الملف.</h4><p>لا يمكنك استعراض بيانات الأعضاء الآخرين.</p></div>';
+        return;
+    }
+}
 
 // GEOGRAPHIC ACCESS CHECK
 if ($is_syndicate_admin) {
@@ -90,6 +98,15 @@ $acc_status = SM_Finance::get_member_status($member->id);
                     <div><label class="sm-label">الدرجة العلمية:</label> <div class="sm-value"><?php echo esc_html($member->academic_degree); ?></div></div>
                     <div><label class="sm-label">رقم الهاتف:</label> <div class="sm-value"><?php echo esc_html($member->phone); ?></div></div>
                     <div><label class="sm-label">البريد الإلكتروني:</label> <div class="sm-value"><?php echo esc_html($member->email); ?></div></div>
+                    <?php if ($member->wp_user_id): ?>
+                        <?php $temp_pass = get_user_meta($member->wp_user_id, 'sm_temp_pass', true); if ($temp_pass): ?>
+                            <div style="grid-column: span 2; background: #fffaf0; padding: 15px; border-radius: 8px; border: 1px solid #feebc8; margin-top: 10px;">
+                                <label class="sm-label" style="color: #744210;">كلمة المرور المؤقتة للنظام:</label>
+                                <div style="font-family: monospace; font-size: 1.2em; font-weight: 700; color: #975a16;"><?php echo esc_html($temp_pass); ?></div>
+                                <small style="color: #975a16;">* يرجى تزويد العضو بهذه الكلمة ليتمكن من الدخول لأول مرة.</small>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
                 </div>
             </div>
 

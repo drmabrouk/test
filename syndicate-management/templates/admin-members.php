@@ -75,6 +75,22 @@ if ($import_results) {
         <button onclick="document.getElementById('csv-import-form').style.display='block'" class="sm-btn sm-btn-secondary">استيراد أعضاء (Excel)</button>
         <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>" target="_blank" class="sm-btn sm-btn-accent" style="background: #27ae60; text-decoration:none;">طباعة كافة البطاقات</a>
     </div>
+
+    <!-- CSV Import Form -->
+    <div id="csv-import-form" style="display:none; background: #f8fafc; padding: 30px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 30px;">
+        <h3 style="margin-top:0; color:var(--sm-secondary-color);">استيراد الأعضاء من ملف CSV / Excel</h3>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">تأكد من أن الملف يحتوي على الأعمدة التالية بالترتيب: (الرقم القومي، الاسم، الدرجة الوظيفية، التخصص، المحافظة، رقم الهاتف، البريد الإلكتروني)</p>
+
+        <form method="post" enctype="multipart/form-data">
+            <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <input type="file" name="member_csv_file" accept=".csv" required style="flex: 1; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <button type="submit" name="sm_import_members_csv" class="sm-btn" style="width: auto; background: #27ae60;">بدء الاستيراد الآن</button>
+                <button type="button" onclick="document.getElementById('csv-import-form').style.display='none'" class="sm-btn sm-btn-outline" style="width: auto;">إلغاء</button>
+            </div>
+        </form>
+        <div style="margin-top: 15px; font-size: 11px; color: #e53e3e;">* سيتم إنشاء حسابات مستخدمين تلقائياً لجميع الأعضاء المستوردين.</div>
+    </div>
     <?php endif; ?>
 
     <div class="sm-table-container">
@@ -94,10 +110,15 @@ if ($import_results) {
             </thead>
             <tbody>
                 <?php
+                $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+                $limit = 20;
+                $offset = ($current_page - 1) * $limit;
                 $members = SM_DB::get_members(array(
                     'search' => $_GET['member_search'] ?? '',
                     'professional_grade' => $_GET['grade_filter'] ?? '',
-                    'specialization' => $_GET['spec_filter'] ?? ''
+                    'specialization' => $_GET['spec_filter'] ?? '',
+                    'limit' => $limit,
+                    'offset' => $offset
                 ));
                 if (empty($members)): ?>
                     <tr><td colspan="9" style="padding: 60px; text-align: center;">لا يوجد أعضاء يطابقون البحث.</td></tr>
@@ -129,6 +150,21 @@ if ($import_results) {
         </table>
     </div>
 
+    <!-- Pagination -->
+    <?php
+    $total_members = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members"); // Simplified count for now
+    $limit = 20;
+    $total_pages = ceil($total_members / $limit);
+    $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+    if ($total_pages > 1):
+    ?>
+    <div class="sm-pagination" style="margin-top: 20px; display: flex; gap: 5px; justify-content: center;">
+        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+            <a href="<?php echo add_query_arg('paged', $i); ?>" class="sm-btn <?php echo $i == $current_page ? '' : 'sm-btn-outline'; ?>" style="padding: 5px 12px; min-width: 40px; text-align: center;"><?php echo $i; ?></a>
+        <?php endfor; ?>
+    </div>
+    <?php endif; ?>
+
     <?php if ($can_manage_members): ?>
     <div id="add-single-member-modal" class="sm-modal-overlay">
         <div class="sm-modal-content" style="max-width: 900px;">
@@ -140,6 +176,7 @@ if ($import_results) {
                     <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="name" type="text" class="sm-input" required></div>
                     <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" class="sm-select"><?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
                     <div class="sm-form-group"><label class="sm-label">التخصص:</label><select name="specialization" class="sm-select"><?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">المؤهل العلمي:</label><select name="academic_degree" class="sm-select"><?php foreach (SM_Settings::get_academic_degrees() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
                     <div class="sm-form-group"><label class="sm-label">المحافظة:</label><select name="governorate" class="sm-select"><option value="">-- اختر المحافظة --</option><?php foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
                     <div class="sm-form-group"><label class="sm-label">رقم العضوية:</label><input name="membership_number" type="text" class="sm-input"></div>
                     <div class="sm-form-group"><label class="sm-label">تاريخ بدء العضوية:</label><input name="membership_start_date" id="add_mem_start" type="date" class="sm-input" onchange="smCalculateDateExpiry('add_mem_start', 'add_mem_expiry')"></div>
@@ -158,8 +195,12 @@ if ($import_results) {
                 <input type="hidden" name="member_id" id="edit_member_id_hidden">
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding:20px;">
                     <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="name" id="edit_name" type="text" class="sm-input" required></div>
-                    <div class="sm-form-group"><label class="sm-label">تاريخ بدء العضوية:</label><input name="membership_start_date" id="edit_mem_start" type="date" class="sm-input" onchange="smCalculateDateExpiry('edit_mem_start', 'edit_mem_expiry')"></div>
-                    <div class="sm-form-group"><label class="sm-label">تاريخ انتهاء العضوية:</label><input name="membership_expiration_date" id="edit_mem_expiry" type="date" class="sm-input"></div>
+                    <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" id="edit_grade" class="sm-select"><?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">التخصص:</label><select name="specialization" id="edit_spec" class="sm-select"><?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">المؤهل العلمي:</label><select name="academic_degree" id="edit_degree" class="sm-select"><?php foreach (SM_Settings::get_academic_degrees() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">المحافظة:</label><select name="governorate" id="edit_gov" class="sm-select"><?php foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
+                    <div class="sm-form-group"><label class="sm-label">تاريخ بدء العضوية:</label><input name="membership_start_date" id="edit_mem_start_input" type="date" class="sm-input" onchange="smCalculateDateExpiry('edit_mem_start_input', 'edit_mem_expiry_input')"></div>
+                    <div class="sm-form-group"><label class="sm-label">تاريخ انتهاء العضوية:</label><input name="membership_expiration_date" id="edit_mem_expiry_input" type="date" class="sm-input"></div>
                 </div>
                 <button type="submit" class="sm-btn">تحديث البيانات</button>
             </form>
@@ -182,8 +223,12 @@ if ($import_results) {
         window.editSmMember = function(s) {
             document.getElementById('edit_member_id_hidden').value = s.id;
             document.getElementById('edit_name').value = s.name;
-            document.getElementById('edit_mem_start').value = s.membership_start_date;
-            document.getElementById('edit_mem_expiry').value = s.membership_expiration_date;
+            document.getElementById('edit_grade').value = s.professional_grade;
+            document.getElementById('edit_spec').value = s.specialization;
+            document.getElementById('edit_degree').value = s.academic_degree;
+            document.getElementById('edit_gov').value = s.governorate;
+            document.getElementById('edit_mem_start_input').value = s.membership_start_date;
+            document.getElementById('edit_mem_expiry_input').value = s.membership_expiration_date;
             document.getElementById('edit-member-modal').style.display = 'flex';
         };
 

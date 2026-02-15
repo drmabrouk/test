@@ -122,7 +122,14 @@
                     'sm_syndicate_member' => 'عضو نقابة'
                 );
 
-                $args = array();
+                $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+                $limit = 20;
+                $offset = ($current_page - 1) * $limit;
+
+                $args = array(
+                    'number' => $limit,
+                    'offset' => $offset
+                );
                 if (!empty($_GET['role_filter'])) {
                     $args['role'] = sanitize_text_field($_GET['role_filter']);
                 }
@@ -175,6 +182,19 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination -->
+    <?php
+    $total_users = count(SM_DB::get_staff(array_merge($args, ['number' => -1, 'offset' => 0])));
+    $total_pages = ceil($total_users / $limit);
+    if ($total_pages > 1):
+    ?>
+    <div class="sm-pagination" style="margin-top: 20px; display: flex; gap: 5px; justify-content: center;">
+        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+            <a href="<?php echo add_query_arg('paged', $i); ?>" class="sm-btn <?php echo $i == $current_page ? '' : 'sm-btn-outline'; ?>" style="padding: 5px 12px; min-width: 40px; text-align: center;"><?php echo $i; ?></a>
+        <?php endfor; ?>
+    </div>
+    <?php endif; ?>
 
 
     <div id="edit-staff-modal" class="sm-modal-overlay">

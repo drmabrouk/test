@@ -262,12 +262,57 @@ class SM_Activator {
             'read' => true
         ));
 
-        // 4. Member (End-user) (عضو)
-        add_role('sm_member', 'عضو', array(
-            'read' => true
-        ));
-
         self::migrate_user_roles();
+        self::sync_missing_member_accounts();
+        self::create_pages();
+    }
+
+    private static function create_pages() {
+        $pages = array(
+            'sm-login' => array(
+                'title' => 'تسجيل الدخول للنظام',
+                'content' => '[sm_login]'
+            ),
+            'sm-admin' => array(
+                'title' => 'لوحة الإدارة النقابية',
+                'content' => '[sm_admin]'
+            )
+        );
+
+        foreach ($pages as $slug => $data) {
+            $existing = get_page_by_path($slug);
+            if (!$existing) {
+                wp_insert_post(array(
+                    'post_title'    => $data['title'],
+                    'post_content'  => $data['content'],
+                    'post_status'   => 'publish',
+                    'post_type'     => 'page',
+                    'post_name'     => $slug
+                ));
+            }
+        }
+    }
+
+    private static function sync_missing_member_accounts() {
+        global $wpdb;
+        $members = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id IS NULL OR wp_user_id = 0");
+        foreach ($members as $m) {
+            $temp_pass = wp_generate_password(12, false);
+            $user_id = wp_insert_user([
+                'user_login' => $m->national_id,
+                'user_email' => $m->email ?: $m->national_id . '@irseg.org',
+                'display_name' => $m->name,
+                'user_pass' => $temp_pass,
+                'role' => 'sm_syndicate_member'
+            ]);
+            if (!is_wp_error($user_id)) {
+                update_user_meta($user_id, 'sm_temp_pass', $temp_pass);
+                if (!empty($m->governorate)) {
+                    update_user_meta($user_id, 'sm_governorate', $m->governorate);
+                }
+                $wpdb->update("{$wpdb->prefix}sm_members", ['wp_user_id' => $user_id], ['id' => $m->id]);
+            }
+        }
     }
 
     private static function migrate_user_roles() {
@@ -276,12 +321,12 @@ class SM_Activator {
             'sm_officer'            => 'sm_syndicate_admin',
             'sm_syndicate_admin'    => 'sm_syndicate_admin',
             'sm_syndicate_member'   => 'sm_syndicate_member',
-            'sm_member'             => 'sm_member',
-            'sm_parent'             => 'sm_member',
+            'sm_member'             => 'sm_syndicate_member',
+            'sm_parent'             => 'sm_syndicate_member',
             'sm_principal'          => 'sm_syndicate_admin',
             'school_admin'          => 'sm_syndicate_admin',
             'sm_school_admin'       => 'sm_syndicate_admin',
-            'sm_student'            => 'sm_member'
+            'sm_student'            => 'sm_syndicate_member'
         );
 
         foreach ($role_migration as $old => $new) {
