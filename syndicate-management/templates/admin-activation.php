@@ -25,13 +25,17 @@
             </div>
 
             <?php if (!$is_unlocked): ?>
-                <form method="post" style="background: #f1f5f9; padding: 20px; border-radius: 10px; border: 1px solid #cbd5e0;">
+                <form method="post" style="background: #111F35; padding: 25px; border-radius: 10px; border: 1px solid #000; box-shadow: inset 0 0 10px rgba(255,255,255,0.1);">
                     <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
-                    <p style="margin-top:0; font-weight:700; color:#111F35; font-size:14px;">يتطلب الوصول لهذا القسم كلمة مرور المطور:</p>
-                    <div class="sm-form-group" style="margin-bottom: 15px;">
-                        <input type="password" name="dev_password" class="sm-input" placeholder="أدخل كلمة مرور المطور..." required>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span class="dashicons dashicons-lock" style="font-size: 40px; width: 40px; height: 40px; color: #fbbf24;"></span>
+                        <p style="margin: 10px 0 0 0; font-weight: 700; color: #fff; font-size: 16px;">الوصول مقيد لمدير النظام</p>
+                        <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 11px;">يرجى إدخال كلمة المرور الخاصة بالمطور للمتابعة</p>
                     </div>
-                    <button type="submit" name="sm_verify_dev_pass" class="sm-btn" style="width:100%; background:#2c3e50;">تحقق من الصلاحية</button>
+                    <div class="sm-form-group" style="margin-bottom: 15px;">
+                        <input type="password" name="dev_password" class="sm-input" placeholder="كلمة المرور المشفرة..." required style="text-align: center; letter-spacing: 5px; background: #1e293b; color: #fff; border-color: #334155;">
+                    </div>
+                    <button type="submit" name="sm_verify_dev_pass" class="sm-btn" style="width:100%; background:#fbbf24; color: #111F35; font-weight: 800;">إلغاء القفل الآمن</button>
                 </form>
             <?php else: ?>
                 <form method="post">

@@ -2,14 +2,18 @@
 
 class SM_DB {
 
-    private static function check_activation() {
+    private static function check_activation($force_die = true) {
         if (!SM_Activation::is_active()) {
-            wp_die('⚠️ النظام متوقف حالياً. يرجى تفعيل الاشتراك السنوي.');
+            if ($force_die) {
+                wp_die('⚠️ النظام متوقف حالياً. يرجى تفعيل الاشتراك السنوي.');
+            }
+            return false;
         }
+        return true;
     }
 
     public static function get_staff($args = array()) {
-        self::check_activation();
+        if (!self::check_activation(false)) return [];
         $user = wp_get_current_user();
         $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
@@ -38,7 +42,7 @@ class SM_DB {
     }
 
     public static function get_members($args = array()) {
-        self::check_activation();
+        if (!self::check_activation(false)) return [];
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
         $query = "SELECT * FROM $table_name WHERE 1=1";
@@ -108,7 +112,7 @@ class SM_DB {
     }
 
     public static function add_member($data) {
-        self::check_activation();
+        self::check_activation(true); // Still die on write
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
 
@@ -347,6 +351,7 @@ class SM_DB {
     }
 
     public static function get_statistics($filters = array()) {
+        // Statistics are allowed even if inactive for the dashboard
         global $wpdb;
         $stats = array();
 
