@@ -3,28 +3,76 @@
 global $wpdb;
 
 $user = wp_get_current_user();
-$is_sys_manager = in_array('sm_system_admin', (array)$user->roles);
-$is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
-$my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+$is_sys_manager = in_array('sm_system_admin', (array)$user->roles) || in_array('administrator', (array)$user->roles);
+
+if (!$is_sys_manager) {
+    echo '<div class="sm-alert sm-alert-danger">عذراً، هذا القسم مخصص لمدير النظام فقط ولا يمكن الوصول إليه.</div>';
+    return;
+}
 
 $where = "1=1";
-if ($is_syndicate_admin && $my_gov) {
-    // Only show payments for members in their governorate
-    $where = $wpdb->prepare("EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND m.governorate = %s)", $my_gov);
-}
+
+$day = isset($_GET['log_day']) ? intval($_GET['log_day']) : '';
+$month = isset($_GET['log_month']) ? intval($_GET['log_month']) : '';
+$year = isset($_GET['log_year']) ? intval($_GET['log_year']) : '';
+
+if ($day) $where .= $wpdb->prepare(" AND DAY(p.payment_date) = %d", $day);
+if ($month) $where .= $wpdb->prepare(" AND MONTH(p.payment_date) = %d", $month);
+if ($year) $where .= $wpdb->prepare(" AND YEAR(p.payment_date) = %d", $year);
 
 $search = isset($_GET['member_search']) ? sanitize_text_field($_GET['member_search']) : '';
 if ($search) {
     $where .= $wpdb->prepare(" AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND (m.name LIKE %s OR m.national_id LIKE %s))", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
 }
 
-$payments = $wpdb->get_results("SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC LIMIT 200");
+$payments = $wpdb->get_results("SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC LIMIT 500");
+$total_period_amount = array_reduce($payments, function($carry, $item) { return $carry + $item->amount; }, 0);
 ?>
 
 <div class="sm-financial-logs" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <h3 style="margin:0;">سجل العمليات المالية الشامل</h3>
+        <div>
+            <h3 style="margin:0;">سجل العمليات المالية الشامل</h3>
+            <div style="font-size: 14px; color: #38a169; font-weight: 700; margin-top: 5px;">إجمالي المبالغ في هذه الفترة: <?php echo number_format($total_period_amount, 2); ?> ج.م</div>
+        </div>
         <button onclick="location.reload()" class="sm-btn sm-btn-outline" style="width:auto;"><span class="dashicons dashicons-update"></span> تحديث السجل</button>
+    </div>
+
+    <!-- Filtering Bar -->
+    <div style="background: #f1f5f9; padding: 20px; border-radius: 10px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+        <form method="get" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <input type="hidden" name="sm_tab" value="financial-logs">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display:block; font-size:12px; margin-bottom:5px; font-weight:700;">بحث عن عضو:</label>
+                <input type="text" name="member_search" value="<?php echo esc_attr($search); ?>" class="sm-input" placeholder="الاسم أو الرقم القومي...">
+            </div>
+            <div style="width: 80px;">
+                <label style="display:block; font-size:12px; margin-bottom:5px; font-weight:700;">اليوم:</label>
+                <select name="log_day" class="sm-select">
+                    <option value="">الكل</option>
+                    <?php for($i=1; $i<=31; $i++) echo "<option value='$i' ".selected($day, $i, false).">$i</option>"; ?>
+                </select>
+            </div>
+            <div style="width: 120px;">
+                <label style="display:block; font-size:12px; margin-bottom:5px; font-weight:700;">الشهر:</label>
+                <select name="log_month" class="sm-select">
+                    <option value="">الكل</option>
+                    <?php
+                    $months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+                    foreach($months as $i => $m) echo "<option value='".($i+1)."' ".selected($month, $i+1, false).">$m</option>";
+                    ?>
+                </select>
+            </div>
+            <div style="width: 100px;">
+                <label style="display:block; font-size:12px; margin-bottom:5px; font-weight:700;">السنة:</label>
+                <select name="log_year" class="sm-select">
+                    <option value="">الكل</option>
+                    <?php for($i=date('Y'); $i>=2020; $i--) echo "<option value='$i' ".selected($year, $i, false).">$i</option>"; ?>
+                </select>
+            </div>
+            <button type="submit" class="sm-btn" style="width:auto; height:42px; padding: 0 25px;">تصفية النتائج</button>
+            <a href="<?php echo remove_query_arg(['log_day', 'log_month', 'log_year', 'member_search']); ?>" class="sm-btn sm-btn-outline" style="width:auto; height:42px; text-decoration:none; display:flex; align-items:center;">إعادة ضبط</a>
+        </form>
     </div>
 
     <div class="sm-table-container">

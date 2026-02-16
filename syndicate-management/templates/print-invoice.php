@@ -61,9 +61,11 @@ $appearance = SM_Settings::get_appearance();
                 <p><?php echo esc_html($syndicate['phone']); ?></p>
             </div>
             <div class="invoice-title">
-                <h2>فاتورة سداد</h2>
-                <p>رقم المرجع: #<?php echo str_pad($payment->id, 6, '0', STR_PAD_LEFT); ?></p>
-                <p>التاريخ: <?php echo date('Y-m-d', strtotime($payment->payment_date)); ?></p>
+                <h2>فاتورة سداد رسمية</h2>
+                <div style="background: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px;">
+                    <p style="margin: 0; font-weight: 900; color: #111F35; font-size: 18px;">رقم الفاتورة: <?php echo esc_html($payment->digital_invoice_code); ?></p>
+                    <p style="margin: 5px 0 0 0; color: #718096; font-size: 12px;">تاريخ الإصدار: <?php echo date('Y-m-d', strtotime($payment->payment_date)); ?></p>
+                </div>
             </div>
         </div>
 
@@ -87,16 +89,26 @@ $appearance = SM_Settings::get_appearance();
         <table class="invoice-table">
             <thead>
                 <tr>
-                    <th style="width: 60%;">الوصف</th>
-                    <th style="text-align: center;">السنة</th>
-                    <th style="text-align: left;">المبلغ</th>
+                    <th style="width: 50%;">بيان الخدمة / سبب المعاملة</th>
+                    <th style="text-align: center;">السنة المالية</th>
+                    <th style="text-align: center;">الكود المرجعي</th>
+                    <th style="text-align: left;">القيمة المالية</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td><?php echo $types[$payment->payment_type] ?? 'خدمات نقابية'; ?></td>
-                    <td style="text-align: center;"><?php echo $payment->target_year ?: '-'; ?></td>
-                    <td style="text-align: left; font-weight: 700;"><?php echo number_format($payment->amount, 2); ?> ج.م</td>
+                    <td style="font-weight: 700; color: var(--sm-dark-color);">
+                        <?php
+                        if (!empty($payment->details_ar)) {
+                            echo esc_html($payment->details_ar);
+                        } else {
+                            echo $types[$payment->payment_type] ?? 'خدمات نقابية';
+                        }
+                        ?>
+                    </td>
+                    <td style="text-align: center; font-weight: 600;"><?php echo $payment->target_year ?: '-'; ?></td>
+                    <td style="text-align: center; font-family: monospace; font-size: 11px;"><?php echo esc_html($payment->digital_invoice_code); ?></td>
+                    <td style="text-align: left; font-weight: 900; color: #27ae60;"><?php echo number_format($payment->amount, 2); ?> ج.م</td>
                 </tr>
             </tbody>
         </table>

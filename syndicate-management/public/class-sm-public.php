@@ -575,6 +575,122 @@ class SM_Public {
         wp_send_json_success();
     }
 
+    public function ajax_delete_gov_data() {
+        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+
+        global $wpdb;
+        $gov = sanitize_text_field($_POST['governorate']);
+        if (!$gov) wp_send_json_error('محافظة غير محددة');
+
+        // 1. Get member IDs for this gov
+        $member_ids = $wpdb->get_col($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE governorate = %s", $gov));
+        if (empty($member_ids)) wp_send_json_success('لا توجد بيانات لهذه المحافظة');
+
+        // 2. Delete WP Users
+        $wp_user_ids = $wpdb->get_col($wpdb->prepare("SELECT wp_user_id FROM {$wpdb->prefix}sm_members WHERE governorate = %s AND wp_user_id IS NOT NULL", $gov));
+        if (!empty($wp_user_ids)) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+            foreach ($wp_user_ids as $uid) wp_delete_user($uid);
+        }
+
+        // 3. Delete payments
+        $ids_str = implode(',', array_map('intval', $member_ids));
+        $wpdb->query("DELETE FROM {$wpdb->prefix}sm_payments WHERE member_id IN ($ids_str)");
+
+        // 4. Delete members
+        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->prefix}sm_members WHERE governorate = %s", $gov));
+
+        SM_Logger::log('حذف بيانات محافظة', "تم مسح كافة بيانات محافظة: $gov");
+        wp_send_json_success();
+    }
+
+    public function ajax_merge_gov_data() {
+        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+
+        $gov = sanitize_text_field($_POST['governorate']);
+        if (empty($_FILES['backup_file']['tmp_name'])) wp_send_json_error('الملف غير موجود');
+
+        $json = file_get_contents($_FILES['backup_file']['tmp_name']);
+        $data = json_decode($json, true);
+        if (!$data || !isset($data['members'])) wp_send_json_error('تنسيق الملف غير صحيح');
+
+        $success = 0; $skipped = 0;
+        foreach ($data['members'] as $row) {
+            // Only merge members belonging to the TARGET governorate if specified in the row,
+            // OR force them to the target governorate.
+            // Requirement says "data for a single governorate only"
+            if ($row['governorate'] !== $gov) {
+                $skipped++;
+                continue;
+            }
+
+            if (SM_DB::member_exists($row['national_id'])) {
+                $skipped++;
+                continue;
+            }
+
+            // Clean data for insertion
+            unset($row['id']);
+
+            // Re-create WP User if needed
+            $digits = ''; for ($i = 0; $i < 10; $i++) $digits .= mt_rand(0, 9);
+            $temp_pass = 'IRS' . $digits;
+            $wp_user_id = wp_insert_user([
+                'user_login' => $row['national_id'],
+                'user_email' => $row['email'] ?: $row['national_id'] . '@irseg.org',
+                'display_name' => $row['name'],
+                'user_pass' => $temp_pass,
+                'role' => 'sm_syndicate_member'
+            ]);
+
+            if (!is_wp_error($wp_user_id)) {
+                $row['wp_user_id'] = $wp_user_id;
+                update_user_meta($wp_user_id, 'sm_temp_pass', $temp_pass);
+                update_user_meta($wp_user_id, 'sm_governorate', $gov);
+            }
+
+            global $wpdb;
+            if ($wpdb->insert("{$wpdb->prefix}sm_members", $row)) $success++;
+            else $skipped++;
+        }
+
+        SM_Logger::log('دمج بيانات محافظة', "تم دمج $success عضواً لمحافظة $gov (تخطى $skipped)");
+        wp_send_json_success("تم بنجاح دمج $success عضواً وتجاهل $skipped عضواً مسجلين مسبقاً.");
+    }
+
+    public function ajax_reset_system() {
+        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+
+        global $wpdb;
+        $tables = [
+            'sm_members', 'sm_payments', 'sm_logs', 'sm_messages',
+            'sm_surveys', 'sm_survey_responses', 'sm_update_requests'
+        ];
+
+        // 1. Delete WordPress Users associated with members
+        $member_wp_ids = $wpdb->get_col("SELECT wp_user_id FROM {$wpdb->prefix}sm_members WHERE wp_user_id IS NOT NULL");
+        if (!empty($member_wp_ids)) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+            foreach ($member_wp_ids as $uid) {
+                wp_delete_user($uid);
+            }
+        }
+
+        // 2. Truncate Tables
+        foreach ($tables as $t) {
+            $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}$t");
+        }
+
+        // 3. Reset sequences
+        delete_option('sm_invoice_sequence_' . date('Y'));
+
+        SM_Logger::log('إعادة تهيئة النظام', "تم مسح كافة البيانات وتصفير النظام بالكامل");
+        wp_send_json_success();
+    }
+
     public function ajax_add_survey() {
         if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_admin_action', 'nonce');
