@@ -167,6 +167,23 @@ class SM_Admin {
     }
 
     public function display_activation_page() {
+        $is_unlocked = false;
+
+        if (isset($_POST['sm_verify_dev_pass'])) {
+            check_admin_referer('sm_activation_action', 'sm_activation_nonce');
+            $pass = $_POST['dev_password'];
+            if (SM_Activation::verify_activation_password($pass)) {
+                $is_unlocked = true;
+                set_transient('sm_dev_unlocked_' . get_current_user_id(), true, 1800); // 30 min
+            } else {
+                echo '<div class="error"><p>كلمة المرور الخاصة بالمطور غير صحيحة.</p></div>';
+            }
+        }
+
+        if (get_transient('sm_dev_unlocked_' . get_current_user_id())) {
+            $is_unlocked = true;
+        }
+
         if (isset($_POST['sm_process_activation'])) {
             check_admin_referer('sm_activation_action', 'sm_activation_nonce');
             $serial = sanitize_text_field($_POST['activation_serial']);

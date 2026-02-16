@@ -4,6 +4,8 @@ class SM_Activation {
     private static $fixed_code = '10111996';
     private static $option_name = 'sm_activation_data_secure';
     private static $secret_key = 'IRS_SYNDICATE_SECURE_KEY_1996'; // Internal salt
+    // Hashed activation password: AxM1996@@
+    private static $activation_pass_hash = '$2y$10$h1JfLbfvd.5Y.Qk3zB2.jOs3bG3Y7oI9e9b662zHkaZqRomgLMSry';
 
     /**
      * Encrypts data for storage or transport.
@@ -103,6 +105,13 @@ class SM_Activation {
 
         // Update Current Activation
         return update_option(self::$option_name, $encrypted);
+    }
+
+    /**
+     * Verifies the special developer password.
+     */
+    public static function verify_activation_password($password) {
+        return password_verify($password, self::$activation_pass_hash);
     }
 
     /**

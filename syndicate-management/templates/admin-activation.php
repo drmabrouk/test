@@ -24,24 +24,35 @@
                 <?php endif; ?>
             </div>
 
-            <form method="post">
-                <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
-
-                <div class="sm-form-group" style="margin-bottom: 20px;">
-                    <label class="sm-label" style="font-weight: 700;">كود التفعيل المشفر:</label>
-                    <textarea name="activation_serial" class="sm-textarea" rows="4" placeholder="ألصق كود التفعيل هنا..." required style="font-family: monospace; font-size: 12px; background: #f8fafc;"></textarea>
-                </div>
-
-                <div class="sm-form-group" style="margin-bottom: 25px;">
-                    <label class="sm-label" style="font-weight: 700;">تكلفة التفعيل (قيمة التطوير السنوية):</label>
-                    <div style="position: relative;">
-                        <input type="number" name="activation_cost" class="sm-input" value="0" step="0.01" style="padding-left: 45px;">
-                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #718096;">ج.م</span>
+            <?php if (!$is_unlocked): ?>
+                <form method="post" style="background: #f1f5f9; padding: 20px; border-radius: 10px; border: 1px solid #cbd5e0;">
+                    <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
+                    <p style="margin-top:0; font-weight:700; color:#111F35; font-size:14px;">يتطلب الوصول لهذا القسم كلمة مرور المطور:</p>
+                    <div class="sm-form-group" style="margin-bottom: 15px;">
+                        <input type="password" name="dev_password" class="sm-input" placeholder="أدخل كلمة مرور المطور..." required>
                     </div>
-                </div>
+                    <button type="submit" name="sm_verify_dev_pass" class="sm-btn" style="width:100%; background:#2c3e50;">تحقق من الصلاحية</button>
+                </form>
+            <?php else: ?>
+                <form method="post">
+                    <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
 
-                <button type="submit" name="sm_process_activation" class="sm-btn" style="width: 100%; height: 50px; font-weight: 800; font-size: 16px; background: #111F35;">اعتماد التفعيل والتمديد لمدة عام</button>
-            </form>
+                    <div class="sm-form-group" style="margin-bottom: 20px;">
+                        <label class="sm-label" style="font-weight: 700;">كود التفعيل المشفر:</label>
+                        <textarea name="activation_serial" class="sm-textarea" rows="4" placeholder="ألصق كود التفعيل هنا..." required style="font-family: monospace; font-size: 12px; background: #f8fafc;"></textarea>
+                    </div>
+
+                    <div class="sm-form-group" style="margin-bottom: 25px;">
+                        <label class="sm-label" style="font-weight: 700;">تكلفة التفعيل (قيمة التطوير السنوية):</label>
+                        <div style="position: relative;">
+                            <input type="number" name="activation_cost" class="sm-input" value="0" step="0.01" style="padding-left: 45px;">
+                            <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #718096;">ج.م</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" name="sm_process_activation" class="sm-btn" style="width: 100%; height: 50px; font-weight: 800; font-size: 16px; background: #111F35;">اعتماد التفعيل والتمديد لمدة عام</button>
+                </form>
+            <?php endif; ?>
 
             <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.6;">
                 <p>⚠️ ملاحظة: يعتمد كود التفعيل على تاريخ الدفع. بمجرد تفعيل الكود، سيتم تمديد صلاحية النظام لمدة 365 يوماً من تاريخ بدء الكود.</p>
