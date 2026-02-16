@@ -262,6 +262,12 @@ class SM_Activator {
             'read' => true
         ));
 
+        // Grant sm_full_access to default Administrator
+        $admin = get_role('administrator');
+        if ($admin) {
+            $admin->add_cap('sm_full_access');
+        }
+
         self::migrate_user_roles();
         self::sync_missing_member_accounts();
         self::create_pages();

@@ -55,17 +55,16 @@ class SM_Activation {
 
     /**
      * Verifies a serial provided by the user.
-     * Expected decrypted format: YYYYMMDD10111996
+     * Expected format: YYYYMMDD10111996 (Plain numeric string)
      */
-    public static function verify_serial($encrypted_serial) {
-        $decrypted = self::decrypt($encrypted_serial);
-        if (!$decrypted) return false;
+    public static function verify_serial($serial) {
+        if (empty($serial)) return false;
 
         // Check length and fixed code suffix
-        if (strlen($decrypted) !== 16) return false;
-        if (substr($decrypted, 8) !== self::$fixed_code) return false;
+        if (strlen($serial) !== 16) return false;
+        if (substr($serial, 8) !== self::$fixed_code) return false;
 
-        $date_str = substr($decrypted, 0, 8);
+        $date_str = substr($serial, 0, 8);
         $year = substr($date_str, 0, 4);
         $month = substr($date_str, 4, 2);
         $day = substr($date_str, 6, 2);
