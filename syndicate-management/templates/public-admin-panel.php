@@ -57,6 +57,67 @@
     };
 
     // MEDIA UPLOADER FOR LOGO
+    window.smDeleteGovData = function() {
+        const gov = document.getElementById('sm_gov_action_target').value;
+        if (!gov) return alert('يرجى اختيار المحافظة أولاً');
+        if (!confirm('هل أنت متأكد من حذف كافة بيانات محافظة ' + gov + '؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+
+        const fd = new FormData();
+        fd.append('action', 'sm_delete_gov_data_ajax');
+        fd.append('governorate', gov);
+        fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
+
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                alert('تم حذف بيانات المحافظة بنجاح.');
+                location.reload();
+            } else alert('خطأ: ' + res.data);
+        });
+    };
+
+    window.smMergeGovData = function(input) {
+        const gov = document.getElementById('sm_gov_action_target').value;
+        if (!gov) return alert('يرجى اختيار المحافظة أولاً لدمج البيانات إليها');
+        if (!input.files.length) return;
+
+        const fd = new FormData();
+        fd.append('action', 'sm_merge_gov_data_ajax');
+        fd.append('governorate', gov);
+        fd.append('backup_file', input.files[0]);
+        fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
+
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                alert('تم دمج البيانات بنجاح. التفاصيل: ' + res.data);
+                location.reload();
+            } else alert('خطأ: ' + res.data);
+        });
+    };
+
+    window.smResetSystem = function() {
+        if (!confirm('تحذير نهائي: هل أنت متأكد من مسح كافة بيانات النظام بالكامل؟ سيتم حذف جميع الأعضاء والعمليات المالية والملفات المرتبطة.')) return;
+        if (!confirm('للتأكيد، هل تريد حقاً البدء في عملية مسح البيانات؟')) return;
+
+        const fd = new FormData();
+        fd.append('action', 'sm_reset_system_ajax');
+        fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
+
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                alert('تمت إعادة تهيئة النظام بنجاح.');
+                location.reload();
+            } else {
+                alert('خطأ: ' + res.data);
+            }
+        });
+    };
+
     window.smOpenMediaUploader = function(inputId) {
         const frame = wp.media({
             title: 'اختر شعار النقابة',
@@ -197,6 +258,9 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
             <?php if (current_user_can('sm_manage_licenses')): ?>
                 <div style="display: flex; gap: 10px;">
+                    <?php if ($is_sys_admin || $is_admin): ?>
+                        <button onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'financial-logs'); ?>'" class="sm-btn" style="background: #e67e22; height: 38px; font-size: 11px; color: white !important; width: auto;"><span class="dashicons dashicons-media-spreadsheet" style="font-size: 16px; margin-top: 4px;"></span> سجل العمليات الشامل</button>
+                    <?php endif; ?>
                     <button onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>&action=new'" class="sm-btn" style="background: #2c3e50; height: 38px; font-size: 11px; color: white !important; width: auto;">+ إصدار ترخيص مزاولة</button>
                     <button onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>&action=new'" class="sm-btn" style="background: #27ae60; height: 38px; font-size: 11px; color: white !important; width: auto;">+ تسجيل منشأة جديدة</button>
                 </div>
@@ -547,6 +611,28 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                             <input type="file" name="backup_file" required style="margin-bottom:10px; font-size:11px;">
                                             <button type="submit" name="sm_restore_backup" class="sm-btn" style="background:#2980b9; width:auto;">بدء الاستيراد</button>
                                         </form>
+                                    </div>
+
+                                    <div style="background:white; padding:20px; border-radius:8px; border:1px solid #eee;">
+                                        <h5 style="margin-top:0;">إدارة بيانات محافظة محددة</h5>
+                                        <p style="font-size:12px; color:#666; margin-bottom:15px;">حذف أو دمج بيانات محافظة واحدة فقط دون المساس ببقية المحافظات.</p>
+                                        <div style="display:flex; flex-direction:column; gap:10px;">
+                                            <select id="sm_gov_action_target" class="sm-select" style="font-size:12px;">
+                                                <option value="">-- اختر المحافظة --</option>
+                                                <?php foreach(SM_Settings::get_governorates() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+                                            </select>
+                                            <div style="display:flex; gap:8px;">
+                                                <button onclick="smDeleteGovData()" class="sm-btn" style="background:#e53e3e; width:auto; font-size:11px;">حذف بيانات المحافظة</button>
+                                                <button onclick="document.getElementById('sm_gov_merge_file').click()" class="sm-btn" style="background:#805ad5; width:auto; font-size:11px;">دمج بيانات (JSON)</button>
+                                                <input type="file" id="sm_gov_merge_file" style="display:none;" onchange="smMergeGovData(this)">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style="background:#fff5f5; padding:20px; border-radius:8px; border:1px solid #feb2b2; grid-column: 1 / -1;">
+                                        <h5 style="margin-top:0; color:#c53030;">منطقة الخطر: إعادة تهيئة النظام</h5>
+                                        <p style="font-size:12px; color:#c53030; margin-bottom:15px;">سيقوم هذا الإجراء بمسح كافة بيانات الأعضاء، الحسابات، المدفوعات، والنشاطات بشكل نهائي ولا يمكن التراجع عنه.</p>
+                                        <button onclick="smResetSystem()" class="sm-btn" style="background:#e53e3e; width:auto; font-weight:800;">إعادة تهيئة النظام بالكامل (Reset)</button>
                                     </div>
                                 </div>
                             </div>

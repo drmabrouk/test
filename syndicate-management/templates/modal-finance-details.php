@@ -30,12 +30,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($dues['breakdown'] as $item): ?>
-                    <tr>
-                        <td><?php echo $item['item']; ?></td>
+                    <?php foreach ($dues['breakdown'] as $item):
+                        $is_late = $item['penalty'] > 0;
+                    ?>
+                    <tr <?php echo $is_late ? 'style="background: #fff5f5;"' : ''; ?>>
+                        <td style="<?php echo $is_late ? 'color: #c53030; font-weight: 700;' : ''; ?>">
+                            <?php if ($is_late): ?><span class="dashicons dashicons-warning" style="font-size: 16px; width: 16px; height: 16px; color: #e53e3e; vertical-align: middle;"></span><?php endif; ?>
+                            <?php echo $item['item']; ?>
+                        </td>
                         <td><?php echo number_format($item['amount'], 2); ?></td>
-                        <td style="color:#e53e3e;"><?php echo number_format($item['penalty'], 2); ?></td>
-                        <td style="font-weight:700;"><?php echo number_format($item['total'], 2); ?></td>
+                        <td style="color:#e53e3e; font-weight: 700;"><?php echo number_format($item['penalty'], 2); ?></td>
+                        <td style="font-weight:900;"><?php echo number_format($item['total'], 2); ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

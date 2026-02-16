@@ -63,6 +63,9 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_export_survey_results', $plugin_public, 'ajax_export_survey_results');
         $this->loader->add_action('wp_ajax_sm_record_payment_ajax', $plugin_public, 'ajax_record_payment');
         $this->loader->add_action('wp_ajax_sm_delete_transaction_ajax', $plugin_public, 'ajax_delete_transaction');
+        $this->loader->add_action('wp_ajax_sm_delete_gov_data_ajax', $plugin_public, 'ajax_delete_gov_data');
+        $this->loader->add_action('wp_ajax_sm_merge_gov_data_ajax', $plugin_public, 'ajax_merge_gov_data');
+        $this->loader->add_action('wp_ajax_sm_reset_system_ajax', $plugin_public, 'ajax_reset_system');
         $this->loader->add_action('wp_ajax_sm_get_member_finance_html', $plugin_public, 'ajax_get_member_finance_html');
         $this->loader->add_action('wp_ajax_sm_update_license_ajax', $plugin_public, 'ajax_update_license');
         $this->loader->add_action('wp_ajax_sm_print_license', $plugin_public, 'ajax_print_license');

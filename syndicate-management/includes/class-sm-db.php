@@ -353,6 +353,15 @@ class SM_DB {
         $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE $where_member");
         $stats['total_officers'] = count(self::get_staff(['number' => -1]));
 
+        // Total Revenue
+        $join_member_rev = "";
+        $where_rev = "1=1";
+        if ($is_syndicate_admin && $my_gov) {
+            $join_member_rev = "JOIN {$wpdb->prefix}sm_members m ON p.member_id = m.id";
+            $where_rev = $wpdb->prepare("m.governorate = %s", $my_gov);
+        }
+        $stats['total_revenue'] = $wpdb->get_var("SELECT SUM(amount) FROM {$wpdb->prefix}sm_payments p $join_member_rev WHERE $where_rev") ?: 0;
+
         // Financial Trends (Last 30 Days)
         $join_member = "";
         $where_finance = "payment_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
