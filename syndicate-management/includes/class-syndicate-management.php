@@ -86,22 +86,22 @@ class Syndicate_Management {
 
         // GLOBAL ACTIVATION CHECK
         if (!SM_Activation::is_active()) {
+            $is_sys_admin = current_user_can('sm_full_access') || current_user_can('manage_options');
+
             if (is_admin()) {
                 $page = isset($_GET['page']) ? $_GET['page'] : '';
 
-                // Block sensitive AJAX actions if not active
+                // Block sensitive AJAX actions if not active (ONLY System Admin can bypass)
                 if (defined('DOING_AJAX') && DOING_AJAX && isset($_REQUEST['action']) && strpos($_REQUEST['action'], 'sm_') === 0) {
-                    $allowed_ajax = ['sm_get_counts_ajax', 'sm_refresh_dashboard'];
-                    if (!in_array($_REQUEST['action'], $allowed_ajax)) {
+                    if (!$is_sys_admin) {
                         wp_send_json_error('يرجى التواصل مع المطور لتجديد النظام. النظام متوقف مؤقتاً.');
                     }
                 }
 
                 // Global Inactivity Notice (Prominent Central Notification)
-                $notice_callback = function() use ($page) {
+                $notice_callback = function() use ($page, $is_sys_admin) {
                     // Check if current user is System Admin AND on Activation page
-                    $is_sys_admin_on_activation = ($page === 'sm-activation' && (current_user_can('sm_full_access') || current_user_can('manage_options')));
-                    if ($is_sys_admin_on_activation) return;
+                    if ($is_sys_admin && $page === 'sm-activation') return;
 
                     echo '<div class="sm-inactive-global-banner" style="background: #9b1c1c; color: #fff; padding: 25px; text-align: center; border-bottom: 5px solid #111F35; position: sticky; top: 0; z-index: 999999; box-shadow: 0 5px 15px rgba(0,0,0,0.5); margin: -20px -20px 20px -20px;">';
                     echo '<div style="max-width: 800px; margin: 0 auto;">';
@@ -112,8 +112,16 @@ class Syndicate_Management {
                 add_action('admin_notices', $notice_callback);
                 add_action('admin_footer', $notice_callback);
 
-                // NO REDIRECTS: Dashboard remains fully accessible.
-                // Other pages will load but SM_DB will return empty data + the notice will be visible.
+                // Access restriction: Only System Admin can access SM pages when inactive
+                if (strpos($page, 'sm-') === 0 && !$is_sys_admin) {
+                    // Allow only Dashboard for others?
+                    // Requirement says: "Ensure that all roles and permissions are restricted... until activation is completed, with the only exception being the System Administrator."
+                    // So we redirect non-sys-admins away from SM pages if they try to access them.
+                    if ($page !== 'sm-dashboard') {
+                        wp_safe_redirect(admin_url()); // Redirect to main WP admin dashboard
+                        exit;
+                    }
+                }
             } else {
                 // Disable shortcodes on public side if not active
                 add_shortcode('sm_login', function() { return '<div style="padding:40px; text-align:center; background:#fff5f5; color:#c53030; border-radius:12px; border:2px solid #feb2b2; font-weight:800;">⚠️ يرجى التواصل مع المطور لتجديد النظام. النظام متوقف مؤقتاً.</div>'; });

@@ -42,8 +42,9 @@
                     <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
 
                     <div class="sm-form-group" style="margin-bottom: 20px;">
-                        <label class="sm-label" style="font-weight: 700;">كود التفعيل المشفر:</label>
-                        <textarea name="activation_serial" class="sm-textarea" rows="4" placeholder="ألصق كود التفعيل هنا..." required style="font-family: monospace; font-size: 12px; background: #f8fafc;"></textarea>
+                        <label class="sm-label" style="font-weight: 700;">كود التفعيل الرقمي:</label>
+                        <textarea name="activation_serial" class="sm-textarea" rows="2" placeholder="مثال: <?php echo date('Ymd'); ?>10111996" required style="font-family: monospace; font-size: 14px; background: #f8fafc; text-align: center;"></textarea>
+                        <p style="font-size: 11px; color: #718096; margin-top: 5px;">التنسيق: (التاريخ الحالي YYYYMMDD) + 10111996</p>
                     </div>
 
                     <div class="sm-form-group" style="margin-bottom: 25px;">
