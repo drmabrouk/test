@@ -56,6 +56,15 @@ class SM_Admin {
             'sm-settings',
             array($this, 'display_settings')
         );
+
+        add_submenu_page(
+            'sm-dashboard',
+            'تفعيل النظام',
+            'تفعيل النظام',
+            'sm_full_access', // Restrict to System Admin
+            'sm-activation',
+            array($this, 'display_activation_page')
+        );
     }
 
     public function enqueue_styles() {
@@ -155,6 +164,25 @@ class SM_Admin {
     public function display_members() {
         $_GET['sm_tab'] = 'members';
         $this->display_settings();
+    }
+
+    public function display_activation_page() {
+        if (isset($_POST['sm_process_activation'])) {
+            check_admin_referer('sm_activation_action', 'sm_activation_nonce');
+            $serial = sanitize_text_field($_POST['activation_serial']);
+            $cost = floatval($_POST['activation_cost']);
+
+            $res = SM_Activation::activate($serial, $cost);
+            if (is_wp_error($res)) {
+                echo '<div class="error"><p>' . $res->get_error_message() . '</p></div>';
+            } else {
+                echo '<div class="updated"><p>تم تفعيل النظام بنجاح لمدة عام كامل.</p></div>';
+            }
+        }
+
+        $activation_data = SM_Activation::get_activation_data();
+        $logs = SM_Activation::get_activation_logs();
+        include SM_PLUGIN_DIR . 'templates/admin-activation.php';
     }
 
 }
