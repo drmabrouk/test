@@ -2,7 +2,14 @@
 
 class SM_DB {
 
+    private static function check_activation() {
+        if (!SM_Activation::is_active()) {
+            wp_die('⚠️ النظام متوقف حالياً. يرجى تفعيل الاشتراك السنوي.');
+        }
+    }
+
     public static function get_staff($args = array()) {
+        self::check_activation();
         $user = wp_get_current_user();
         $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
@@ -31,6 +38,7 @@ class SM_DB {
     }
 
     public static function get_members($args = array()) {
+        self::check_activation();
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
         $query = "SELECT * FROM $table_name WHERE 1=1";
@@ -100,6 +108,7 @@ class SM_DB {
     }
 
     public static function add_member($data) {
+        self::check_activation();
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
 

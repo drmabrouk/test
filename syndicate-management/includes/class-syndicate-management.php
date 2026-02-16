@@ -15,6 +15,7 @@ class Syndicate_Management {
 
     private function load_dependencies() {
         require_once SM_PLUGIN_DIR . 'includes/class-sm-loader.php';
+        require_once SM_PLUGIN_DIR . 'includes/class-sm-activation.php';
         require_once SM_PLUGIN_DIR . 'includes/class-sm-db.php';
         require_once SM_PLUGIN_DIR . 'includes/class-sm-settings.php';
         require_once SM_PLUGIN_DIR . 'includes/class-sm-finance.php';
@@ -82,6 +83,37 @@ class Syndicate_Management {
 
     public function run() {
         $this->check_version_updates();
+
+        // GLOBAL ACTIVATION CHECK
+        if (!SM_Activation::is_active()) {
+            if (is_admin()) {
+                $page = isset($_GET['page']) ? $_GET['page'] : '';
+
+                // Block AJAX SM actions if not active
+                if (defined('DOING_AJAX') && DOING_AJAX && isset($_REQUEST['action']) && strpos($_REQUEST['action'], 'sm_') === 0) {
+                    wp_send_json_error('النظام متوقف. انتهت صلاحية الترخيص.');
+                }
+
+                if ($page !== 'sm-activation') {
+                    add_action('admin_notices', function() {
+                        echo '<div class="notice notice-error"><p style="font-weight:900; font-size:16px;">⚠️ نظام إدارة النقابة متوقف حالياً. انتهت صلاحية الترخيص السنوي. يرجى التواصل مع المطور للتجديد.</p></div>';
+                    });
+                    // Redirect to activation page if trying to access other SM pages
+                    if (strpos($page, 'sm-') === 0) {
+                        wp_safe_redirect(admin_url('admin.php?page=sm-activation'));
+                        exit;
+                    }
+                }
+            } else {
+                // Disable shortcodes on public side if not active
+                add_shortcode('sm_login', function() { return '<div style="padding:40px; text-align:center; background:#fff5f5; color:#c53030; border-radius:12px; border:2px solid #feb2b2; font-weight:800;">عذراً، النظام متوقف حالياً بسبب انتهاء فترة الترخيص.</div>'; });
+                add_shortcode('sm_admin', function() { return ''; });
+            }
+
+            // Remove core hooks to stop functionality if not active
+            // But we MUST keep the menu hooks so the activation page is visible
+        }
+
         $this->loader->run();
     }
 
