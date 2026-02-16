@@ -61,7 +61,7 @@ class SM_Admin {
             'sm-dashboard',
             'تفعيل النظام',
             'تفعيل النظام',
-            'sm_full_access', // Restrict to System Admin
+            'manage_options', // Allow both System Admin and WP Admin
             'sm-activation',
             array($this, 'display_activation_page')
         );

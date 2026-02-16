@@ -89,33 +89,31 @@ class Syndicate_Management {
             if (is_admin()) {
                 $page = isset($_GET['page']) ? $_GET['page'] : '';
 
-                // Block sensitive AJAX actions if not active (keep core dashboard ones if needed)
+                // Block sensitive AJAX actions if not active
                 if (defined('DOING_AJAX') && DOING_AJAX && isset($_REQUEST['action']) && strpos($_REQUEST['action'], 'sm_') === 0) {
                     $allowed_ajax = ['sm_get_counts_ajax', 'sm_refresh_dashboard'];
                     if (!in_array($_REQUEST['action'], $allowed_ajax)) {
-                        wp_send_json_error('النظام متوقف. انتهت صلاحية الترخيص.');
+                        wp_send_json_error('يرجى التواصل مع المطور لتجديد النظام. النظام متوقف مؤقتاً.');
                     }
                 }
 
-                // Global Inactivity Notice
+                // Global Inactivity Notice (Prominent Central Notification)
                 $notice_callback = function() use ($page) {
-                    if ($page === 'sm-activation' && current_user_can('sm_full_access')) return;
+                    // Check if current user is System Admin AND on Activation page
+                    $is_sys_admin_on_activation = ($page === 'sm-activation' && (current_user_can('sm_full_access') || current_user_can('manage_options')));
+                    if ($is_sys_admin_on_activation) return;
 
-                    echo '<div class="sm-inactive-overlay-notice" style="background: #9b1c1c; color: #fff; padding: 25px; text-align: center; border-bottom: 5px solid #111F35; position: sticky; top: 0; z-index: 99999; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">';
-                    echo '<p style="margin: 0; font-weight: 900; font-size: 22px; text-transform: uppercase;">⚠️ يرجى التواصل مع المطور لتجديد النظام. النظام متوقف مؤقتاً.</p>';
-                    echo '<div style="font-size: 13px; margin-top: 5px; opacity: 0.8;">Contact Developer for Renewal - System Temporarily Inactive</div>';
-                    echo '</div>';
+                    echo '<div class="sm-inactive-global-banner" style="background: #9b1c1c; color: #fff; padding: 25px; text-align: center; border-bottom: 5px solid #111F35; position: sticky; top: 0; z-index: 999999; box-shadow: 0 5px 15px rgba(0,0,0,0.5); margin: -20px -20px 20px -20px;">';
+                    echo '<div style="max-width: 800px; margin: 0 auto;">';
+                    echo '<p style="margin: 0; font-weight: 900; font-size: 24px; letter-spacing: 0.5px;">⚠️ يرجى التواصل مع المطور لتجديد النظام. النظام متوقف مؤقتاً.</p>';
+                    echo '<div style="font-size: 14px; margin-top: 8px; opacity: 0.9; font-weight: 600;">Please contact the developer to renew the system. The system is temporarily inactive.</div>';
+                    echo '</div></div>';
                 };
                 add_action('admin_notices', $notice_callback);
                 add_action('admin_footer', $notice_callback);
 
-                // Restriction logic: Only Dashboard and Activation remain functional
-                if (strpos($page, 'sm-') === 0 && !in_array($page, ['sm-dashboard', 'sm-activation'])) {
-                    // Just show the notice and keep the content blocked?
-                    // Let's redirect to dashboard if not on dashboard or activation
-                    wp_safe_redirect(admin_url('admin.php?page=sm-dashboard'));
-                    exit;
-                }
+                // NO REDIRECTS: Dashboard remains fully accessible.
+                // Other pages will load but SM_DB will return empty data + the notice will be visible.
             } else {
                 // Disable shortcodes on public side if not active
                 add_shortcode('sm_login', function() { return '<div style="padding:40px; text-align:center; background:#fff5f5; color:#c53030; border-radius:12px; border:2px solid #feb2b2; font-weight:800;">⚠️ يرجى التواصل مع المطور لتجديد النظام. النظام متوقف مؤقتاً.</div>'; });
