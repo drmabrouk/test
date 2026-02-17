@@ -188,7 +188,7 @@ global $wpdb;
 $user = wp_get_current_user();
 $roles = (array)$user->roles;
 $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');
-$is_sys_admin = in_array('sm_system_admin', $roles);
+$is_sys_admin = in_array('sm_system_admin', $roles) || in_array('sm_manager', $roles);
 $is_syndicate_admin = in_array('sm_syndicate_admin', $roles);
 $is_syndicate_member = in_array('sm_syndicate_member', $roles);
 $is_member = in_array('sm_member', $roles);
@@ -232,7 +232,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 5px 15px; background: #f0f4f8; color: #111F35; border-radius: 12px; font-size: 11px; font-weight: 700; margin-top: 6px; border: 1px solid #cbd5e0; line-height: 1.4;">
                     <div>
                         <?php
-                        if ($is_admin || $is_sys_admin) echo 'مدير النظام';
+                        if ($is_admin || in_array('sm_system_admin', $roles)) echo 'مدير النظام';
+                        elseif (in_array('sm_manager', $roles)) echo 'المدير';
                         elseif ($is_syndicate_admin) echo 'مسؤول نقابة';
                         elseif ($is_syndicate_member) echo 'عضو نقابة';
                         elseif ($is_member) echo 'عضو';

@@ -9,7 +9,7 @@ if (!$member) {
 }
 
 $user = wp_get_current_user();
-$is_sys_manager = in_array('sm_system_admin', (array)$user->roles);
+$is_sys_manager = in_array('sm_system_admin', (array)$user->roles) || in_array('sm_manager', (array)$user->roles) || current_user_can('sm_full_access') || current_user_can('manage_options');
 $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
 $is_syndicate_staff = in_array('sm_syndicate_member', (array)$user->roles);
 

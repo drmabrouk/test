@@ -30,32 +30,43 @@
                     <div style="text-align: center; margin-bottom: 20px;">
                         <span class="dashicons dashicons-lock" style="font-size: 40px; width: 40px; height: 40px; color: #fbbf24;"></span>
                         <p style="margin: 10px 0 0 0; font-weight: 700; color: #fff; font-size: 16px;">الوصول مقيد لمدير النظام</p>
-                        <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 11px;">يرجى إدخال كلمة المرور الخاصة بالمطور للمتابعة</p>
+                        <p style="margin: 5px 0 0 0; color: #94a3b8; font-size: 11px;">الخطوة 1: أدخل كود الوصول العام (Master Code)</p>
                     </div>
                     <div class="sm-form-group" style="margin-bottom: 15px;">
-                        <input type="password" name="dev_password" class="sm-input" placeholder="كلمة المرور المشفرة..." required style="text-align: center; letter-spacing: 5px; background: #1e293b; color: #fff; border-color: #334155;">
+                        <input type="password" name="dev_password" class="sm-input" placeholder="********" required style="text-align: center; letter-spacing: 5px; background: #1e293b; color: #fff; border-color: #334155;">
                     </div>
-                    <button type="submit" name="sm_verify_dev_pass" class="sm-btn" style="width:100%; background:#fbbf24; color: #111F35; font-weight: 800;">إلغاء القفل الآمن</button>
+                    <button type="submit" name="sm_verify_dev_pass" class="sm-btn" style="width:100%; background:#fbbf24; color: #111F35; font-weight: 800;">فتح واجهة التفعيل</button>
                 </form>
-            <?php else: ?>
+            <?php elseif (!$is_otp_sent): ?>
                 <form method="post">
                     <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
-
+                    <div style="margin-bottom: 15px; font-size: 13px; color: #111F35; font-weight: 700;">الخطوة 2: إدخال كود التفعيل</div>
                     <div class="sm-form-group" style="margin-bottom: 20px;">
-                        <label class="sm-label" style="font-weight: 700;">كود التفعيل الرقمي:</label>
+                        <label class="sm-label" style="font-weight: 700;">كود التفعيل الرقمي (16 رقم):</label>
                         <textarea name="activation_serial" class="sm-textarea" rows="2" placeholder="مثال: <?php echo date('Ymd'); ?>10111996" required style="font-family: monospace; font-size: 14px; background: #f8fafc; text-align: center;"></textarea>
-                        <p style="font-size: 11px; color: #718096; margin-top: 5px;">التنسيق: (التاريخ الحالي YYYYMMDD) + 10111996</p>
                     </div>
 
                     <div class="sm-form-group" style="margin-bottom: 25px;">
-                        <label class="sm-label" style="font-weight: 700;">تكلفة التفعيل (قيمة التطوير السنوية):</label>
-                        <div style="position: relative;">
-                            <input type="number" name="activation_cost" class="sm-input" value="0" step="0.01" style="padding-left: 45px;">
-                            <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #718096;">ج.م</span>
-                        </div>
+                        <label class="sm-label" style="font-weight: 700;">تكلفة التفعيل:</label>
+                        <input type="number" name="activation_cost" class="sm-input" value="0" step="0.01">
                     </div>
 
-                    <button type="submit" name="sm_process_activation" class="sm-btn" style="width: 100%; height: 50px; font-weight: 800; font-size: 16px; background: #111F35;">اعتماد التفعيل والتمديد لمدة عام</button>
+                    <button type="submit" name="sm_request_otp" class="sm-btn" style="width: 100%; height: 50px; font-weight: 800; font-size: 16px; background: #111F35;">إرسال رمز التحقق OTP</button>
+                </form>
+            <?php else: ?>
+                <form method="post" style="background: #f0f4f8; padding: 25px; border-radius: 10px; border: 1px solid #cbd5e0;">
+                    <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span class="dashicons dashicons-email-alt" style="font-size: 40px; width: 40px; height: 40px; color: #3182ce;"></span>
+                        <p style="margin: 10px 0 0 0; font-weight: 700; color: #111F35; font-size: 16px;">الخطوة 3: التحقق من OTP</p>
+                        <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 11px;">تم إرسال رمز مكون من 15 رقم إلى البريد المسجل للمطور</p>
+                    </div>
+                    <div class="sm-form-group" style="margin-bottom: 15px;">
+                        <label class="sm-label">أدخل رمز OTP المستلم:</label>
+                        <input type="text" name="activation_otp" class="sm-input" placeholder="000000000000000" required style="text-align: center; font-family: monospace; font-size: 1.4em; letter-spacing: 2px;">
+                    </div>
+                    <button type="submit" name="sm_finalize_activation" class="sm-btn" style="width:100%; background:#27ae60; color: #fff; font-weight: 800;">إتمام التفعيل النهائي</button>
+                    <button type="button" onclick="location.reload()" class="sm-btn sm-btn-outline" style="width:100%; margin-top:10px; font-size:12px;">إلغاء والبدء من جديد</button>
                 </form>
             <?php endif; ?>
 

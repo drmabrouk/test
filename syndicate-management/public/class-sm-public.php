@@ -25,8 +25,8 @@ class SM_Public {
 
         // Syndicate Admins can only manage Syndicate Members
         if (in_array('sm_syndicate_admin', (array)$current_user->roles)) {
-            // Cannot manage System Admins
-            if (in_array('sm_system_admin', (array)$target_user->roles)) return false;
+            // Cannot manage System Admins or Managers
+            if (in_array('sm_system_admin', (array)$target_user->roles) || in_array('sm_manager', (array)$target_user->roles)) return false;
             // Cannot manage other Syndicate Admins
             if (in_array('sm_syndicate_admin', (array)$target_user->roles)) return false;
 
@@ -331,7 +331,7 @@ class SM_Public {
         $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
 
         $is_admin = in_array('administrator', $roles) || current_user_can('sm_manage_system');
-        $is_sys_admin = in_array('sm_system_admin', $roles);
+        $is_sys_admin = in_array('sm_system_admin', $roles) || in_array('sm_manager', $roles);
         $is_syndicate_admin = in_array('sm_syndicate_admin', $roles);
         $is_syndicate_member = in_array('sm_syndicate_member', $roles);
 
@@ -417,7 +417,7 @@ class SM_Public {
         $role = sanitize_text_field($_POST['role']);
 
         // Prevent role escalation
-        if ($role === 'sm_system_admin' && !current_user_can('sm_full_access') && !current_user_can('manage_options')) {
+        if (($role === 'sm_system_admin' || $role === 'sm_manager') && !current_user_can('sm_full_access') && !current_user_can('manage_options')) {
             wp_send_json_error('Insufficient permissions to assign this role');
         }
 
@@ -466,7 +466,7 @@ class SM_Public {
         $role = sanitize_text_field($_POST['role']);
 
         // Prevent role escalation
-        if ($role === 'sm_system_admin' && !current_user_can('sm_full_access') && !current_user_can('manage_options')) {
+        if (($role === 'sm_system_admin' || $role === 'sm_manager') && !current_user_can('sm_full_access') && !current_user_can('manage_options')) {
             wp_send_json_error('Insufficient permissions to assign this role');
         }
 
@@ -818,7 +818,8 @@ class SM_Public {
             }
 
             $role = 'sm_syndicate_member';
-            if (strpos($role_label, 'مدير') !== false) $role = 'sm_system_admin';
+            if ($role_label === 'المدير') $role = 'sm_manager';
+            elseif (strpos($role_label, 'مدير') !== false) $role = 'sm_system_admin';
             elseif (strpos($role_label, 'مسؤول') !== false) $role = 'sm_syndicate_admin';
 
             $user_id = wp_insert_user([
@@ -937,6 +938,15 @@ class SM_Public {
         $member_id = intval($_GET['member_id'] ?? 0);
 
         if ($member_id && !$this->can_access_member($member_id)) wp_die('Access denied');
+
+        $member = $member_id ? SM_DB::get_member_by_id($member_id) : null;
+
+        $args = ['limit' => -1];
+        if (!empty($_GET['grade_filter'])) {
+            $args['professional_grade'] = sanitize_text_field($_GET['grade_filter']);
+        }
+
+        $members = $member_id ? ($member ? [$member] : []) : SM_DB::get_members($args);
 
         switch($type) {
             case 'id_card':

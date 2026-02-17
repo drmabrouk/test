@@ -103,13 +103,15 @@ class SM_Finance {
         // 3. Facility License Dues - Automatic renewal calculation REMOVED as requested.
         // It should only be applied if explicitly requested or handled via another mechanism.
 
-        // Subtract existing payments from total
-        $total_paid = self::get_total_paid($member_id);
-        $final_balance = $total_owed - $total_paid;
+        // Total paid for UNCONSUMED years (years > last_paid_membership_year)
+        // Or simply, since total_owed only includes future years, we only subtract payments specifically for those years or non-year-specific payments.
+        // A simpler way that fixes the reviewer's concern:
+        $unconsumed_payments = (float)self::get_unconsumed_payments($member_id, $last_paid_year);
+        $final_balance = $total_owed - $unconsumed_payments;
 
         return [
             'total_owed' => (float)$total_owed,
-            'total_paid' => (float)$total_paid,
+            'total_paid' => (float)self::get_total_paid($member_id),
             'balance' => (float)$final_balance,
             'breakdown' => $breakdown
         ];
@@ -120,6 +122,15 @@ class SM_Finance {
         $sum = $wpdb->get_var($wpdb->prepare(
             "SELECT SUM(amount) FROM {$wpdb->prefix}sm_payments WHERE member_id = %d",
             $member_id
+        ));
+        return (float)$sum;
+    }
+
+    public static function get_unconsumed_payments($member_id, $last_paid_year) {
+        global $wpdb;
+        $sum = $wpdb->get_var($wpdb->prepare(
+            "SELECT SUM(amount) FROM {$wpdb->prefix}sm_payments WHERE member_id = %d AND (target_year > %d OR target_year IS NULL)",
+            $member_id, $last_paid_year
         ));
         return (float)$sum;
     }
