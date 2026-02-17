@@ -57,15 +57,16 @@
 
     <?php
     $current_user = wp_get_current_user();
-    $is_sys_manager = in_array('sm_system_admin', (array)$current_user->roles);
+    $is_sys_manager = in_array('sm_system_admin', (array)$current_user->roles) || in_array('sm_manager', (array)$current_user->roles) || current_user_can('manage_options');
     $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$current_user->roles);
     $my_gov = get_user_meta($current_user->ID, 'sm_governorate', true);
     ?>
 
     <?php if ($is_sys_manager): ?>
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; overflow-x: auto; padding-bottom: 5px;">
         <a href="<?php echo remove_query_arg('role_filter'); ?>" class="sm-tab-btn <?php echo empty($_GET['role_filter']) ? 'sm-active' : ''; ?>" style="text-decoration:none;">الكل</a>
         <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_system_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مدير النظام</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_manager'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_manager' ? 'sm-active' : ''; ?>" style="text-decoration:none;">المدير</a>
         <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مسؤول نقابة</a>
         <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_member'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_member' ? 'sm-active' : ''; ?>" style="text-decoration:none;">عضو نقابة</a>
     </div>
@@ -87,6 +88,7 @@
                 <select name="role_filter" class="sm-select">
                     <option value="">كل الأدوار</option>
                     <option value="sm_system_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_system_admin'); ?>>مدير النظام</option>
+                    <option value="sm_manager" <?php selected($_GET['role_filter'] ?? '', 'sm_manager'); ?>>المدير</option>
                     <option value="sm_syndicate_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_admin'); ?>>مسؤول نقابة</option>
                     <option value="sm_syndicate_member" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_member'); ?>>عضو نقابة</option>
                 </select>
@@ -118,6 +120,7 @@
                 <?php 
                 $role_labels = array(
                     'sm_system_admin' => 'مدير النظام',
+                    'sm_manager' => 'المدير',
                     'sm_syndicate_admin' => 'مسؤول نقابة',
                     'sm_syndicate_member' => 'عضو نقابة'
                 );
@@ -228,6 +231,7 @@
                         <select name="role" id="edit_off_role" class="sm-select">
                             <?php if ($is_sys_manager): ?>
                                 <option value="sm_system_admin">مدير النظام</option>
+                                <option value="sm_manager">المدير</option>
                                 <option value="sm_syndicate_admin">مسؤول نقابة</option>
                             <?php endif; ?>
                             <option value="sm_syndicate_member">عضو نقابة</option>
@@ -279,6 +283,7 @@
                         <select name="role" class="sm-select">
                             <?php if ($is_sys_manager): ?>
                                 <option value="sm_system_admin">مدير النظام</option>
+                                <option value="sm_manager">المدير</option>
                                 <option value="sm_syndicate_admin">مسؤول نقابة</option>
                             <?php endif; ?>
                             <option value="sm_syndicate_member">عضو نقابة</option>

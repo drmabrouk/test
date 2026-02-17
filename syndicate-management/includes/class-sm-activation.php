@@ -4,8 +4,8 @@ class SM_Activation {
     private static $fixed_code = '10111996';
     private static $option_name = 'sm_activation_data_secure';
     private static $secret_key = 'IRS_SYNDICATE_SECURE_KEY_1996'; // Internal salt
-    // Hashed activation password: AxM1996@@
-    private static $activation_pass_hash = '$2y$10$h1JfLbfvd.5Y.Qk3zB2.jOs3bG3Y7oI9e9b662zHkaZqRomgLMSry';
+    // Hashed activation password: 10111996
+    private static $activation_pass_hash = '$2y$10$.Atnihww9QRkgPxR8luOJuUHQylXHDrKoYakbsqI..sxwk4Kv7DI2';
 
     /**
      * Encrypts data for storage or transport.
@@ -111,6 +111,32 @@ class SM_Activation {
      */
     public static function verify_activation_password($password) {
         return password_verify($password, self::$activation_pass_hash);
+    }
+
+    /**
+     * Sends a 15-digit OTP to mabrouk@dr.com
+     */
+    public static function send_activation_otp() {
+        $otp = '';
+        for ($i = 0; $i < 15; $i++) {
+            $otp .= mt_rand(0, 9);
+        }
+
+        set_transient('sm_activation_otp_' . get_current_user_id(), $otp, 600); // 10 min
+
+        $to = 'mabrouk@dr.com';
+        $subject = 'System Activation OTP - Syndicate Management';
+        $message = "Your 15-digit activation OTP is: " . $otp . "\r\n\r\n" . "This code is valid for 10 minutes.";
+
+        return wp_mail($to, $subject, $message);
+    }
+
+    /**
+     * Verifies the 15-digit OTP.
+     */
+    public static function verify_activation_otp($otp) {
+        $saved = get_transient('sm_activation_otp_' . get_current_user_id());
+        return ($saved && $saved === $otp);
     }
 
     /**

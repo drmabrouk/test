@@ -153,7 +153,7 @@ class SM_Activator {
     }
 
     private static function migrate_settings() {
-        $old_info = get_option('sm_syndicate_info');
+        $old_info = get_option('sm_school_info');
         if ($old_info && !get_option('sm_syndicate_info')) {
             // Rename syndicate fields to syndicate fields
             if (isset($old_info['syndicate_name'])) {
@@ -260,6 +260,19 @@ class SM_Activator {
         // 3. Syndicate Member (عضو نقابة) - Restricted to personal profile
         add_role('sm_syndicate_member', 'عضو نقابة', array(
             'read' => true
+        ));
+
+        // 4. Manager (المدير)
+        add_role('sm_manager', 'المدير', array(
+            'read' => true,
+            'manage_options' => true,
+            'sm_manage_system' => true,
+            'sm_manage_users' => true,
+            'sm_manage_members' => true,
+            'sm_manage_finance' => true,
+            'sm_manage_licenses' => true,
+            'sm_print_reports' => true,
+            'sm_full_access' => true
         ));
 
         // Grant sm_full_access to default Administrator

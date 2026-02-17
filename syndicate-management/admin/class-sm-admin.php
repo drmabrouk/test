@@ -58,10 +58,10 @@ class SM_Admin {
         );
 
         add_submenu_page(
-            'sm-dashboard',
+            'sm-settings',
             'تفعيل النظام',
             'تفعيل النظام',
-            'sm_full_access', // Restrict to System Admin
+            'sm_full_access',
             'sm-activation',
             array($this, 'display_activation_page')
         );
@@ -168,15 +168,15 @@ class SM_Admin {
 
     public function display_activation_page() {
         $is_unlocked = false;
+        $is_otp_sent = false;
 
         if (isset($_POST['sm_verify_dev_pass'])) {
             check_admin_referer('sm_activation_action', 'sm_activation_nonce');
-            $pass = $_POST['dev_password'];
-            if (SM_Activation::verify_activation_password($pass)) {
+            if (SM_Activation::verify_activation_password($_POST['dev_password'])) {
                 $is_unlocked = true;
-                set_transient('sm_dev_unlocked_' . get_current_user_id(), true, 1800); // 30 min
+                set_transient('sm_dev_unlocked_' . get_current_user_id(), true, 1800);
             } else {
-                echo '<div class="error"><p>كلمة المرور الخاصة بالمطور غير صحيحة.</p></div>';
+                echo '<div class="error"><p>كود الوصول غير صحيح.</p></div>';
             }
         }
 
@@ -184,16 +184,43 @@ class SM_Admin {
             $is_unlocked = true;
         }
 
-        if (isset($_POST['sm_process_activation'])) {
+        if (isset($_POST['sm_request_otp'])) {
             check_admin_referer('sm_activation_action', 'sm_activation_nonce');
             $serial = sanitize_text_field($_POST['activation_serial']);
-            $cost = floatval($_POST['activation_cost']);
-
-            $res = SM_Activation::activate($serial, $cost);
-            if (is_wp_error($res)) {
-                echo '<div class="error"><p>' . $res->get_error_message() . '</p></div>';
+            if (SM_Activation::verify_serial($serial)) {
+                if (SM_Activation::send_activation_otp()) {
+                    $is_otp_sent = true;
+                    // Store serial temporarily
+                    set_transient('sm_pending_serial_' . get_current_user_id(), $serial, 600);
+                    set_transient('sm_pending_cost_' . get_current_user_id(), floatval($_POST['activation_cost']), 600);
+                    echo '<div class="updated"><p>تم إرسال رمز التحقق (OTP) إلى mabrouk@dr.com</p></div>';
+                } else {
+                    echo '<div class="error"><p>فشل في إرسال البريد الإلكتروني. يرجى مراجعة إعدادات السيرفر.</p></div>';
+                }
             } else {
-                echo '<div class="updated"><p>تم تفعيل النظام بنجاح لمدة عام كامل.</p></div>';
+                echo '<div class="error"><p>كود التفعيل غير صحيح.</p></div>';
+            }
+        }
+
+        if (isset($_POST['sm_finalize_activation'])) {
+            check_admin_referer('sm_activation_action', 'sm_activation_nonce');
+            $otp = sanitize_text_field($_POST['activation_otp']);
+            if (SM_Activation::verify_activation_otp($otp)) {
+                $serial = get_transient('sm_pending_serial_' . get_current_user_id());
+                $cost = get_transient('sm_pending_cost_' . get_current_user_id());
+
+                $res = SM_Activation::activate($serial, $cost);
+                if (is_wp_error($res)) {
+                    echo '<div class="error"><p>' . $res->get_error_message() . '</p></div>';
+                } else {
+                    delete_transient('sm_pending_serial_' . get_current_user_id());
+                    delete_transient('sm_pending_cost_' . get_current_user_id());
+                    delete_transient('sm_activation_otp_' . get_current_user_id());
+                    echo '<div class="updated"><p>تم تفعيل النظام بنجاح لمدة عام كامل.</p></div>';
+                }
+            } else {
+                $is_otp_sent = true; // Stay on OTP step
+                echo '<div class="error"><p>رمز التحقق (OTP) غير صحيح.</p></div>';
             }
         }
 

@@ -19,7 +19,7 @@ class SM_DB {
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
         $default_args = array(
-            'role__in' => array('sm_system_admin', 'sm_syndicate_admin', 'sm_syndicate_member'),
+            'role__in' => array('sm_system_admin', 'sm_manager', 'sm_syndicate_admin', 'sm_syndicate_member'),
             'number' => 20,
             'offset' => 0
         );

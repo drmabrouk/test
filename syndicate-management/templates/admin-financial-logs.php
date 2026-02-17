@@ -3,7 +3,7 @@
 global $wpdb;
 
 $user = wp_get_current_user();
-$is_sys_manager = in_array('sm_system_admin', (array)$user->roles) || in_array('administrator', (array)$user->roles);
+$is_sys_manager = in_array('sm_system_admin', (array)$user->roles) || in_array('sm_manager', (array)$user->roles) || current_user_can('sm_full_access') || in_array('administrator', (array)$user->roles);
 
 if (!$is_sys_manager) {
     echo '<div class="sm-alert sm-alert-danger">عذراً، هذا القسم مخصص لمدير النظام فقط ولا يمكن الوصول إليه.</div>';
