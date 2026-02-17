@@ -353,6 +353,7 @@ class SM_Activator {
         );
 
         foreach ($role_migration as $old => $new) {
+            if ($old === $new) continue;
             $users = get_users(array('role' => $old));
             if (!empty($users)) {
                 foreach ($users as $user) {

@@ -16,6 +16,7 @@ class SM_Finance {
         // 1. Membership Dues
         // Registration date determines the first year
         $start_year = $member->membership_start_date ? (int)date('Y', strtotime($member->membership_start_date)) : $current_year;
+        if ($start_year < 1900) $start_year = $current_year; // Safety check
         $last_paid_year = (int)$member->last_paid_membership_year;
 
         // If it's a new member (never paid), they owe registration fee for the start year
