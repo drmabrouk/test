@@ -93,7 +93,7 @@ class Syndicate_Management {
         }
 
         if (is_admin()) {
-            $is_sys_admin = current_user_can('sm_full_access') || current_user_can('manage_options');
+            $is_sys_admin = is_user_logged_in() && (current_user_can('sm_full_access') || current_user_can('manage_options'));
             $page = isset($_GET['page']) ? $_GET['page'] : '';
 
             // Block sensitive AJAX actions if not active (ONLY System Admin can bypass)
@@ -105,6 +105,7 @@ class Syndicate_Management {
 
             // Global Inactivity Notice (Prominent Central Notification)
             $notice_callback = function() use ($page) {
+                if (!is_user_logged_in()) return;
                 $is_sys_admin = current_user_can('sm_full_access') || current_user_can('manage_options');
                 // Check if current user is System Admin AND on Activation page
                 if ($is_sys_admin && $page === 'sm-activation') return;

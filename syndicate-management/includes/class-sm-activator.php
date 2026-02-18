@@ -155,15 +155,15 @@ class SM_Activator {
     private static function migrate_settings() {
         $old_info = get_option('sm_school_info');
         if ($old_info && !get_option('sm_syndicate_info')) {
-            // Rename syndicate fields to syndicate fields
-            if (isset($old_info['syndicate_name'])) {
-                $old_info['syndicate_name'] = $old_info['syndicate_name'];
+            // Map old school fields to new syndicate fields
+            if (isset($old_info['school_name'])) {
+                $old_info['syndicate_name'] = $old_info['school_name'];
             }
-            if (isset($old_info['syndicate_logo'])) {
-                $old_info['syndicate_logo'] = $old_info['syndicate_logo'];
+            if (isset($old_info['school_logo'])) {
+                $old_info['syndicate_logo'] = $old_info['school_logo'];
             }
-            if (isset($old_info['syndicate_officer_name'])) {
-                $old_info['syndicate_officer_name'] = $old_info['syndicate_officer_name'];
+            if (isset($old_info['principal_name'])) {
+                $old_info['syndicate_officer_name'] = $old_info['principal_name'];
             }
             update_option('sm_syndicate_info', $old_info);
         }
@@ -353,12 +353,16 @@ class SM_Activator {
         );
 
         foreach ($role_migration as $old => $new) {
-            if ($old === $new) continue;
-            $users = get_users(array('role' => $old));
+            $users = get_users(array('role' => $old, 'number' => -1));
             if (!empty($users)) {
                 foreach ($users as $user) {
-                    $user->add_role($new);
-                    $user->remove_role($old);
+                    if ($old !== $new) {
+                        $user->add_role($new);
+                        $user->remove_role($old);
+                    } else {
+                        // Refresh role just in case
+                        $user->add_role($new);
+                    }
                 }
             }
         }
