@@ -80,13 +80,17 @@ class SM_Finance {
                 $penalty_start_date = date('Y-m-d', strtotime($expiry . ' +1 year'));
 
                 if ($current_date >= $penalty_start_date) {
-                    $d1 = new DateTime($expiry);
-                    $d2 = new DateTime($current_date);
-                    $diff = $d1->diff($d2);
-                    $years_delayed = $diff->y;
+                    try {
+                        $d1 = new DateTime($expiry);
+                        $d2 = new DateTime($current_date);
+                        $diff = $d1->diff($d2);
+                        $years_delayed = $diff->y;
 
-                    if ($years_delayed >= 1) {
-                        $penalty = $years_delayed * (float)$settings['license_penalty'];
+                        if ($years_delayed >= 1) {
+                            $penalty = $years_delayed * (float)$settings['license_penalty'];
+                        }
+                    } catch (Exception $e) {
+                        $penalty = 0;
                     }
                 }
 
