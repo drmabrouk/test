@@ -314,7 +314,8 @@ class SM_Activator {
 
     private static function sync_missing_member_accounts() {
         global $wpdb;
-        $members = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id IS NULL OR wp_user_id = 0");
+        // Limit to 50 members per run to prevent timeout on large sites
+        $members = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id IS NULL OR wp_user_id = 0 LIMIT 50");
         foreach ($members as $m) {
             $digits = '';
             for ($i = 0; $i < 10; $i++) {

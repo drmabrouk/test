@@ -186,19 +186,13 @@ class SM_Admin {
 
         if (isset($_POST['sm_request_otp'])) {
             check_admin_referer('sm_activation_action', 'sm_activation_nonce');
-            $serial = sanitize_text_field($_POST['activation_serial']);
-            if (SM_Activation::verify_serial($serial)) {
-                if (SM_Activation::send_activation_otp()) {
-                    $is_otp_sent = true;
-                    // Store serial temporarily
-                    set_transient('sm_pending_serial_' . get_current_user_id(), $serial, 600);
-                    set_transient('sm_pending_cost_' . get_current_user_id(), floatval($_POST['activation_cost']), 600);
-                    echo '<div class="updated"><p>تم إرسال رمز التحقق (OTP) إلى mabrouk@dr.com</p></div>';
-                } else {
-                    echo '<div class="error"><p>فشل في إرسال البريد الإلكتروني. يرجى مراجعة إعدادات السيرفر.</p></div>';
-                }
+            if (SM_Activation::send_activation_otp()) {
+                $is_otp_sent = true;
+                set_transient('sm_pending_duration_' . get_current_user_id(), intval($_POST['activation_duration']), 600);
+                set_transient('sm_pending_cost_' . get_current_user_id(), floatval($_POST['activation_cost']), 600);
+                echo '<div class="updated"><p>تم إرسال رمز التحقق (OTP) إلى website.developer@email.com</p></div>';
             } else {
-                echo '<div class="error"><p>كود التفعيل غير صحيح.</p></div>';
+                echo '<div class="error"><p>فشل في إرسال البريد الإلكتروني. يرجى مراجعة إعدادات السيرفر.</p></div>';
             }
         }
 
@@ -206,17 +200,17 @@ class SM_Admin {
             check_admin_referer('sm_activation_action', 'sm_activation_nonce');
             $otp = sanitize_text_field($_POST['activation_otp']);
             if (SM_Activation::verify_activation_otp($otp)) {
-                $serial = get_transient('sm_pending_serial_' . get_current_user_id());
+                $duration = get_transient('sm_pending_duration_' . get_current_user_id()) ?: 1;
                 $cost = get_transient('sm_pending_cost_' . get_current_user_id());
 
-                $res = SM_Activation::activate($serial, $cost);
+                $res = SM_Activation::activate($duration, $cost);
                 if (is_wp_error($res)) {
                     echo '<div class="error"><p>' . $res->get_error_message() . '</p></div>';
                 } else {
-                    delete_transient('sm_pending_serial_' . get_current_user_id());
+                    delete_transient('sm_pending_duration_' . get_current_user_id());
                     delete_transient('sm_pending_cost_' . get_current_user_id());
                     delete_transient('sm_activation_otp_' . get_current_user_id());
-                    echo '<div class="updated"><p>تم تفعيل النظام بنجاح لمدة عام كامل.</p></div>';
+                    echo '<div class="updated"><p>تم تفعيل النظام بنجاح.</p></div>';
                 }
             } else {
                 $is_otp_sent = true; // Stay on OTP step

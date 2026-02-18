@@ -111,6 +111,46 @@ class SM_DB {
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE national_id = %s", $national_id));
     }
 
+    public static function count_members($args = array()) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sm_members';
+        $query = "SELECT COUNT(*) FROM $table_name WHERE 1=1";
+        $params = array();
+
+        // Role-based filtering (Governorate)
+        $user = wp_get_current_user();
+        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles) || in_array('sm_syndicate_member', (array)$user->roles);
+        if ($is_officer && !current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+            $gov = get_user_meta($user->ID, 'sm_governorate', true);
+            if ($gov) {
+                $query .= " AND governorate = %s";
+                $params[] = $gov;
+            }
+        }
+
+        if (isset($args['professional_grade']) && !empty($args['professional_grade'])) {
+            $query .= " AND professional_grade = %s";
+            $params[] = $args['professional_grade'];
+        }
+
+        if (isset($args['specialization']) && !empty($args['specialization'])) {
+            $query .= " AND specialization = %s";
+            $params[] = $args['specialization'];
+        }
+
+        if (isset($args['search']) && !empty($args['search'])) {
+            $query .= " AND (name LIKE %s OR national_id LIKE %s OR membership_number LIKE %s)";
+            $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
+            $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
+            $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
+        }
+
+        if (!empty($params)) {
+            return $wpdb->get_var($wpdb->prepare($query, $params));
+        }
+        return $wpdb->get_var($query);
+    }
+
     public static function add_member($data) {
         self::check_activation(true); // Still die on write
         global $wpdb;

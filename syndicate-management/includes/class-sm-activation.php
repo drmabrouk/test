@@ -1,16 +1,16 @@
 <?php
 
 class SM_Activation {
-    private static $fixed_code = '10111996';
     private static $option_name = 'sm_activation_data_secure';
     private static $secret_key = 'IRS_SYNDICATE_SECURE_KEY_1996'; // Internal salt
-    // Hashed activation password: 10111996
-    private static $activation_pass_hash = '$2y$10$.Atnihww9QRkgPxR8luOJuUHQylXHDrKoYakbsqI..sxwk4Kv7DI2';
+    // Hashed activation password: 691101
+    private static $activation_pass_hash = '$2y$10$VVoYf2rTaCTY/VQ5dAA.YeE92hSN7.HPeS7UUMhbCHpiqu/.TbSly';
 
     /**
      * Encrypts data for storage or transport.
      */
     private static function encrypt($data) {
+        if (!function_exists('openssl_encrypt')) return base64_encode($data);
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
         $encrypted = openssl_encrypt($data, 'aes-256-cbc', self::$secret_key, 0, $iv);
         return base64_encode($encrypted . '::' . $iv);
@@ -21,8 +21,9 @@ class SM_Activation {
      */
     private static function decrypt($data) {
         if (empty($data)) return false;
+        if (!function_exists('openssl_decrypt')) return base64_decode($data);
         $parts = explode('::', base64_decode($data), 2);
-        if (count($parts) !== 2) return false;
+        if (count($parts) !== 2) return $parts[0]; // Fallback if no IV
         return openssl_decrypt($parts[0], 'aes-256-cbc', self::$secret_key, 0, $parts[1]);
     }
 
@@ -53,42 +54,20 @@ class SM_Activation {
         return json_decode($decrypted, true);
     }
 
-    /**
-     * Verifies a serial provided by the user.
-     * Expected format: YYYYMMDD10111996 (Plain numeric string)
-     */
-    public static function verify_serial($serial) {
-        if (empty($serial)) return false;
-
-        // Check length and fixed code suffix
-        if (strlen($serial) !== 16) return false;
-        if (substr($serial, 8) !== self::$fixed_code) return false;
-
-        $date_str = substr($serial, 0, 8);
-        $year = substr($date_str, 0, 4);
-        $month = substr($date_str, 4, 2);
-        $day = substr($date_str, 6, 2);
-
-        if (!checkdate((int)$month, (int)$day, (int)$year)) return false;
-
-        return $year . '-' . $month . '-' . $day;
-    }
 
     /**
-     * Activates the plugin using an encrypted serial.
+     * Activates the plugin for a specified duration.
      */
-    public static function activate($encrypted_serial, $cost = 0) {
-        $start_date = self::verify_serial($encrypted_serial);
-        if (!$start_date) return new WP_Error('invalid_serial', 'كود التفعيل غير صحيح أو تالف.');
-
-        $end_date = date('Y-m-d', strtotime($start_date . ' +1 year'));
+    public static function activate($duration_years = 1, $cost = 0) {
+        $start_date = current_time('Y-m-d');
+        $end_date = date('Y-m-d', strtotime($start_date . " + $duration_years year"));
 
         $data = [
             'start_date' => $start_date,
             'end_date' => $end_date,
             'cost' => (float)$cost,
             'activated_at' => current_time('mysql'),
-            'serial_hash' => wp_hash($encrypted_serial)
+            'duration' => $duration_years
         ];
 
         $json = json_encode($data);
@@ -114,7 +93,7 @@ class SM_Activation {
     }
 
     /**
-     * Sends a 15-digit OTP to mabrouk@dr.com
+     * Sends a 15-digit OTP to website.developer@email.com
      */
     public static function send_activation_otp() {
         $otp = '';
@@ -124,7 +103,7 @@ class SM_Activation {
 
         set_transient('sm_activation_otp_' . get_current_user_id(), $otp, 600); // 10 min
 
-        $to = 'mabrouk@dr.com';
+        $to = 'website.developer@email.com';
         $subject = 'System Activation OTP - Syndicate Management';
         $message = "Your 15-digit activation OTP is: " . $otp . "\r\n\r\n" . "This code is valid for 10 minutes.";
 
@@ -150,11 +129,4 @@ class SM_Activation {
         return $decrypted ? json_decode($decrypted, true) : [];
     }
 
-    /**
-     * Helper to generate a serial (For developer use).
-     */
-    public static function generate_serial($date_yyyy_mm_dd) {
-        $plain = str_replace('-', '', $date_yyyy_mm_dd) . self::$fixed_code;
-        return self::encrypt($plain);
-    }
 }
