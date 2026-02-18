@@ -40,10 +40,17 @@
             <?php elseif (!$is_otp_sent): ?>
                 <form method="post">
                     <?php wp_nonce_field('sm_activation_action', 'sm_activation_nonce'); ?>
-                    <div style="margin-bottom: 15px; font-size: 13px; color: #111F35; font-weight: 700;">الخطوة 2: إدخال كود التفعيل</div>
+                    <div style="margin-bottom: 15px; font-size: 13px; color: #111F35; font-weight: 700;">الخطوة 2: تحديد مدة التفعيل</div>
+
                     <div class="sm-form-group" style="margin-bottom: 20px;">
-                        <label class="sm-label" style="font-weight: 700;">كود التفعيل الرقمي (16 رقم):</label>
-                        <textarea name="activation_serial" class="sm-textarea" rows="2" placeholder="مثال: <?php echo date('Ymd'); ?>10111996" required style="font-family: monospace; font-size: 14px; background: #f8fafc; text-align: center;"></textarea>
+                        <label class="sm-label" style="font-weight: 700;">مدة التفعيل (بالسنوات):</label>
+                        <select name="activation_duration" class="sm-select">
+                            <option value="1">سنة واحدة</option>
+                            <option value="2">سنتين</option>
+                            <option value="3">3 سنوات</option>
+                            <option value="5">5 سنوات</option>
+                            <option value="10">10 سنوات</option>
+                        </select>
                     </div>
 
                     <div class="sm-form-group" style="margin-bottom: 25px;">
@@ -59,7 +66,7 @@
                     <div style="text-align: center; margin-bottom: 20px;">
                         <span class="dashicons dashicons-email-alt" style="font-size: 40px; width: 40px; height: 40px; color: #3182ce;"></span>
                         <p style="margin: 10px 0 0 0; font-weight: 700; color: #111F35; font-size: 16px;">الخطوة 3: التحقق من OTP</p>
-                        <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 11px;">تم إرسال رمز مكون من 15 رقم إلى البريد المسجل للمطور</p>
+                        <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 11px;">تم إرسال رمز مكون من 15 رقم إلى: website.developer@email.com</p>
                     </div>
                     <div class="sm-form-group" style="margin-bottom: 15px;">
                         <label class="sm-label">أدخل رمز OTP المستلم:</label>

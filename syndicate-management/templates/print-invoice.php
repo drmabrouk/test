@@ -1,14 +1,20 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-if (!current_user_can('sm_manage_finance')) wp_die('Unauthorized');
-
 $payment_id = intval($_GET['payment_id']);
 global $wpdb;
 $payment = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_payments WHERE id = %d", $payment_id));
 if (!$payment) wp_die('Payment not found');
 
 $member = SM_DB::get_member_by_id($payment->member_id);
+
+if (!current_user_can('sm_manage_finance')) {
+    // Allow members to view their own invoices
+    $current_user_id = get_current_user_id();
+    if (!$member || $member->wp_user_id != $current_user_id) {
+        wp_die('Unauthorized');
+    }
+}
 $syndicate = SM_Settings::get_syndicate_info();
 $appearance = SM_Settings::get_appearance();
 ?>
