@@ -171,6 +171,10 @@ class SM_Activator {
 
     private static function migrate_tables() {
         global $wpdb;
+
+        // Prevent multiple execution if already migrated
+        if (get_option('sm_tables_migrated')) return;
+
         // Migration from School version (sm_students -> sm_members)
         $mappings = array(
             'sm_students' => 'sm_members'
@@ -220,6 +224,8 @@ class SM_Activator {
                 }
             }
         }
+
+        update_option('sm_tables_migrated', true);
     }
 
     private static function setup_roles() {

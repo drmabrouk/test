@@ -5,7 +5,8 @@ class SM_DB {
     private static function check_activation($force_die = true) {
         if (!SM_Activation::is_active()) {
             if ($force_die) {
-                wp_die('⚠️ النظام متوقف حالياً. يرجى تفعيل الاشتراك السنوي.');
+                // Return WP_Error instead of wp_die to prevent crashing background processes
+                return new WP_Error('sm_inactive', '⚠️ النظام متوقف حالياً. يرجى تفعيل الاشتراك السنوي.');
             }
             return false;
         }
@@ -152,7 +153,8 @@ class SM_DB {
     }
 
     public static function add_member($data) {
-        self::check_activation(true); // Still die on write
+        $check = self::check_activation(true);
+        if (is_wp_error($check)) return $check;
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
 
@@ -244,7 +246,8 @@ class SM_DB {
     }
 
     public static function update_member($id, $data) {
-        self::check_activation(true);
+        $check = self::check_activation(true);
+        if (is_wp_error($check)) return $check;
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
 
@@ -295,13 +298,15 @@ class SM_DB {
     }
 
     public static function update_member_photo($id, $photo_url) {
-        self::check_activation(true);
+        $check = self::check_activation(true);
+        if (is_wp_error($check)) return $check;
         global $wpdb;
         return $wpdb->update($wpdb->prefix . 'sm_members', array('photo_url' => $photo_url), array('id' => $id));
     }
 
     public static function delete_member($id) {
-        self::check_activation(true);
+        $check = self::check_activation(true);
+        if (is_wp_error($check)) return $check;
         global $wpdb;
 
         $member = self::get_member_by_id($id);
@@ -333,7 +338,8 @@ class SM_DB {
     }
 
     public static function send_message($sender_id, $receiver_id, $message, $member_id = null) {
-        self::check_activation(true);
+        $check = self::check_activation(true);
+        if (is_wp_error($check)) return $check;
         global $wpdb;
         return $wpdb->insert($wpdb->prefix . 'sm_messages', array(
             'sender_id' => $sender_id,

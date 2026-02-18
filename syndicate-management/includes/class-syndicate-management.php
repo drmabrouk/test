@@ -93,7 +93,7 @@ class Syndicate_Management {
         }
 
         if (is_admin()) {
-            $is_sys_admin = is_user_logged_in() && (current_user_can('sm_full_access') || current_user_can('manage_options'));
+            $is_sys_admin = is_user_logged_in() && (current_user_can('sm_full_access') || current_user_can('manage_options') || current_user_can('administrator'));
             $page = isset($_GET['page']) ? $_GET['page'] : '';
 
             // Block sensitive AJAX actions if not active (ONLY System Admin can bypass)
@@ -106,7 +106,7 @@ class Syndicate_Management {
             // Global Inactivity Notice (Prominent Central Notification)
             $notice_callback = function() use ($page) {
                 if (!is_user_logged_in()) return;
-                $is_sys_admin = current_user_can('sm_full_access') || current_user_can('manage_options');
+                $is_sys_admin = current_user_can('sm_full_access') || current_user_can('manage_options') || current_user_can('administrator');
                 // Check if current user is System Admin AND on Activation page
                 if ($is_sys_admin && $page === 'sm-activation') return;
 
@@ -121,6 +121,7 @@ class Syndicate_Management {
 
             // Access restriction: Only System Admin can access SM pages when inactive
             if (strpos($page, 'sm-') === 0 && !$is_sys_admin) {
+                // Allow ONLY dashboard for unauthorized users when inactive
                 if ($page !== 'sm-dashboard') {
                     wp_safe_redirect(admin_url());
                     exit;
@@ -136,9 +137,15 @@ class Syndicate_Management {
     private function check_version_updates() {
         $db_version = get_option('sm_plugin_version', '1.0.0');
         if (version_compare($db_version, SM_VERSION, '<')) {
-            require_once SM_PLUGIN_DIR . 'includes/class-sm-activator.php';
-            SM_Activator::activate();
+            // Update version first to prevent crash loops if activation logic fails
             update_option('sm_plugin_version', SM_VERSION);
+
+            require_once SM_PLUGIN_DIR . 'includes/class-sm-activator.php';
+            try {
+                SM_Activator::activate();
+            } catch (Exception $e) {
+                error_log('Syndicate Management Activation Error: ' . $e->getMessage());
+            }
         }
     }
 

@@ -201,6 +201,12 @@ class SM_Finance {
 
             // Trigger Invoice Delivery (Email & Account)
             self::deliver_invoice($payment_id);
+
+            // Clear financial stats cache
+            delete_transient('sm_fin_stats_all');
+            if ($member && !empty($member->governorate)) {
+                delete_transient('sm_fin_stats_gov_' . $member->governorate);
+            }
         }
 
         return $insert;
@@ -254,7 +260,11 @@ class SM_Finance {
         $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
-        $args = array('limit' => -1);
+        $cache_key = 'sm_fin_stats_' . ($is_syndicate_admin ? 'gov_' . $my_gov : 'all');
+        $cached = get_transient($cache_key);
+        if ($cached !== false) return $cached;
+
+        $args = array('limit' => 500); // Limit to 500 members for stats to prevent timeout
         $members = SM_DB::get_members($args);
 
         $total_owed = 0;
@@ -271,11 +281,15 @@ class SM_Finance {
             }
         }
 
-        return [
+        $res = [
             'total_owed' => $total_owed,
             'total_paid' => $total_paid,
             'total_balance' => $total_owed - $total_paid,
-            'total_penalty' => $total_penalty
+            'total_penalty' => $total_penalty,
+            'is_partial' => (count($members) >= 500)
         ];
+
+        set_transient($cache_key, $res, 3600); // Cache for 1 hour
+        return $res;
     }
 }

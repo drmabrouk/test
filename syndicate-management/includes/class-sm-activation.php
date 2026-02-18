@@ -34,9 +34,11 @@ class SM_Activation {
         $data = self::get_activation_data();
         if (!$data) return false;
 
-        $current_time = time();
+        $current_time = current_time('timestamp');
         $start_time = strtotime($data['start_date']);
         $end_time = strtotime($data['end_date']);
+
+        if (!$start_time || !$end_time) return false;
 
         return ($current_time >= $start_time && $current_time <= $end_time);
     }
